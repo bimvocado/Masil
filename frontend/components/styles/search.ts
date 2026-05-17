@@ -1,5 +1,4 @@
 import { StyleSheet, Dimensions } from 'react-native';
-import { Colors } from '@/constants/colors';
 
 const { width } = Dimensions.get('window');
 export const CARD_SIZE = (width - 48) / 3;
@@ -7,7 +6,7 @@ export const CARD_SIZE = (width - 48) / 3;
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: '#ffffff',
   },
   searchBarContainer: {
     paddingHorizontal: 16,
@@ -16,12 +15,12 @@ export const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.masil.searchBar,
+    backgroundColor: '#f5f5f5',
     borderRadius: 20,
     paddingHorizontal: 12,
     height: 40,
     borderWidth: 1,
-    borderColor: Colors.masil.border,
+    borderColor: '#e0e0e0',
   },
   searchIcon: {
     marginRight: 8,
@@ -30,12 +29,12 @@ export const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
-    color: Colors.gray.dark,
+    color: '#333',
   },
   tabContainer: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderColor: Colors.masil.border,
+    borderColor: '#e0e0e0',
   },
   tabButton: {
     flex: 1,
@@ -45,34 +44,34 @@ export const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   activeTabButton: {
-    borderColor: Colors.masil.point,
+    borderColor: '#009205',
   },
   tabText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.gray.medium,
+    color: '#888',
   },
   activeTabText: {
-    color: Colors.masil.point,
+    color: '#009205',
   },
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     padding: 12,
-    backgroundColor: Colors.masil.background,
+    backgroundColor: '#edf3d2',
     flexGrow: 1,
   },
   brandCard: {
     width: CARD_SIZE,
     height: CARD_SIZE + 20,
-    backgroundColor: Colors.white,
+    backgroundColor: '#ffffff',
     borderRadius: 16,
     margin: 4,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 8,
 
-    shadowColor: Colors.black,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -82,12 +81,12 @@ export const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: Colors.gray.lighter, // 나중에 이미지 들어갈 자리
+    backgroundColor: '#ccc', // 나중에 이미지 들어갈 자리
     marginBottom: 8,
   },
   brandNameText: {
     fontSize: 13,
     fontWeight: '500',
-    color: Colors.gray.dark,
+    color: '#333',
   },
 });

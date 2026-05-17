@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { Colors } from '@/constants/colors';
 
 export const styles = StyleSheet.create({
   container: {
@@ -13,7 +12,7 @@ export const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.masil.searchBar,
+    backgroundColor: '#f5f5f5',
     borderRadius: 20,
     paddingHorizontal: 16,
     height: 40,
@@ -22,12 +21,12 @@ export const styles = StyleSheet.create({
     width: 16,
     height: 16,
     marginRight: 8,
-    tintColor: Colors.gray.light,
+    tintColor: '#aaa',
   },
   input: {
     flex: 1,
     fontSize: 14,
-    color: Colors.gray.dark,
+    color: '#333',
   },
   listContainer: {
     flex: 1,
@@ -40,12 +39,15 @@ export const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderColor: Colors.masil.border,
+    borderColor: '#f0f0f0',
   },
   bookmarkButton: {
     paddingRight: 16,
   },
-
+  bookmarkIcon: {
+    width: 22,
+    height: 22,
+  },
   cardLeft: {
     flex: 1,
     justifyContent: 'center',
@@ -54,17 +56,17 @@ export const styles = StyleSheet.create({
   postTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: Colors.gray.dark,
+    color: '#333333',
     marginBottom: 2,
   },
   postHandle: {
     fontSize: 14,
-    color: Colors.gray.medium,
+    color: '#666666',
     marginBottom: 4,
   },
   postDate: {
     fontSize: 13,
-    color: Colors.gray.light,
+    color: '#999999',
     marginBottom: 8,
   },
   interactionRow: {
@@ -76,11 +78,22 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  
+  heartIcon: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  commentIcon: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  countText: {
+    fontSize: 13,
+    color: '#666666',
+  },
   thumbnailPlaceholder: {
     width: 76,
     height: 76,
     borderRadius: 16,
-    backgroundColor: Colors.gray.lighter,
+    backgroundColor: '#e0e0e0',
   },
 });

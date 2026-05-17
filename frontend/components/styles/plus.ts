@@ -1,10 +1,9 @@
 import { StyleSheet } from 'react-native';
-import { Colors } from '@/constants/colors';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.masil.background,
+    backgroundColor: '#F5F8E6',
     paddingHorizontal: 24,
   },
   // 헤더 (게시물 업로드 & 뒤로가기)
@@ -23,12 +22,12 @@ export const styles = StyleSheet.create({
   },
   backIcon: {
     fontSize: 22,
-    color: Colors.gray.dark,
+    color: '#333333',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.gray.dark,
+    color: '#333333',
   },
 
   // 정사각형 이미지 업로드 
@@ -40,7 +39,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: Colors.black,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
@@ -49,7 +48,7 @@ export const styles = StyleSheet.create({
   imageIconPlaceHolder: {
     width: 60,
     height: 60,
-    tintColor: Colors.masil.icon,
+    tintColor: '#A5D6A7',
   },
 
   // 브랜드 이름 입력
@@ -60,7 +59,7 @@ export const styles = StyleSheet.create({
     borderRadius: 32,
     padding: 20,
     marginBottom: 20,
-    shadowColor: Colors.black,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
@@ -70,18 +69,18 @@ export const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: Colors.gray.lighter,
+    backgroundColor: '#D9D9D9',
     marginRight: 16,
   },
   nameInputWrapper: {
     flex: 1,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray.medium,
+    borderBottomColor: '#666666',
     paddingBottom: 4,
   },
   nameInput: {
     fontSize: 16,
-    color: Colors.gray.dark,
+    color: '#333333',
     padding: 0,
   },
 
@@ -89,11 +88,11 @@ export const styles = StyleSheet.create({
   contentUploadCard: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: '#ffffff',
     borderRadius: 32,
     padding: 24,
     marginBottom: 20,
-    shadowColor: Colors.black,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
@@ -102,26 +101,26 @@ export const styles = StyleSheet.create({
   contentInputBox: {
     flex: 1,
     borderWidth: 1,
-    borderColor: Colors.masil.border,
+    borderColor: '#D0D0D0',
     borderRadius: 20,
     padding: 20,
   },
   contentInput: {
     flex: 1,
     fontSize: 15,
-    color: Colors.gray.dark,
+    color: '#333333',
     textAlignVertical: 'top',
   },
 
   submitButton: {
     alignSelf: 'flex-end',
-    backgroundColor: Colors.masil.button,
+    backgroundColor: '#B3CBB3',
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 24,
   },
   submitButtonText: {
-    color: Colors.white,
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '700',
   },

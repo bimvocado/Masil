@@ -1,17 +1,16 @@
 import { StyleSheet } from 'react-native';
-import { Colors } from '@/constants/colors';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: '#ffffff',
   },
   scrollContent: {
     flexGrow: 1,
   },
   settingsIcon: {
     fontSize: 22,
-    color: Colors.gray.dark,
+    color: '#333',
   },
   profileContainer: {
     paddingHorizontal: 24,
@@ -30,7 +29,7 @@ export const styles = StyleSheet.create({
   },
   avatarPlaceholder: {
     flex: 1,
-    backgroundColor: Colors.gray.lighter,
+    backgroundColor: '#dbdbdb',
   },
   avatarImage: {
     flex: 1,
@@ -41,16 +40,16 @@ export const styles = StyleSheet.create({
   nicknameText: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.gray.dark,
+    color: '#000000',
     marginBottom: 2,
   },
   bioText: {
     fontSize: 14,
-    color: Colors.gray.medium,
+    color: '#666666',
     marginBottom: 8,
   },
   profileEditButton: {
-    backgroundColor: Colors.masil.background,
+    backgroundColor: '#edf3d2',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
@@ -59,7 +58,7 @@ export const styles = StyleSheet.create({
   profileEditButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: Colors.masil.point,
+    color: '#009205',
   },
   filterContainer: {
     paddingHorizontal: 24,
@@ -68,12 +67,12 @@ export const styles = StyleSheet.create({
   filterBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: '#ffffff',
     borderRadius: 20,
     paddingHorizontal: 14,
     height: 36,
     borderWidth: 1,
-    borderColor: Colors.masil.border,
+    borderColor: '#e8e8e8',
   },
   searchIcon: {
     marginRight: 6,
@@ -82,22 +81,22 @@ export const styles = StyleSheet.create({
   filterInput: {
     flex: 1,
     fontSize: 14,
-    color: Colors.gray.dark,
+    color: '#333',
     paddingVertical: 0,
   },
   listContainer: {
     flex: 1,
-    backgroundColor: Colors.masil.background,
+    backgroundColor: '#edf3d2',
     paddingHorizontal: 20,
     paddingTop: 20,
   },
   postCard: {
     flexDirection: 'row',
-    backgroundColor: Colors.white,
+    backgroundColor: '#ffffff',
     borderRadius: 24,
     padding: 16,
     marginBottom: 14,
-    shadowColor: Colors.black,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
@@ -111,12 +110,12 @@ export const styles = StyleSheet.create({
   postTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.gray.dark,
+    color: '#333333',
     marginBottom: 4,
   },
   postDate: {
     fontSize: 13,
-    color: Colors.gray.medium,
+    color: '#999999',
     marginBottom: 12,
   },
   interactionRow: {
@@ -140,7 +139,7 @@ export const styles = StyleSheet.create({
   },
   countText: {
     fontSize: 13,
-    color: Colors.gray.medium,
+    color: '#666666',
   },
   cardRight: {
     justifyContent: 'center',
@@ -150,6 +149,6 @@ export const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 16,
-    backgroundColor: Colors.gray.lighter,
+    backgroundColor: '#e0e0e0',
   },
 });
