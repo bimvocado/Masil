@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Href } from 'expo-router';
-import { styles } from '../../../components/styles/plus';
+import { styles } from '@/components/styles/plus';
+import { Colors } from '@/constants/colors';
+
+import { TopBar } from '@/components/layout/top-bar'; 
 
 export default function PlusScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   
   const [step, setStep] = useState<1 | 2>(1);
@@ -27,17 +28,17 @@ export default function PlusScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
       style={{ flex: 1 }}
     >
-      <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
-        
-        {/* 상단 공통 헤더 */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-            <Text style={styles.backIcon}>{'<'}</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>게시물 업로드</Text>
-        </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <TopBar 
+          title="게시물 업로드" 
+          onBackPress={handleBackPress} 
+      />
+      
+      <View style={styles.container}>
+        
+
+
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100, paddingTop: 20 }}>
           
           {step === 1 ? (
             <>
@@ -54,7 +55,7 @@ export default function PlusScreen() {
                 <View style={styles.nameInputWrapper}>
                   <TextInput 
                     placeholder="@이름 작성" 
-                    placeholderTextColor="#999"
+                    placeholderTextColor={Colors.gray.light}
                     style={styles.nameInput} 
                     value={brandName}
                     onChangeText={setBrandName}
@@ -73,7 +74,7 @@ export default function PlusScreen() {
                 <View style={styles.nameInputWrapper}>
                   <TextInput 
                     placeholder="@이름 작성" 
-                    placeholderTextColor="#999"
+                    placeholderTextColor={Colors.gray.light}
                     style={styles.nameInput} 
                     value={brandName}
                     onChangeText={setBrandName}

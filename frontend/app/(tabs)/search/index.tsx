@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { styles } from '../../../components/styles/search';
+import { styles } from '@/components/styles/search';
 
 interface BrandMock {
   brandId: number;
