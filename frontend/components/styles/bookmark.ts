@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { Colors } from '@/constants/colors';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 56) / 2;
@@ -14,7 +15,7 @@ export const styles = StyleSheet.create({
   topBarButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333333',
+    color: Colors.gray.dark,
   },
   gridContainer: {
     flexDirection: 'row',
@@ -30,7 +31,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 4,
     borderBottomWidth: 1,
-    borderColor: '#e8e8e8',
+    borderColor: Colors.masil.border,
     marginBottom: 16,
   },
   labelContainer: {
@@ -40,12 +41,12 @@ export const styles = StyleSheet.create({
   categoryName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333333',
+    color: Colors.gray.dark,
     marginBottom: 2,
   },
   countText: {
     fontSize: 14,
-    color: '#666666',
+    color: Colors.gray.medium,
     textAlign: 'right',
   },
   deleteText: {
@@ -61,7 +62,7 @@ export const styles = StyleSheet.create({
   },
   addCategoryText: {
     fontSize: 14,
-    color: '#999999',
+    color: Colors.gray.light,
     fontWeight: '500',
   },
 });

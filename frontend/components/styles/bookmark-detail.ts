@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { Colors } from '@/constants/colors';
 
 export const styles = StyleSheet.create({
   container: {
@@ -12,7 +13,7 @@ export const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.masil.searchBar,
     borderRadius: 20,
     paddingHorizontal: 16,
     height: 40,
@@ -21,12 +22,12 @@ export const styles = StyleSheet.create({
     width: 16,
     height: 16,
     marginRight: 8,
-    tintColor: '#aaa',
+    tintColor: Colors.gray.light,
   },
   input: {
     flex: 1,
     fontSize: 14,
-    color: '#333',
+    color: Colors.gray.dark,
   },
   listContainer: {
     flex: 1,
@@ -39,15 +40,12 @@ export const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: Colors.masil.border,
   },
   bookmarkButton: {
     paddingRight: 16,
   },
-  bookmarkIcon: {
-    width: 22,
-    height: 22,
-  },
+
   cardLeft: {
     flex: 1,
     justifyContent: 'center',
@@ -56,17 +54,17 @@ export const styles = StyleSheet.create({
   postTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#333333',
+    color: Colors.gray.dark,
     marginBottom: 2,
   },
   postHandle: {
     fontSize: 14,
-    color: '#666666',
+    color: Colors.gray.medium,
     marginBottom: 4,
   },
   postDate: {
     fontSize: 13,
-    color: '#999999',
+    color: Colors.gray.light,
     marginBottom: 8,
   },
   interactionRow: {
@@ -78,22 +76,11 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  heartIcon: {
-    fontSize: 12,
-    marginRight: 4,
-  },
-  commentIcon: {
-    fontSize: 12,
-    marginRight: 4,
-  },
-  countText: {
-    fontSize: 13,
-    color: '#666666',
-  },
+  
   thumbnailPlaceholder: {
     width: 76,
     height: 76,
     borderRadius: 16,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: Colors.gray.lighter,
   },
 });
