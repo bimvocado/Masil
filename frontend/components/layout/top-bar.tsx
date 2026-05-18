@@ -23,12 +23,14 @@ export function TopBar({
 
   const handleBackPress = () => {
     if (onBackPress) {
-      onBackPress();
+      onBackPress(); 
+    } else if (router.canGoBack()) {
+      router.back(); 
     } else {
-      router.back();
+      
+      router.replace('/(tabs)/user'); 
     }
   };
-
 
   const touchSlop = { top: 10, bottom: 10, left: 10, right: 10 };
 
