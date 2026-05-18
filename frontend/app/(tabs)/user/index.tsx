@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TopBar } from '@/components/layout/top-bar';
 import { styles } from '@/components/styles/user';
+import { useRouter } from 'expo-router'; 
 
 import { InteractionButton } from '@/constants/interaction-button';
 
@@ -49,6 +50,7 @@ const MOCK_POSTS: PostMock[] = [
 export default function UserScreen() {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter(); 
   
 
   const [posts, setPosts] = useState(MOCK_POSTS);
@@ -74,7 +76,7 @@ export default function UserScreen() {
         title="내 정보" 
         showBackButton={true}
         rightIcon={
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/user/settings')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Image
               source={require('@/assets/icons/setting.png')}
               style={{ width: 18, height: 18, tintColor: '#aaa'}}
@@ -103,7 +105,7 @@ export default function UserScreen() {
               <Text style={styles.nicknameText}>{MOCK_USER.nickname}</Text>
               <Text style={styles.bioText}>{MOCK_USER.bio}</Text>
               
-              <TouchableOpacity style={styles.profileEditButton}>
+              <TouchableOpacity style={styles.profileEditButton} onPress={() => router.push('/(tabs)/user/edit')}>
                 <Text style={styles.profileEditButtonText}>프로필 설정</Text>
               </TouchableOpacity>
             </View>
