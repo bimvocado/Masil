@@ -6,19 +6,24 @@ const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
 //테스트용
 const MOCK_POSTS: Post[] = [
-    { 
-      postId: 1, 
-      brandId: '롯데리아', 
-      stuffName: '새우버거', 
-      content: '맛있네요ㄷㄷㄷㄷㄷㄷㄷㄷㄷㄷㅇㅇㅇㅇㅇ', 
-      likeCount: 123, 
-      commentCount: 10, 
-      createdAt: '2024.05.19', 
-      tags: ['@콜라'],
-      isHearted: false
-    }
-  ];
-
+  { 
+    postId: 1, 
+    userId: 999,          
+    stuffId: 101,         
+    title: '새우버거 리뷰',  
+    content: '맛있네요ㄷㄷㄷㄷㄷㄷㄷㄷㄷㄷㅇㅇㅇㅇㅇ', 
+    createdAt: '2024.05.19', 
+    updatedAt: '2024.05.19', 
+    
+    
+    brandId: 3, 
+    stuffName: '새우버거', 
+    likeCount: 123, 
+    commentCount: 10, 
+    isScrapped: false,
+    scrapCount: 3
+  }
+];
 export default function UserPostFeedScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();

@@ -42,6 +42,14 @@ export const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: Colors.masil.border,
   },
+  cardRight: {
+    width: 80,
+    height: 80,
+    marginLeft: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
   bookmarkButton: {
     paddingRight: 16,
   },

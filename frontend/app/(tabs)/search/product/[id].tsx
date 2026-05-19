@@ -3,52 +3,66 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import { useLocalSearchParams } from 'expo-router';
 import { TopBar } from '@/components/layout/top-bar';
 import { ProductCard } from '@/components/ui/product-card';
+import { Post } from '@/types/post'; 
 
 export default function ProductDetailScreen() {
-  const { name, brand } = useLocalSearchParams();
+  
+  const { stuffName, brandName } = useLocalSearchParams<{ stuffName: string; brandName: string }>();
 
   return (
     <View style={styles.container}>
-      <TopBar title="상품 이름" showBackButton={true} />
+      <TopBar title={stuffName || "상품 상세"} showBackButton={true} />
       
       <ScrollView contentContainerStyle={styles.scrollContent} style={{ backgroundColor: '#f5fbe7' }}>
         {/* 상단 리뷰 사진 영역 */}
         <View style={styles.imagePlaceholderBox}>
-          <Text style={styles.imageLabel}>옳소 가장 많은 리뷰의 사진</Text>
+          <Text style={styles.imageLabel}>가장 인기 있는 리뷰 사진</Text>
         </View>
 
         {/* 상품 정보 */}
         <View style={styles.infoSection}>
-          <Text style={styles.brandLink}>브랜드명(누르면 바로감) {brand}</Text>
-          <Text style={styles.productTitle}>{name || "새우버거"}</Text>
+          {/* 브랜드 클릭 시 해당 브랜드 상세로 이동하게 설계하면 좋음 */}
+          <TouchableOpacity>
+            <Text style={styles.brandLink}>브랜드: {brandName || "브랜드 미정"}</Text>
+          </TouchableOpacity>
+          <Text style={styles.productTitle}>{stuffName || "상품명 없음"}</Text>
           <Text style={styles.priceText}>1,234원</Text>
         </View>
 
         <View style={styles.divider} />
 
-        {/* 통계 지표 (좋아요/싫어요/점수 등) */}
+        {/* 통계 지표 */}
         <View style={styles.statsContainer}>
-          <View style={styles.statRow}><Text>👍 1,234</Text><Text>👎 1,234</Text></View>
-          <View style={styles.statRow}><Text>🟡 1,234</Text><Text>🟡 1,234</Text></View>
-          <View style={styles.statRow}><Text>🔵 1,234</Text><Text>🔵 1,234</Text></View>
+          <View style={styles.statRow}>
+            <Text>👍 좋아요 1,234</Text>
+            <Text>👎 별로요 1,234</Text>
+          </View>
         </View>
 
         <View style={styles.divider} />
 
-        {/* 추천 조합 (컴포넌트 재사용!) */}
+        {/* 추천 조합 (ProductCard 내부 변수명도 stuffName으로 통일하면 더 좋음!) */}
         <Text style={styles.sectionTitle}>추천조합</Text>
-        <ProductCard rank={1} name="상품이름" price="1,234" likes="1,234" comments="1,234" />
-        <ProductCard rank={2} name="상품이름" price="1,234" likes="1,234" comments="1,234" />
+        <ProductCard rank={1} name="콜라 세트" price="2,000" likes="500" comments="12" />
+        <ProductCard rank={2} name="치즈스틱 추가" price="1,500" likes="300" comments="8" />
         
         <TouchableOpacity><Text style={styles.moreText}>더보기 {'>'}</Text></TouchableOpacity>
 
-        {/* 하단 리뷰 영역 */}
+        <View style={styles.divider} />
+
+        {/* 하단 리뷰 영역: 여기가 바로 '게시글(Post)'들이 보일 곳입니다! */}
         <View style={styles.reviewHeader}>
-          <Text>리뷰</Text>
-          <Text>옳소리뷰▼</Text>
+          <Text style={{ fontWeight: 'bold' }}>리뷰</Text>
+          <TouchableOpacity>
+            <Text>옳소리뷰 순 ▼</Text>
+          </TouchableOpacity>
         </View>
+
         <View style={styles.reviewBox}>
-          <Text>여기 리뷰는 뭐지?? 게시글 연결인가?</Text>
+          <Text style={{ color: '#666' }}>
+            여기는 유저들이 작성한 게시글(Post) 중 {"\n"}
+            이 상품({stuffName})에 대한 리뷰가 뜰 자리입니다!
+          </Text>
         </View>
       </ScrollView>
     </View>

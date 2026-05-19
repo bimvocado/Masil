@@ -1,9 +1,10 @@
 export interface Interaction {
   
+    userId: number;
+    stuffId: number;
     reactionType: 'LIKE' | 'DISLIKE';
-    commentId: number;
-    text: string;
-    parentCommentId: string;
-    
+    createdAt: string;
+    updatedAt: string;
+
 
   }

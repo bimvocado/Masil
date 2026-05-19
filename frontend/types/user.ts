@@ -1,12 +1,17 @@
 export interface User {
-    userId: string;
+    userId: number;
     loginId: string;
     nickname: string;
+    email: string;
     profileImageUrl: string;
-    bio: string;
-    followerCount: number;
-    followingCount: number;
     isKorean: 'KOREAN' | 'FORIEGN';
     birthDate: string;
     passwordHash: string;
+    createdAt: string;
+    updatedAt: string;
+    deletdAt: string;
+
+
+
+    bio: string;
   }

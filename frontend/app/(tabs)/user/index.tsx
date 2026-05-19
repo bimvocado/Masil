@@ -12,37 +12,66 @@ import { TopBar } from '@/components/layout/top-bar';
 import { styles } from '@/components/styles/user';
 import { useRouter } from 'expo-router'; 
 import { Post } from '@/types/post';
+import { User } from '@/types/user';
 
 import { InteractionButton } from '@/constants/interaction-button';
 
-interface UserMock {
-  userId: number;
-  nickname: string;
-  profileImageUrl: string;
-  bio: string;
-}
 
+const MOCK_USER: User = {
+    userId: 22,
+    loginId: 'what',
+    nickname: '예리니',
+    email: 'dd',
+    profileImageUrl: '',
+    isKorean: 'KOREAN',
+    birthDate: '2024-30-02',
+    passwordHash: 'dafdf',
+    createdAt: '2023-33-33',
+    updatedAt: '3333-33-33',
+    deletdAt: '3333-33-33',
 
-const MOCK_USER: UserMock = {
-  userId: 1,
-  nickname: 'username',
-  profileImageUrl: '', 
-  bio: 'my name is ... yes hihi',
+    bio: '안녕하살법'
 };
 
 const MOCK_POSTS: Post[] = [
   { 
-    postId: 1, 
-    brandId: '롯데리아', 
-    stuffName: '새우버거', 
-    content: '맛있네요ㄷㄷㄷㄷㄷㄷㄷㄷㄷㄷㅇㅇㅇㅇㅇ', 
-    likeCount: 123, 
-    commentCount: 10, 
-    createdAt: '2024.05.19', 
-    tags: ['@콜라'],
-    isHearted: false
-  }
+    postId: 1,
+    userId: 3,
+    stuffId: 101,
+    title: '롯데리아 새우버거 폼 미쳤다',
+    content: '오랜만에 먹었는데 패티가 아주 바삭하고 맛있네요. 추천합니다!',
+    imageUrl: '',
+    createdAt: '2024-05-19', // 
+    updatedAt: '2024-05-19',
+    
+    nickname: '버거왕',      
+    stuffName: '새우버거',     
+    brandName: '롯데리아',     
+    likeCount: 12,    
+    commentCount: 5,  
+    isScrapped: true,
+    scrapCount: 12 // 화면에서 쓸 스크랩 숫자
+  },
+  { 
+    postId: 2,
+    userId: 5,
+    stuffId: 102,
+    title: '이건 좀 별로임',
+    content: '기대했는데 생각보다 느끼하네요. 다음엔 안 먹을 듯.',
+    imageUrl: '',
+    createdAt: '2024-05-18',
+    updatedAt: '2024-05-18',
+    
+    nickname: '솔직리뷰어',      
+    stuffName: '치즈버거',     
+    brandName: '맥도날드',     
+    likeCount: 45,    
+    commentCount: 22,  
+    isScrapped: false,
+    scrapCount: 45
+  },
 ];
+
 export default function UserScreen() {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,7 +84,7 @@ export default function UserScreen() {
   const toggleHeart = (postId: number) => {
     setPosts(posts.map(p => 
       p.postId === postId 
-        ? { ...p, isHearted: !p.isHearted, likeCount: p.isHearted ? p.likeCount - 1 : p.likeCount + 1 } 
+        ? { ...p, isScrapped: !p.isScrapped, likeCount: p.isScrapped ? (p.likeCount || 0) - 1 : (p.likeCount || 0) + 1 } 
         : p
     ));
   };
@@ -151,7 +180,7 @@ export default function UserScreen() {
                       type="heart"
                       count={post.likeCount.toLocaleString()}
                       textPosition="right"
-                      isActive={post.isHearted}
+                      isActive={post.isScrapped}
                       onPress={() => toggleHeart(post.postId)}
                     />
                   </View>
