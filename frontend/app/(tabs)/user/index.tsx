@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TopBar } from '@/components/layout/top-bar';
 import { styles } from '@/components/styles/user';
 import { useRouter } from 'expo-router'; 
+import { Post } from '@/types/post';
 
 import { InteractionButton } from '@/constants/interaction-button';
 
@@ -21,15 +22,6 @@ interface UserMock {
   bio: string;
 }
 
-interface PostMock {
-  postId: number;
-  title: number | string;
-  createdAt: string;
-  imageUrl: string;
-  likeCount: number;
-  commentCount: number;
-  isHearted?: boolean;
-}
 
 const MOCK_USER: UserMock = {
   userId: 1,
@@ -38,15 +30,19 @@ const MOCK_USER: UserMock = {
   bio: 'my name is ... yes hihi',
 };
 
-const MOCK_POSTS: PostMock[] = [
-  { postId: 1, title: '버거라라라라라라라라라라라라라라라라라라라', createdAt: '2024.04.05', imageUrl: '', likeCount: 1234, commentCount: 1234, isHearted: false },
-  { postId: 2, title: '정신이나가요', createdAt: '2024.04.04', imageUrl: '', likeCount: 567, commentCount: 12, isHearted: true },
-  { postId: 3, title: '횜비기부기온', createdAt: '2024.03.25', imageUrl: '', likeCount: 89, commentCount: 4, isHearted: false },
-  { postId: 4, title: '다이소?다없소...', createdAt: '2024.03.20', imageUrl: '', likeCount: 999, commentCount: 45, isHearted: false }, 
-  { postId: 5, title: '얼굴을피자...', createdAt: '2024.03.15', imageUrl: '', likeCount: 23, commentCount: 2, isHearted: false },
-  { postId: 6, title: '눈을감자...', createdAt: '2024.03.01', imageUrl: '', likeCount: 456, commentCount: 88, isHearted: false },
+const MOCK_POSTS: Post[] = [
+  { 
+    postId: 1, 
+    brandId: '롯데리아', 
+    stuffName: '새우버거', 
+    content: '맛있네요ㄷㄷㄷㄷㄷㄷㄷㄷㄷㄷㅇㅇㅇㅇㅇ', 
+    likeCount: 123, 
+    commentCount: 10, 
+    createdAt: '2024.05.19', 
+    tags: ['@콜라'],
+    isHearted: false
+  }
 ];
-
 export default function UserScreen() {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,8 +61,8 @@ export default function UserScreen() {
   };
 
 
-  const filteredPosts = posts.filter(
-    (post) => post.title.toString().includes(searchQuery) || post.createdAt.includes(searchQuery)
+  const filteredPosts = posts.filter((post) => 
+    post.content.includes(searchQuery) || post.createdAt.includes(searchQuery)
   );
 
   return (
@@ -132,13 +128,23 @@ export default function UserScreen() {
         {/* 게시글 리스트 영역 */}
         <View style={styles.listContainer}>
           {filteredPosts.map((post) => (
-            <TouchableOpacity key={post.postId} style={styles.postCard}>
-              
+            <TouchableOpacity 
+            key={post.postId} 
+            style={styles.postCard}
+            // 🔥 내 게시물 전용 릴스 뷰로 이동
+            onPress={() => router.push({
+              pathname: `/user/post-feed/${post.postId}`, 
+            } as any)}
+          >  
               {/* 텍스트 및 인터랙션 정보 */}
               <View style={styles.cardLeft}>
-                <Text style={styles.postTitle} numberOfLines={1}>{post.title}</Text>
-                <Text style={styles.postDate}>{post.createdAt}</Text>
-                
+              <Text style={styles.postTitle} numberOfLines={1}>
+        {post.content.length > 20 
+          ? `${post.content.substring(0, 20)}...` 
+          : post.content}
+      </Text>
+      
+      <Text style={styles.postDate}>{post.createdAt}</Text>  
                 <View style={styles.interactionRow}>
                   <View style={styles.iconGroup}>
                     <InteractionButton 

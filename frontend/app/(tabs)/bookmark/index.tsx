@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native'; // Alert 추가
 import { useRouter, Href } from 'expo-router';
 import { TopBar } from '@/components/layout/top-bar';
 import { styles } from '../../../components/styles/bookmark';
@@ -12,10 +12,8 @@ interface CategoryMock {
 
 export default function BookmarkScreen() {
   const router = useRouter();
-  const [isEditing, setIsEditing] = useState(false); // 편집 모드 토글 상태
+  const [isEditing, setIsEditing] = useState(false);
 
-  //카테고리 목록 데이터 - 이것도 하드코딩 해둔거라 나중에 연동 필요합니다
-  //카테고리 추가는 아직 안 먹습니다...!!!!!!!!!! ㅋㅋㅋㅋㅋㅋㅋㅋ...ㅠㅠ
   const [categories, setCategories] = useState<CategoryMock[]>([
     { id: '1', name: '싫소', count: 5 },
     { id: '2', name: '싫소', count: 6544 },
@@ -24,6 +22,12 @@ export default function BookmarkScreen() {
     { id: '5', name: '먹킷리스트', count: '개수' },
     { id: '6', name: '꿀템리스트', count: '개수' },
   ]);
+
+  // 효율적인 추가 로직 (한 줄 컷)
+  const handleAdd = () => {
+    const newName = `새 폴더 ${categories.length + 1}`;
+    setCategories([...categories, { id: String(Date.now()), name: newName, count: 0 }]);
+};
 
   return (
     <View style={styles.container}>
@@ -47,7 +51,6 @@ export default function BookmarkScreen() {
               style={styles.categoryCard}
               onPress={() => {
                 if (!isEditing) {
-                  // 각 카테고리 클릭 시 상세 페이지로 이동 (이름을 파라미터로 전달)
                   router.push(`/(tabs)/bookmark/${item.id}?name=${item.name}` as Href);
                 }
               }}
@@ -66,8 +69,8 @@ export default function BookmarkScreen() {
             </TouchableOpacity>
           ))}
 
-          {/* + 카테고리 추가 버튼 */}
-          <TouchableOpacity style={styles.addCategoryButton}>
+          {/* + 카테고리 추가 버튼 (handleAdd 연결 완료) */}
+          <TouchableOpacity style={styles.addCategoryButton} onPress={handleAdd}>
             <Text style={styles.addCategoryText}>+ 카테고리 추가</Text>
           </TouchableOpacity>
         </View>
