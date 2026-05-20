@@ -10,45 +10,72 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TopBar } from '@/components/layout/top-bar';
 import { styles } from '@/components/styles/user';
+import { useRouter } from 'expo-router'; 
+import { Post } from '@/types/post';
+import { User } from '@/types/user';
 
 import { InteractionButton } from '@/constants/interaction-button';
 
-interface UserMock {
-  userId: number;
-  nickname: string;
-  profileImageUrl: string;
-  bio: string;
-}
 
-interface PostMock {
-  postId: number;
-  title: number | string;
-  createdAt: string;
-  imageUrl: string;
-  likeCount: number;
-  commentCount: number;
-  isHearted?: boolean;
-}
+const MOCK_USER: User = {
+    userId: 22,
+    loginId: 'what',
+    nickname: '예리니',
+    email: 'dd',
+    profileImageUrl: '',
+    isKorean: 'KOREAN',
+    birthDate: '2024-30-02',
+    passwordHash: 'dafdf',
+    createdAt: '2023-33-33',
+    updatedAt: '3333-33-33',
+    deletdAt: '3333-33-33',
 
-const MOCK_USER: UserMock = {
-  userId: 1,
-  nickname: 'username',
-  profileImageUrl: '', 
-  bio: 'my name is ... yes hihi',
+    bio: '안녕하살법'
 };
 
-const MOCK_POSTS: PostMock[] = [
-  { postId: 1, title: '버거라라라라라라라라라라라라라라라라라라라', createdAt: '2024.04.05', imageUrl: '', likeCount: 1234, commentCount: 1234, isHearted: false },
-  { postId: 2, title: '정신이나가요', createdAt: '2024.04.04', imageUrl: '', likeCount: 567, commentCount: 12, isHearted: true },
-  { postId: 3, title: '횜비기부기온', createdAt: '2024.03.25', imageUrl: '', likeCount: 89, commentCount: 4, isHearted: false },
-  { postId: 4, title: '다이소?다없소...', createdAt: '2024.03.20', imageUrl: '', likeCount: 999, commentCount: 45, isHearted: false }, 
-  { postId: 5, title: '얼굴을피자...', createdAt: '2024.03.15', imageUrl: '', likeCount: 23, commentCount: 2, isHearted: false },
-  { postId: 6, title: '눈을감자...', createdAt: '2024.03.01', imageUrl: '', likeCount: 456, commentCount: 88, isHearted: false },
+const MOCK_POSTS: Post[] = [
+  { 
+    postId: 1,
+    userId: 3,
+    stuffId: 101,
+    title: '롯데리아 새우버거 폼 미쳤다',
+    content: '오랜만에 먹었는데 패티가 아주 바삭하고 맛있네요. 추천합니다!',
+    imageUrl: '',
+    createdAt: '2024-05-19', // 
+    updatedAt: '2024-05-19',
+    
+    nickname: '버거왕',      
+    stuffName: '새우버거',     
+    brandName: '롯데리아',     
+    likeCount: 12,    
+    commentCount: 5,  
+    isScrapped: true,
+    scrapCount: 12 // 화면에서 쓸 스크랩 숫자
+  },
+  { 
+    postId: 2,
+    userId: 5,
+    stuffId: 102,
+    title: '이건 좀 별로임',
+    content: '기대했는데 생각보다 느끼하네요. 다음엔 안 먹을 듯.',
+    imageUrl: '',
+    createdAt: '2024-05-18',
+    updatedAt: '2024-05-18',
+    
+    nickname: '솔직리뷰어',      
+    stuffName: '치즈버거',     
+    brandName: '맥도날드',     
+    likeCount: 45,    
+    commentCount: 22,  
+    isScrapped: false,
+    scrapCount: 45
+  },
 ];
 
 export default function UserScreen() {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter(); 
   
 
   const [posts, setPosts] = useState(MOCK_POSTS);
@@ -57,14 +84,14 @@ export default function UserScreen() {
   const toggleHeart = (postId: number) => {
     setPosts(posts.map(p => 
       p.postId === postId 
-        ? { ...p, isHearted: !p.isHearted, likeCount: p.isHearted ? p.likeCount - 1 : p.likeCount + 1 } 
+        ? { ...p, isScrapped: !p.isScrapped, likeCount: p.isScrapped ? (p.likeCount || 0) - 1 : (p.likeCount || 0) + 1 } 
         : p
     ));
   };
 
 
-  const filteredPosts = posts.filter(
-    (post) => post.title.toString().includes(searchQuery) || post.createdAt.includes(searchQuery)
+  const filteredPosts = posts.filter((post) => 
+    post.content.includes(searchQuery) || post.createdAt.includes(searchQuery)
   );
 
   return (
@@ -74,7 +101,7 @@ export default function UserScreen() {
         title="내 정보" 
         showBackButton={true}
         rightIcon={
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/user/settings')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Image
               source={require('@/assets/icons/setting.png')}
               style={{ width: 18, height: 18, tintColor: '#aaa'}}
@@ -103,7 +130,7 @@ export default function UserScreen() {
               <Text style={styles.nicknameText}>{MOCK_USER.nickname}</Text>
               <Text style={styles.bioText}>{MOCK_USER.bio}</Text>
               
-              <TouchableOpacity style={styles.profileEditButton}>
+              <TouchableOpacity style={styles.profileEditButton} onPress={() => router.push('/(tabs)/user/edit')}>
                 <Text style={styles.profileEditButtonText}>프로필 설정</Text>
               </TouchableOpacity>
             </View>
@@ -130,20 +157,30 @@ export default function UserScreen() {
         {/* 게시글 리스트 영역 */}
         <View style={styles.listContainer}>
           {filteredPosts.map((post) => (
-            <TouchableOpacity key={post.postId} style={styles.postCard}>
-              
+            <TouchableOpacity 
+            key={post.postId} 
+            style={styles.postCard}
+            // 🔥 내 게시물 전용 릴스 뷰로 이동
+            onPress={() => router.push({
+              pathname: `/user/post-feed/${post.postId}`, 
+            } as any)}
+          >  
               {/* 텍스트 및 인터랙션 정보 */}
               <View style={styles.cardLeft}>
-                <Text style={styles.postTitle} numberOfLines={1}>{post.title}</Text>
-                <Text style={styles.postDate}>{post.createdAt}</Text>
-                
+              <Text style={styles.postTitle} numberOfLines={1}>
+        {post.content.length > 20 
+          ? `${post.content.substring(0, 20)}...` 
+          : post.content}
+      </Text>
+      
+      <Text style={styles.postDate}>{post.createdAt}</Text>  
                 <View style={styles.interactionRow}>
                   <View style={styles.iconGroup}>
                     <InteractionButton 
                       type="heart"
                       count={post.likeCount.toLocaleString()}
                       textPosition="right"
-                      isActive={post.isHearted}
+                      isActive={post.isScrapped}
                       onPress={() => toggleHeart(post.postId)}
                     />
                   </View>

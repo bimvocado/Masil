@@ -3,27 +3,32 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import { TopBar } from '@/components/layout/top-bar';
 import { styles } from '../../../components/styles/bookmark';
+import { Category } from '@/types/category'; // 👈 인터페이스 임포트
 
-interface CategoryMock {
-  id: string;
-  name: string;
-  count: number | string;
-}
+// 1. MOCK 데이터를 실제 값으로 수정
+const MOCK_CATEGORIES: Category[] = [
+  { categoryId: 1, categoryName: '싫소', postInCategoryCount: 5 },
+  { categoryId: 2, categoryName: '좋아요한 글', postInCategoryCount: 6544 },
+  { categoryId: 3, categoryName: '먹킷리스트', postInCategoryCount: 12 },
+];
 
 export default function BookmarkScreen() {
   const router = useRouter();
-  const [isEditing, setIsEditing] = useState(false); // 편집 모드 토글 상태
+  const [isEditing, setIsEditing] = useState(false);
 
-  //카테고리 목록 데이터 - 이것도 하드코딩 해둔거라 나중에 연동 필요합니다
-  //카테고리 추가는 아직 안 먹습니다...!!!!!!!!!! ㅋㅋㅋㅋㅋㅋㅋㅋ...ㅠㅠ
-  const [categories, setCategories] = useState<CategoryMock[]>([
-    { id: '1', name: '싫소', count: 5 },
-    { id: '2', name: '싫소', count: 6544 },
-    { id: '3', name: '좋아요한 글', count: 2 },
-    { id: '4', name: '댓글단 글', count: 21 },
-    { id: '5', name: '먹킷리스트', count: '개수' },
-    { id: '6', name: '꿀템리스트', count: '개수' },
-  ]);
+  // 2. State에도 Category[] 타입을 적용해서 변수명 싱크 강제
+  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+
+  // 추가 로직도 변수명에 맞게 수정
+  const handleAdd = () => {
+    const newName = `새 폴더 ${categories.length + 1}`;
+    const newCategory: Category = {
+      categoryId: Date.now(), // 숫자로 통일
+      categoryName: newName,
+      postInCategoryCount: 0
+    };
+    setCategories([...categories, newCategory]);
+  };
 
   return (
     <View style={styles.container}>
@@ -43,31 +48,32 @@ export default function BookmarkScreen() {
         <View style={styles.gridContainer}>
           {categories.map((item) => (
             <TouchableOpacity 
-              key={item.id} 
+              key={item.categoryId} // id -> categoryId
               style={styles.categoryCard}
               onPress={() => {
                 if (!isEditing) {
-                  // 각 카테고리 클릭 시 상세 페이지로 이동 (이름을 파라미터로 전달)
-                  router.push(`/(tabs)/bookmark/${item.id}?name=${item.name}` as Href);
+                  // URL 파라미터도 통일된 이름으로 전달
+                  router.push(`/(tabs)/bookmark/${item.categoryId}?name=${item.categoryName}` as Href);
                 }
               }}
             >
               <View style={styles.labelContainer}>
-                <Text style={styles.categoryName} numberOfLines={1}>{item.name}</Text>
+                {/* name -> categoryName */}
+                <Text style={styles.categoryName} numberOfLines={1}>{item.categoryName}</Text>
               </View>
               
               {isEditing ? (
-                <TouchableOpacity onPress={() => setCategories(categories.filter(c => c.id !== item.id))}>
+                <TouchableOpacity onPress={() => setCategories(categories.filter(c => c.categoryId !== item.categoryId))}>
                   <Text style={styles.deleteText}>삭제</Text>
                 </TouchableOpacity>
               ) : (
-                <Text style={styles.countText}>{item.count}</Text>
+                // count -> postInCategoryCount
+                <Text style={styles.countText}>{item.postInCategoryCount}</Text>
               )}
             </TouchableOpacity>
           ))}
 
-          {/* + 카테고리 추가 버튼 */}
-          <TouchableOpacity style={styles.addCategoryButton}>
+          <TouchableOpacity style={styles.addCategoryButton} onPress={handleAdd}>
             <Text style={styles.addCategoryText}>+ 카테고리 추가</Text>
           </TouchableOpacity>
         </View>

@@ -8,6 +8,7 @@ import {
   Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { styles } from '@/components/styles/search';
 
@@ -32,7 +33,7 @@ const MOCK_BRANDS: BrandMock[] = [
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
-  
+  const router = useRouter();
   // 음식 / 물건
   const [activeTab, setActiveTab] = useState<'FOOD' | 'STUFF'>('FOOD');
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,18 +83,23 @@ export default function SearchScreen() {
 
       {/* 3열 그리드 브랜드 리스트 영역 */}
       <ScrollView contentContainerStyle={styles.gridContainer}>
-        {filteredBrands.map((brand) => (
-          <TouchableOpacity key={brand.brandId} style={styles.brandCard}>
-            {/* 동그라미 로고 플레이스홀더 */}
-            <View style={styles.logoCircle} />
-            <Text style={styles.brandNameText} numberOfLines={1}>
-              {brand.brandName}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
+      {filteredBrands.map((brand) => (
+        <TouchableOpacity 
+          key={brand.brandId} 
+          style={styles.brandCard}
+          // 🔥 클릭 시 브랜드 ID와 이름을 가지고 상세 페이지로 이동
+          onPress={() => router.push({
+            pathname: "/search/[id]", // 1. 실제 파일명인 [id]를 그대로 씁니다.
+            params: { id: brand.brandId, name: brand.brandName } // 2. 여기서 id 값을 넘겨줍니다.
+          })}
+        >
+          <View style={styles.logoCircle} />
+          <Text style={styles.brandNameText} numberOfLines={1}>
+            {brand.brandName}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
     </View>
-  );
-}
+); }
 
