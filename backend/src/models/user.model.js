@@ -2,12 +2,12 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
 const User = sequelize.define('User', {
-  user_id: {
+  userId: {
     type: DataTypes.BIGINT,
     primaryKey: true,
     autoIncrement: true,
   },
-  login_id: {
+  loginId: {
     type: DataTypes.STRING(20),
     allowNull: false,
   },
@@ -16,7 +16,7 @@ const User = sequelize.define('User', {
     allowNull: false,
     unique: true,
   },
-  password_hash: {
+  passwordHash: {
     type: DataTypes.STRING(255),
     allowNull: false,
   },
@@ -25,15 +25,15 @@ const User = sequelize.define('User', {
     allowNull: false,
     unique: true,
   },
-  birth_date: {
+  birthDate: {
     type: DataTypes.DATEONLY, 
-    allowNull: false,
+    allowNull: true,
   },
-  profile_image_url: {
+  profileImageUrl: {
     type: DataTypes.STRING(255),
     defaultValue: 'https://example.com/default.png',
   },
-  is_korean: {
+  isKorean: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true,

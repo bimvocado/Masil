@@ -6,18 +6,27 @@ const { port } = require('./src/config/env');
 // 유저
 const userRouter = require('./src/routes/user.routes');
 // 댓글
-const commentRouter = require('./src/routes/comment.routes');
+//const commentRouter = require('./src/routes/comment.routes');
+const sequelize = require('./src/config/db'); // DB 연결 설정 파일 경로 확인!
+const User = require('./src/models/user.model'); // 유저 모델 불러오기 (중요!)
 
+sequelize.sync({ alter: true }) // alter: true는 바뀐 설계도대로 테이블을 수정/생성함
+  .then(() => {
+    console.log('✅ 드디어 MySQL에 테이블이 생겼습니다!');
+  })
+  .catch((err) => {
+    console.error('❌ 테이블 생성 실패. 이유는?:', err);
+  });
 
 const app = express();
-
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
+
 
 // 라우터 등록 
 app.use('/api/users', userRouter);
-app.use('/api/posts', commentRouter);
-app.use('/api/comments', commentRouter);
+//app.use('/api/posts', commentRouter);
+//app.use('/api/comments', commentRouter);
 
 
 // 서버 상태 확인

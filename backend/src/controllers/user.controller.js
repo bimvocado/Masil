@@ -32,4 +32,21 @@ const login = async (req, res, next) => {
   }
 };
 
-module.exports = { signup, login };
+const getProfile = async (req, res, next) => {
+  try {
+  
+    const { userId } = req.params; 
+    console.log("프론트에서 넘어온 userId 값:", userId);
+    console.log("userId의 타입:", typeof userId);
+    const user = await userService.getUserById(userId);
+
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { signup, login, getProfile};
