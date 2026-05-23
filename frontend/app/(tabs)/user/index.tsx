@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -16,22 +15,10 @@ import { User } from '@/types/user';
 
 import { InteractionButton } from '@/constants/interaction-button';
 
+import React, { useEffect, useState } from 'react'; 
+import { authService } from '@/services/auth-service'; 
 
-const MOCK_USER: User = {
-    userId: 22,
-    loginId: 'what',
-    nickname: '예리니',
-    email: 'dd',
-    profileImageUrl: '',
-    isKorean: 'KOREAN',
-    birthDate: '2024-30-02',
-    passwordHash: 'dafdf',
-    createdAt: '2023-33-33',
-    updatedAt: '3333-33-33',
-    deletdAt: '3333-33-33',
 
-    bio: '안녕하살법'
-};
 
 const MOCK_POSTS: Post[] = [
   { 
@@ -76,9 +63,29 @@ export default function UserScreen() {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter(); 
-  
 
+  const [user, setUser] = useState<any>(null); 
   const [posts, setPosts] = useState(MOCK_POSTS);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchMyData = async () => {
+      try {
+        // 일단 테스트로 1번 유저 가져오기 (나중엔 로그인한 ID 넣기)
+        const response = await authService.getProfile(1); 
+        console.log("프론트가 받은 응답:", response);
+        if (response.success) {
+          setUser(response.data); // 백엔드에서 온 데이터로 교체!
+          console.log("실제 데이터 안의 닉네임:", response.data.nickname);
+        }
+      } catch (error) {
+        console.error("내 정보 로딩 실패:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMyData();
+  }, []);
 
 
   const toggleHeart = (postId: number) => {
@@ -119,16 +126,16 @@ export default function UserScreen() {
         <View style={styles.profileContainer}>
           <View style={styles.profileRow}>
             <View style={styles.avatarCircle}>
-              {MOCK_USER.profileImageUrl ? (
-                <Image source={{ uri: MOCK_USER.profileImageUrl }} style={styles.avatarImage} />
+              {user?.profileImageUrl ? (
+                <Image source={{ uri: user.profileImageUrl }} style={styles.avatarImage} />
               ) : (
                 <View style={styles.avatarPlaceholder} />
               )}
             </View>
 
             <View style={styles.profileTextContainer}>
-              <Text style={styles.nicknameText}>{MOCK_USER.nickname}</Text>
-              <Text style={styles.bioText}>{MOCK_USER.bio}</Text>
+              <Text style={styles.nicknameText}>{user?.nickname}</Text>
+              <Text style={styles.bioText}>{user?.bio}</Text>
               
               <TouchableOpacity style={styles.profileEditButton} onPress={() => router.push('/(tabs)/user/edit')}>
                 <Text style={styles.profileEditButtonText}>프로필 설정</Text>
