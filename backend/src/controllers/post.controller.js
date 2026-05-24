@@ -11,8 +11,7 @@ const createPost = async (req, res, next) => {
   try {
     const { content, imageUrl, stuffId } = req.body;
 
-    // const userId = req.user.user.userId;
-    const userId = 1;
+    const userId = req.user.user.userId;
 
     const reqDTO = new CreatePostReqDTO(
       content,
@@ -65,8 +64,7 @@ const updatePost = async (req, res, next) => {
     const { postId } = req.params;
     const { content, imageUrl } = req.body;
 
-    // const userId = req.user.user.userId;
-    const userId = 1;
+    const userId = req.user.user.userId;
 
     const reqDTO = new UpdatePostReqDTO(content, imageUrl);
 
@@ -89,8 +87,7 @@ const deletePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
 
-    // const userId = req.user.user.userId;
-    const userId = 1;
+    const userId = req.user.user.userId;
 
     const deleteResult = await postService.deletePost(
       Number(postId),
