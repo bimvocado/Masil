@@ -9,6 +9,8 @@ const userRouter = require('./src/routes/user.routes');
 //const commentRouter = require('./src/routes/comment.routes');
 const sequelize = require('./src/config/db'); // DB 연결 설정 파일 경로 확인!
 const User = require('./src/models/user.model'); // 유저 모델 불러오기 (중요!)
+// 상호작용 - 옳소/싫소
+const interactionRouter = require('./src/routes/interaction.routes');
 
 sequelize.sync({ alter: true }) // alter: true는 바뀐 설계도대로 테이블을 수정/생성함
   .then(() => {
@@ -27,7 +29,7 @@ app.use(express.json());
 app.use('/api/users', userRouter);
 //app.use('/api/posts', commentRouter);
 //app.use('/api/comments', commentRouter);
-
+app.use('/api/interactions', interactionRouter);
 
 // 서버 상태 확인
 app.get('/', (req, res) => {

@@ -1,5 +1,6 @@
 const interactionRepository = require('../repositories/interaction.repository');
 const { toInteractionResDTO } = require('../converters/interaction.converter');
+const stuffRepository = require('../repositories/stuff.repository');
 const { NotFoundException, BadRequestException } = require('../exceptions/custom.exception');
 
 const processInteraction = async (interactionData) => {
@@ -12,29 +13,29 @@ const processInteraction = async (interactionData) => {
 
     const existingInteraction = await interactionRepository.findByUserAndStuff(userId, stuffId);
 
-    let currentAction = '';
+    let currentAction = ''; 
     let savedEntity = null;
 
     if (!existingInteraction) {
-        savedEntity = await interactionRepository.create({
+        savedEntity = await interactionRepository.createInteraction({
             userId,
             stuffId,
             reactionType
         });
         currentAction = 'CREATED';
     } else if (existingInteraction.reactionType === reactionType) {
-        await interactionRepository.delete(existingInteraction.id);
+        await interactionRepository.deleteInteraction(existingInteraction.userId, existingInteraction.stuffId);
         currentAction = 'DELETED';
     } else {
-        savedEntity = await interactionRepository.update(existingInteraction.id, { reactionType });
+        savedEntity = await interactionRepository.updateInteraction(existingInteraction.userId, existingInteraction.stuffId, { reactionType });
         currentAction = 'UPDATED';
     }
 
-    const updatedStats = await getStats(stuffId);
+    const rawStats = await interactionRepository.getInteractionStats(stuffId);
 
     return {
         action: currentAction,
-        ineraction: savedEntity ? toInteractionResDTO(savedEntity) : null,
-        stats: updatedStats
+        interaction: savedEntity ? toInteractionResDTO(savedEntity) : null,
+        stats: toStatsResDTO(rawStats)
     };
 };
