@@ -5,8 +5,8 @@ export interface User {
     email: string;
     profileImageUrl: string;
     isKorean: 'KOREAN' | 'FORIEGN';
-    birthDate: string;
-    passwordHash: string;
+    birthDate: string | Date;
+    password: string;
     createdAt: string;
     updatedAt: string;
     deletdAt: string;
