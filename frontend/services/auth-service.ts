@@ -30,7 +30,6 @@ export const authService = {
    * @param type 'loginId' | 'email'
    * @param value 확인할 값
    */
-
   checkDuplicate: async (type: 'loginId' | 'email', value: string) => {
     try {
       const response = await axios.get(`${BASE_URL}/api/users/check-duplicate`, {
@@ -74,7 +73,20 @@ export const authService = {
       console.error('프로필 로딩 에러:', error);
       throw error;
     }
-  }
+  },
 
+
+  changePassword: async (userId: number, currentPassword: string, newPassword: string) => {
+  try {
+    const response = await axios.patch(`${BASE_URL}/api/users/change-password`, {
+      userId,
+      currentPassword,
+      newPassword
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+},
 
 };

@@ -12,4 +12,6 @@ router.post('/login', userController.login);
 router.get('/profile/:userId', userController.getProfile);
 router.get('/check-duplicate', userController.checkDuplicate);
 
+router.patch('/change-password', userController.changePassword);
+
 module.exports = router;

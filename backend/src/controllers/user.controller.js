@@ -39,7 +39,7 @@ const signup = async (req, res, next) => {
     return res.status(201).json({
       success: true,
       message: '회원가입 성공! 마실에 오신 것을 환영합니다.',
-      data: { userId: newUser.user_id }
+      data: { userId: newUser.userId }
     });
   } catch (error) {
     next(error); 
@@ -72,4 +72,19 @@ const getProfile = async (req, res, next) => {
   }
 };
 
-module.exports = { signup, login, getProfile, checkDuplicate };
+const changePassword = async (req, res, next) => {
+  try {
+    //토큰or user id 인데 아직 토큰 안해서 userid 
+    const { userId, currentPassword, newPassword } = req.body;
+
+    await userService.updatePassword(userId, currentPassword, newPassword);
+
+    return res.status(200).json({
+      success: true,
+      message: '비밀번호가 성공적으로 변경되었습니다.'
+    });
+  } catch (error) {
+    next(error); 
+  }
+};
+module.exports = { signup, login, getProfile, checkDuplicate, changePassword  };
