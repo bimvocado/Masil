@@ -2,24 +2,42 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
 const Stuff = sequelize.define('Stuff', {
-    stuffId: {
-        type: DataTypes.BIGINT,
-        primaryKey: true,
-        autoIncrement: true
+    // 상품 ID
+  stuffId: {
+    type: DataTypes.BIGINT,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+
+  // 브랜드 ID 참조
+  brandId: {
+    type: DataTypes.BIGINT,
+    allowNull: false,
+    references: {
+      model: 'brands',
+      key: 'brand_id',
     },
-    brandId: {
-        type: DataTypes.BIGINT,
-        allowNull: false
-    },
-    stuffName: {
-        type: DataTypes.STRING(50),
-        allowNull: false
-    },
-    isDiscontinued: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false
-    }
+  },
+
+  // 상품 이름
+  stuffName: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+  },
+
+  // 상품 가격
+  price: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0,
+  },
+
+  // 단종 여부
+  isDiscontinued: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
 }, {
      tableName: 'stuffs',   
      timestamps: true,  // createdAt, updatedAt 자동 관리      

@@ -11,6 +11,12 @@ const userRouter = require('./src/routes/user.routes');
 // 게시글
 const postRouter = require('./src/routes/post.routes')
 
+// 상품
+const stuffRouter = require('./src/routes/stuff.routes');
+
+// 상품/검색 관련 API 연결
+app.use('/api/stuffs', stuffRouter);
+
 const sequelize = require('./src/config/db'); // DB 연결 설정 파일 경로 확인!
 const User = require('./src/models/user.model'); // 유저 모델 불러오기 (중요!)
 // 상호작용 - 옳소/싫소
