@@ -72,8 +72,41 @@ const deleteBrand = async (req, res, next) => {
   }
 };
 
+// 브랜드 탐색 페이지 조회
+const searchBrands = async (
+  req,
+  res,
+  next
+) => {
+  try {
+
+    const {
+      keyword,
+      category
+    } = req.query;
+
+
+    const result =
+      await brandService.searchBrands(
+        keyword,
+        category
+      );
+
+
+    return res.status(200).json({
+      success: true,
+      message: '브랜드 목록 조회 성공',
+      data: result,
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createBrand,
   updateBrand,
   deleteBrand,
+  searchBrands,
 };

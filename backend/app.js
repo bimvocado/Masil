@@ -14,8 +14,6 @@ const postRouter = require('./src/routes/post.routes')
 // 상품
 const stuffRouter = require('./src/routes/stuff.routes');
 
-// 상품/검색 관련 API 연결
-app.use('/api/stuffs', stuffRouter);
 
 const sequelize = require('./src/config/db'); // DB 연결 설정 파일 경로 확인!
 const User = require('./src/models/user.model'); // 유저 모델 불러오기 (중요!)
@@ -37,6 +35,12 @@ Post.belongsTo(Stuff, { foreignKey : 'stuffId' });
 User.hasMany(Post, { foreignKey : 'userId' });
 Post.belongsTo(User, { foreignKey : 'userId' });
 
+User.hasMany(Interaction, { foreignKey: 'userId' });
+Interaction.belongsTo(User, { foreignKey: 'userId' });
+
+Post.hasMany(Interaction, { foreignKey: 'postId' });
+Interaction.belongsTo(Post, { foreignKey: 'postId' });
+
 sequelize.sync({ alter: true }) // alter: true는 바뀐 설계도대로 테이블을 수정/생성함
   .then(() => {
     console.log('✅ 드디어 MySQL에 테이블이 생겼습니다!');
@@ -56,7 +60,8 @@ app.use('/api/users', userRouter);
 //app.use('/api/comments', commentRouter);
 app.use('/api/interactions', interactionRouter);
 app.use('/api/posts', postRouter);
-
+// 상품/검색 관련 API 연결
+app.use('/api/stuffs', stuffRouter);
 
 // 서버 상태 확인
 app.get('/', (req, res) => {

@@ -124,9 +124,56 @@ const deleteStuff = async (req, res, next) => {
   }
 };
 
+ // 브랜드별 상품 목록 조회
+const getStuffsByBrandId = async (req, res, next) => {
+  try {
+    const { brandId } = req.params;
+
+    const {
+      sort = 'LATEST',
+      page = 0,
+      size = 10,
+    } = req.query;
+
+    const result = await stuffService.getStuffsByBrandId(
+      brandId,
+      sort,
+      page,
+      size
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: '브랜드별 상품 목록 조회 성공',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 상품 상세 페이지 조회
+const getStuffDetail = async (req, res, next) => {
+  try {
+    const { stuffId } = req.params;
+
+    const result = await stuffService.getStuffDetail(stuffId);
+
+    return res.status(200).json({
+      success: true,
+      message: '상품 상세 조회 성공',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 module.exports = {
   createStuff,
   updateStuff,
   deleteStuff,
+  getStuffsByBrandId,
+  getStuffDetail,
 };

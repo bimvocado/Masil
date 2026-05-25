@@ -113,8 +113,135 @@ const deleteStuff = async (stuffId) => {
 };
 
 
+// 브랜드별 상품 목록 조회
+const getStuffsByBrandId = async (
+  brandId,
+  sort = 'LATEST',
+  page = 0,
+  size = 10
+) => {
+  // 브랜드 존재 여부 확인
+  const brand = await stuffRepository.findBrandById(brandId);
+
+  if (!brand) {
+    throw new Error('존재하지 않는 브랜드입니다.');
+  }
+
+  // 정렬값 검증
+  if (
+    sort !== 'LIKE_DESC' &&
+    sort !== 'DISLIKE_ASC' &&
+    sort !== 'LATEST'
+  ) {
+    throw new Error('정렬 기준이 올바르지 않습니다.');
+  }
+
+  const stuffList = await stuffRepository.findStuffsByBrandId(
+    brandId,
+    sort,
+    page,
+    size
+  );
+
+  const totalElements = await stuffRepository.countStuffsByBrandId(brandId);
+
+  const pageNumber = Number(page);
+  const pageSize = Number(size);
+  const totalPages = Math.ceil(totalElements / pageSize);
+
+  return {
+    brandId: brand.brandId,
+    brandName: brand.brandName,
+
+    totalElements,
+    totalPages,
+    currentPage: pageNumber,
+    pageSize,
+    isFirst: pageNumber === 0,
+    isLast: pageNumber + 1 >= totalPages,
+
+    stuffList: stuffList.map((stuff, index) => ({
+      rank: pageNumber * pageSize + index + 1,
+      stuffId: stuff.stuffId,
+      brandId: stuff.brandId,
+      stuffName: stuff.stuffName,
+      price: Number(stuff.price || 0),
+      likeCount: Number(stuff.likeCount || 0),
+      dislikeCount: Number(stuff.dislikeCount || 0),
+      createdAt: stuff.createdAt,
+    })),
+  };
+};
+
+// 상품 상세 페이지 조회
+const getStuffDetail = async (stuffId) => {
+  // 상품 기본 정보와 옳소/싫소 통계 조회
+  const detail = await stuffRepository.findStuffDetailById(stuffId);
+
+  if (!detail) {
+    throw new Error('존재하지 않는 상품입니다.');
+  }
+
+  // 대표 리뷰 사진
+  const bestReviewImage =
+    await stuffRepository.findBestReviewImageByStuffId(stuffId);
+
+  // 추천 조합 상위 2개
+  const recommendedStuffs =
+    await stuffRepository.findRecommendedStuffs(stuffId);
+
+  // 하단 대표 리뷰
+  const bestReview =
+    await stuffRepository.findBestReviewByStuffId(stuffId);
+
+  return {
+    stuffId: detail.stuffId,
+    stuffName: detail.stuffName,
+    price: Number(detail.price || 0),
+
+    brandId: detail.brandId,
+    brandName: detail.brandName,
+
+    bestReviewImageUrl: bestReviewImage
+      ? bestReviewImage.imageUrl
+      : null,
+
+    likeCount: Number(detail.likeCount || 0),
+    dislikeCount: Number(detail.dislikeCount || 0),
+    koreanLikeCount: Number(detail.koreanLikeCount || 0),
+    foreignLikeCount: Number(detail.foreignLikeCount || 0),
+
+    recommendedStuffs: recommendedStuffs.map((stuff) => ({
+      stuffId: stuff.stuffId,
+      stuffName: stuff.stuffName,
+      price: Number(stuff.price || 0),
+      likeCount: Number(stuff.likeCount || 0),
+      dislikeCount: Number(stuff.dislikeCount || 0),
+    })),
+
+    bestReview: bestReview
+      ? {
+          postId: bestReview.postId,
+          content: bestReview.content,
+          imageUrl: bestReview.imageUrl,
+          createdAt: bestReview.createdAt,
+          likeCount: Number(bestReview.likeCount || 0),
+          dislikeCount: Number(bestReview.dislikeCount || 0),
+          user: {
+            userId: bestReview.userId,
+            nickname: bestReview.nickname,
+            profileImageUrl: bestReview.profileImageUrl,
+          },
+        }
+      : null,
+  };
+};
+
+
 module.exports = {
   createStuff,
   updateStuff,
   deleteStuff,
+  getStuffsByBrandId,
+  getStuffDetail,
 };

@@ -45,7 +45,18 @@ class UpdateBrandReqDTO {
   }
 }
 
+// 브랜드 카드 1개 응답 DTO
+class BrandCardResDTO {
+  constructor(brand) {
+    this.brandId = brand.brandId;
+    this.brandName = brand.brandName;
+    this.logoUrl = brand.logoUrl;
+    this.category = brand.category;
+  }
+}
+
 module.exports = {
   CreateBrandReqDTO,
   UpdateBrandReqDTO,
+  BrandCardResDTO,
 };

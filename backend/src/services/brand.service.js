@@ -83,8 +83,43 @@ const deleteBrand = async (brandId) => {
   };
 };
 
+// 브랜드 탐색 페이지 조회
+const searchBrands = async (
+  keyword,
+  category
+) => {
+
+  // 카테고리 검증
+  if (
+    category &&
+    category !== 'FOOD' &&
+    category !== 'HOUSEHOLD'
+  ) {
+    throw new Error(
+      '카테고리가 올바르지 않습니다.'
+    );
+  }
+
+
+  const brands =
+    await brandRepository.searchBrands(
+      keyword,
+      category
+    );
+
+
+  // 프론트 카드 형태 응답
+  return brands.map((brand) => ({
+    brandId: brand.brandId,
+    brandName: brand.brandName,
+    logoUrl: brand.logoUrl,
+    category: brand.category,
+  }));
+};
+
 module.exports = {
   createBrand,
   updateBrand,
   deleteBrand,
+  searchBrands,
 };

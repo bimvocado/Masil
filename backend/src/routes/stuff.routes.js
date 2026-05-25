@@ -30,4 +30,19 @@ router.delete(
 );
 
 
+// 브랜드별 상품 목록 조회
+// GET /api/stuffs/brand/1?sort=LIKE_DESC&page=0&size=10
+router.get(
+    '/brand/:brandId', 
+    stuffController.getStuffsByBrandId
+);
+
+// 상품 상세 페이지 조회
+// GET /api/stuffs/1/detail
+router.get(
+  '/:stuffId/detail',
+  stuffController.getStuffDetail
+);
+
+
 module.exports = router;
