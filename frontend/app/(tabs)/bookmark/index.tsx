@@ -17,7 +17,7 @@ export default function BookmarkScreen() {
   const [isEditing, setIsEditing] = useState(false);
 
   // 2. State에도 Category[] 타입을 적용해서 변수명 싱크 강제
-  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES || []);
 
   // 추가 로직도 변수명에 맞게 수정
   const handleAdd = () => {
@@ -46,7 +46,7 @@ export default function BookmarkScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.gridContainer}>
-          {categories.map((item) => (
+          {categories?.map((item) => (
             <TouchableOpacity 
               key={item.categoryId} // id -> categoryId
               style={styles.categoryCard}

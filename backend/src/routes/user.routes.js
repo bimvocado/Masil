@@ -10,5 +10,6 @@ router.post('/signup', userController.signup);
 router.post('/login', userController.login);
 
 router.get('/profile/:userId', userController.getProfile);
+router.get('/check-duplicate', userController.checkDuplicate);
 
 module.exports = router;

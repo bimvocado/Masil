@@ -1,9 +1,8 @@
 const User = require('../models/user.model');
 const bcrypt = require('bcrypt');
 
-/**
- * 회원가입 로직
- */
+
+/*회원가입로직*/
 const signup = async (userData) => {
   const { loginId, email, password, nickname, birthDate } = userData;
 
@@ -23,6 +22,23 @@ const signup = async (userData) => {
   return newUser;
 };
 
+/*중복체크로직*/
+const checkExists = async (type, value) => {
+  console.log(`[DB 조회 시작] 타입: ${type}, 값: ${value}`); 
+  try {
+    const user = await User.findOne({ 
+      where: { [type]: value },
+      attributes: ['user_id'],
+      raw: true 
+    });
+    
+    console.log(`[DB 조회 완료] 결과 존재 여부: ${!!user}`); 
+    return !!user; 
+  } catch (error) {
+    console.error(" DB 조회 중 에러 발생:", error);
+    throw error;
+  }
+};
 
 const loginUser = async (loginId, password) => {
 const user = await User.findOne({ where: { loginId } });
@@ -59,5 +75,6 @@ const getUserById = async (userId) => {
 module.exports = { 
   signup, 
   loginUser,
-  getUserById
+  getUserById,
+  checkExists
 };

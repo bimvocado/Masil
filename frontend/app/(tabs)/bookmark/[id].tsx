@@ -57,7 +57,7 @@ export default function BookmarkDetailScreen() {
 
   // 스크랩(하트) 토글 함수
   const toggleScrap = (postId: number) => {
-    setPosts(posts.map(p => 
+    setPosts(posts?.map(p => 
       p.postId === postId 
         ? { 
             ...p, 
