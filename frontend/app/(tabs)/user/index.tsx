@@ -16,7 +16,7 @@ import { User } from '@/types/user';
 import { InteractionButton } from '@/constants/interaction-button';
 
 import React, { useEffect, useState } from 'react'; 
-import { authService } from '@/services/auth-service'; 
+import { authService } from '@/api/auth-service'; 
 
 
 
