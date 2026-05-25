@@ -5,7 +5,7 @@ import {
 import { useRouter, Redirect } from 'expo-router';
 import { useState } from 'react';
 import { authStyles as styles } from '@/components/styles/auth';
-import { authService } from '@/services/auth-service';
+import { authService } from '@/api/auth-service';
 import { useAuthStore } from '@/store/use-auth-store';
 
 export default function EntryScreen() {
