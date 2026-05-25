@@ -35,7 +35,7 @@ class InteractionRepository {
                 [sequelize.fn('COUNT', sequelize.col('Interaction.interaction_id')), 'count']
             ],
             include: [{
-                model: User,
+                model: User, 
                 attributes: ['isKorean'],
                 required: true
             }],

@@ -7,7 +7,7 @@ interface InteractionButtonProps {
   isActive?: boolean;
   onPress?: () => void;
   hitSlop?: { top: number; bottom: number; left: number; right: number };
-  textPosition?: 'bottom' | 'right'; // 아래(bottom) 또는 오른쪽(right)
+  textPosition?: 'bottom' | 'right';
 }
 
 const IMAGE_SOURCES = {
