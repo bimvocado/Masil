@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { authStyles as styles } from '@/components/styles/auth';
 import { authService } from '@/services/auth-service';
 import { useAuthStore } from '@/store/use-auth-store';
+import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
 
 export default function EntryScreen() {
   const router = useRouter();
@@ -111,32 +112,25 @@ export default function EntryScreen() {
       style={{ flex: 1 }}
     >
       <ScrollView contentContainerStyle={styles.container} bounces={false}>
-        
         <Text style={styles.title}>{isLoginView ? 'Hello!' : 'Welcome!'}</Text>
         <Text style={styles.subtitle}>
           {isLoginView ? '마실에 오신 것을 환영합니다!' : '마실이 처음이신가요?'}
         </Text>
 
         <View style={{ width: '100%', marginBottom: 20 }}>
-          {/* --- 아이디 입력부 (중복 확인 포함) --- */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
             <TextInput 
               style={[styles.input, { flex: 1, marginBottom: 0 }]} 
-              placeholder={isLoginView ? "아이디" : "사용할 아이디"} 
+              placeholder="아이디" 
               placeholderTextColor="#8DBA7D"
               value={formData.loginId}
               onChangeText={(v) => handleChange('loginId', v)}
             />
-            {/* 회원가입 모드일 때만 중복확인 버튼 표시 */}
             {!isLoginView && (
               <TouchableOpacity 
                 style={{ 
                   backgroundColor: isIdChecked ? '#E0E0E0' : '#8DBA7D', 
-                  paddingHorizontal: 15, 
-                  height: 50, // 기존 input 높이에 맞춤
-                  justifyContent: 'center',
-                  borderRadius: 10, 
-                  marginLeft: 10 
+                  paddingHorizontal: 15, height: 50, justifyContent: 'center', borderRadius: 10, marginLeft: 10 
                 }}
                 onPress={handleCheckId}
                 disabled={isIdChecked}
@@ -148,40 +142,37 @@ export default function EntryScreen() {
             )}
           </View>
           
-          {/* 회원가입 시에만 보이는 이메일 입력 */}
           {!isLoginView && (
             <TextInput 
               style={styles.input} 
-              placeholder="email" 
+              placeholder="이메일" 
               placeholderTextColor="#8DBA7D"
               value={formData.email}
               onChangeText={(v) => handleChange('email', v)}
             />
           )}
 
-          {/* 비밀번호 입력 */}
           <TextInput 
             style={styles.input} 
-            placeholder="password" 
+            placeholder="비밀번호" 
             secureTextEntry 
             placeholderTextColor="#8DBA7D"
             value={formData.password}
             onChangeText={(v) => handleChange('password', v)}
           />
 
-          {/* 회원가입 전용 추가 정보 */}
           {!isLoginView && (
             <>
               <TextInput 
                 style={styles.input} 
-                placeholder="nickname" 
+                placeholder="닉네임" 
                 placeholderTextColor="#8DBA7D" 
                 value={formData.nickname}
                 onChangeText={(v) => handleChange('nickname', v)}
               />
               <TextInput 
                 style={styles.input} 
-                placeholder="birthDate(0000-00-00)" 
+                placeholder="생년월일(YYYY-MM-DD)" 
                 placeholderTextColor="#8DBA7D" 
                 value={formData.birthDate}
                 onChangeText={(v) => handleChange('birthDate', v)}
@@ -190,27 +181,21 @@ export default function EntryScreen() {
           )}
         </View>
 
-        {/* 메인 실행 버튼: 회원가입 시 중복확인 안되면 반투명 처리 */}
         <TouchableOpacity 
-          style={[
-            styles.button, 
-            { backgroundColor: '#8DBA7D' },
-            (!isLoginView && !isIdChecked) && { opacity: 0.4 } 
-          ]} 
+          style={[styles.button, { backgroundColor: '#8DBA7D' }, (!isLoginView && !isIdChecked) && { opacity: 0.4 }]} 
           onPress={handleSubmit}
-          disabled={!isLoginView && !isIdChecked} // 중복확인 전까지 가입 버튼 클릭 방지
+          disabled={!isLoginView && !isIdChecked}
         >
           <Text style={[styles.buttonText, { color: '#fff' }]}>
             {isLoginView ? '로그인하기' : '가입 완료하기'}
           </Text>
         </TouchableOpacity>
 
-        {/* 뷰 전환 버튼 */}
         <TouchableOpacity 
           style={[styles.button, styles.whiteButton, { marginTop: 10 }]}
           onPress={() => {
             setIsLoginView(!isLoginView);
-            setIsIdChecked(false); // 뷰 전환 시 체크 상태 초기화
+            setIsIdChecked(false);
           }}
         >
           <Text style={styles.buttonText}>
@@ -218,11 +203,8 @@ export default function EntryScreen() {
           </Text>
         </TouchableOpacity>
 
-        {isLoginView && (
-          <TouchableOpacity style={[styles.button, styles.kakaoButton, { marginTop: 10 }]}>
-            <Text style={styles.buttonText}>카카오톡으로 시작하기</Text>
-          </TouchableOpacity>
-        )}
+        {/* 구글 로그인 버튼 컴포넌트 */}
+        {isLoginView && <GoogleLoginButton />}
 
       </ScrollView>
     </KeyboardAvoidingView>

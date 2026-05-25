@@ -3,6 +3,7 @@ import { User } from '@/types/user';
 
 
 const BASE_URL = 'http://localhost:3000'; 
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 
 
@@ -85,6 +86,20 @@ export const authService = {
     });
     return response.data;
   } catch (error) {
+    throw error;
+  }
+},
+
+loginWithGoogle: async (idToken: string) => {
+  try {
+    // 우리 백엔드 서버의 구글 로그인 엔드포인트로 전송
+    const response = await axios.post(`${API_URL}/auth/google`, {
+      code: idToken, // 백엔드 컨트롤러에서 'code'로 받기로 했으니 이름을 맞춰줍니다
+    });
+
+    return response.data; // { success: true, token: '...', user: {...} }
+  } catch (error) {
+    console.error('구글 로그인 통신 에러:', error);
     throw error;
   }
 },

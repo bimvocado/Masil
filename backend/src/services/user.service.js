@@ -1,5 +1,7 @@
 const User = require('../models/user.model');
 const bcrypt = require('bcrypt');
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /* 회원가입 로직 */
 const signup = async (userData) => {
@@ -71,7 +73,7 @@ const getUserById = async (userId) => {
   return user;
 };
 
-/* ⭐️ 비밀번호 변경 로직 (수정 완료) ⭐️ */
+/*비밀번호 수정 로직*/
 const updatePassword = async (userId, currentPassword, newPassword) => {
   console.log(`[서비스] 비밀번호 변경 시도 - userId: ${userId}`);
 
@@ -104,10 +106,37 @@ const updatePassword = async (userId, currentPassword, newPassword) => {
   return true;
 };
 
+const socialLoginOrSignup = async (googleData) => {
+  const { sub, email, name, picture } = googleData;
+
+  // 1. 이미 구글로 가입한 유저가 있는지 확인
+  let user = await User.findOne({ 
+    where: { socialId: sub, provider: 'google' } 
+  });
+
+  if (!user) {
+    // 2. 없으면 회원가입
+    user = await User.create({
+      loginId: `google_${sub}`, // 중복 방지용 임시 ID
+      email: email,
+      nickname: name,
+      passwordHash: 'SOCIAL_AUTH_USER', // 소셜 유저 구분용
+      socialId: sub,
+      provider: 'google',
+      profileImageUrl: picture,
+      isKorean: true // 기본값
+    });
+  }
+
+  // 3. 유저 정보 반환 (이후 컨트롤러에서 JWT 발급)
+  return user;
+};
+
 module.exports = { 
   signup, 
   loginUser,
   getUserById,
   checkExists,
-  updatePassword
+  updatePassword,
+  socialLoginOrSignup
 };

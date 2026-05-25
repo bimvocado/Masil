@@ -18,7 +18,7 @@ const User = sequelize.define('User', {
   },
   passwordHash: {
     type: DataTypes.STRING(255),
-    allowNull: false,
+    allowNull: true,
   },
   nickname: {
     type: DataTypes.STRING(20),
@@ -38,11 +38,26 @@ const User = sequelize.define('User', {
     allowNull: false,
     defaultValue: true,
   },
+
+  provider: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    defaultValue: 'local', // local, google, kakao
+  },
+  socialId: {
+    type: DataTypes.STRING(255),
+    allowNull: true, // 소셜 로그인일 때만 구글 고유 ID 저장
+  },
 }, {
-  tableName: 'users',      
-  underscored: true,     
-  timestamps: true,        
-  paranoid: true,         
-});
+  tableName: 'users',
+  underscored: true,
+  timestamps: true,      
+}
+
+
+
+
+
+);
 
 module.exports = User;
