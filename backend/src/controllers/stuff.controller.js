@@ -124,6 +124,7 @@ const deleteStuff = async (req, res, next) => {
   }
 };
 
+
  // 브랜드별 상품 목록 조회
 const getStuffsByBrandId = async (req, res, next) => {
   try {

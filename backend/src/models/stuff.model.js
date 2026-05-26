@@ -1,8 +1,10 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
+// Stuffs 테이블을 Sequalize로 정의
 const Stuff = sequelize.define('Stuff', {
-    // 상품 ID
+
+  // 상품 ID
   stuffId: {
     type: DataTypes.BIGINT,
     primaryKey: true,
@@ -39,10 +41,13 @@ const Stuff = sequelize.define('Stuff', {
     defaultValue: false,
   },
 }, {
-     tableName: 'stuffs',   
-     timestamps: true,  // createdAt, updatedAt 자동 관리      
-     paranoid: true,    // deletedAt 자동 관리    
-     underscored: true, // db에 위 3가지 생성 (ex created_at)
-})
+  tableName: 'stuffs',
+  // createdAt, updatedAt 자동 관리
+  timestamps: true,
+  // deletedAt 자동 관리
+  paranoid: true,
+  // db에 위 3가지 생성 (ex created_at)
+  underscored: true,
+  })
 
 module.exports = Stuff;
