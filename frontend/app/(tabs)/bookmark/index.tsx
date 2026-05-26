@@ -1,33 +1,50 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import { TopBar } from '@/components/layout/top-bar';
 import { styles } from '../../../components/styles/bookmark';
-import { Category } from '@/types/category'; // 👈 인터페이스 임포트
-
-// 1. MOCK 데이터를 실제 값으로 수정
-const MOCK_CATEGORIES: Category[] = [
-  { categoryId: 1, categoryName: '싫소', postInCategoryCount: 5 },
-  { categoryId: 2, categoryName: '좋아요한 글', postInCategoryCount: 6544 },
-  { categoryId: 3, categoryName: '먹킷리스트', postInCategoryCount: 12 },
-];
+import { Category } from '@/types/category';
+import { categoryService } from '@/api/category-service';
+import { useAuthStore } from '@/store/use-auth-store';
 
 export default function BookmarkScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 2. State에도 Category[] 타입을 적용해서 변수명 싱크 강제
-  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+  useEffect(() => {
+    if (!user) return;
+    fetchCategories();
+  }, [user]);
 
-  // 추가 로직도 변수명에 맞게 수정
-  const handleAdd = () => {
+  const fetchCategories = async () => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+      const res = await categoryService.getCategories(user.userId);
+      setCategories(res.data ?? []);
+    } catch {
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdd = async () => {
+    if (!user) return;
     const newName = `새 폴더 ${categories.length + 1}`;
-    const newCategory: Category = {
-      categoryId: Date.now(), // 숫자로 통일
-      categoryName: newName,
-      postInCategoryCount: 0
-    };
-    setCategories([...categories, newCategory]);
+    try {
+      const res = await categoryService.createCategory(user.userId, { categoryName: newName });
+      setCategories(prev => [...prev, res.data]);
+    } catch {}
+  };
+
+  const handleDelete = async (categoryId: number) => {
+    try {
+      await categoryService.deleteCategory(categoryId);
+      setCategories(prev => prev.filter(c => c.categoryId !== categoryId));
+    } catch {}
   };
 
   return (
@@ -44,40 +61,41 @@ export default function BookmarkScreen() {
         }
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.gridContainer}>
-          {categories.map((item) => (
-            <TouchableOpacity 
-              key={item.categoryId} // id -> categoryId
-              style={styles.categoryCard}
-              onPress={() => {
-                if (!isEditing) {
-                  // URL 파라미터도 통일된 이름으로 전달
-                  router.push(`/(tabs)/bookmark/${item.categoryId}?name=${item.categoryName}` as Href);
-                }
-              }}
-            >
-              <View style={styles.labelContainer}>
-                {/* name -> categoryName */}
-                <Text style={styles.categoryName} numberOfLines={1}>{item.categoryName}</Text>
-              </View>
-              
-              {isEditing ? (
-                <TouchableOpacity onPress={() => setCategories(categories.filter(c => c.categoryId !== item.categoryId))}>
-                  <Text style={styles.deleteText}>삭제</Text>
-                </TouchableOpacity>
-              ) : (
-                // count -> postInCategoryCount
-                <Text style={styles.countText}>{item.postInCategoryCount}</Text>
-              )}
-            </TouchableOpacity>
-          ))}
+      {isLoading ? (
+        <ActivityIndicator style={{ marginTop: 40 }} color="#888" />
+      ) : (
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.gridContainer}>
+            {categories.map((item) => (
+              <TouchableOpacity
+                key={item.categoryId}
+                style={styles.categoryCard}
+                onPress={() => {
+                  if (!isEditing) {
+                    router.push(`/(tabs)/bookmark/${item.categoryId}?name=${item.categoryName}` as Href);
+                  }
+                }}
+              >
+                <View style={styles.labelContainer}>
+                  <Text style={styles.categoryName} numberOfLines={1}>{item.categoryName}</Text>
+                </View>
 
-          <TouchableOpacity style={styles.addCategoryButton} onPress={handleAdd}>
-            <Text style={styles.addCategoryText}>+ 카테고리 추가</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+                {isEditing ? (
+                  <TouchableOpacity onPress={() => handleDelete(item.categoryId)}>
+                    <Text style={styles.deleteText}>삭제</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={styles.countText}>{item.postInCategoryCount}</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity style={styles.addCategoryButton} onPress={handleAdd}>
+              <Text style={styles.addCategoryText}>+ 카테고리 추가</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
     </View>
   );
 }

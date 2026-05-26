@@ -11,7 +11,7 @@ export const commentService = {
     }
   },
 
-  createComment: async (postId: number, data: { content: string; userId: number }) => {
+  createComment: async (postId: number, data: { text: string; userId: number }) => {
     try {
       const response = await apiClient.post(`/api/posts/${postId}/comments`, data);
       return response.data;
@@ -21,7 +21,7 @@ export const commentService = {
     }
   },
 
-  updateComment: async (commentId: number, data: { content: string }) => {
+  updateComment: async (commentId: number, data: { text: string }) => {
     try {
       const response = await apiClient.put(`/api/comments/${commentId}`, data);
       return response.data;

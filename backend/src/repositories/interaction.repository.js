@@ -1,4 +1,4 @@
-const { Interaction, User, sequelize } = require('../models');
+const { Interaction, User, sequelize } = require('../models/interaction.model');
 
 class InteractionRepository {
 

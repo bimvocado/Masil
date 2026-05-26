@@ -1,7 +1,14 @@
 const Scrap = require('../models/scrap.model');
+const Post = require('../models/post.model');
 
 const findScrapsByCategory = async (categoryId) => {
-  return await Scrap.findAll({ where: { categoryId } });
+  return await Scrap.findAll({
+    where: { categoryId },
+    include: [{
+      model: Post,
+      attributes: ['postId', 'content', 'imageUrl'],
+    }],
+  });
 };
 
 const createScrap = async (userId, postId, categoryId) => {

@@ -5,9 +5,10 @@ interface Props {
   value: string;
   onChangeText: (text: string) => void;
   multiline?: boolean;
+  placeholder?: string;
 }
 
-export function ProfileInput({ label, value, onChangeText, multiline }: Props) {
+export function ProfileInput({ label, value, onChangeText, multiline, placeholder }: Props) {
   return (
     <View style={styles.group}>
       <Text style={styles.label}>{label}</Text>
@@ -16,6 +17,7 @@ export function ProfileInput({ label, value, onChangeText, multiline }: Props) {
         value={value} 
         onChangeText={onChangeText}
         multiline={multiline}
+        placeholder={placeholder}
       />
     </View>
   );

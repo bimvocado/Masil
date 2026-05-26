@@ -2,11 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const { port } = require('./src/config/env');
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
 // DB
 const sequelize = require('./src/config/db');
 
@@ -19,6 +14,7 @@ const commentRouter = require('./src/routes/comment.routes');
 const interactionRouter = require('./src/routes/interaction.routes');
 const scrapRouter = require('./src/routes/scrap.routes');
 const categoryRouter = require('./src/routes/category.routes');
+const authRoutes = require('./src/routes/auth.route');
 
 // 모델
 const User = require('./src/models/user.model');
@@ -60,15 +56,23 @@ Scrap.belongsTo(Category, { foreignKey: 'categoryId' });
 
 User.hasMany(Interaction, { foreignKey: 'userId' });
 Interaction.belongsTo(User, { foreignKey: 'userId' });
-
 Post.hasMany(Interaction, { foreignKey: 'postId' });
 Interaction.belongsTo(Post, { foreignKey: 'postId' });
+
+sequelize.sync({ alter: true })
+  .then(() => console.log('MySQL 테이블 생성/수정 완료'))
+  .catch((err) => console.error('테이블 생성 실패:', err));
+
+const app = express();
+app.use(cors());
+app.use(express.json());
 
 // 라우터 등록
 app.use('/api/users', userRouter);
 app.use('/api/posts', postRouter);
 app.use('/api/stuffs', stuffRouter);
 app.use('/api/brands', brandRouter);
+app.use('/api/auth', authRoutes);
 app.use('/api/interactions', interactionRouter);
 app.use('/api/scraps', scrapRouter);
 app.use('/api/categories', categoryRouter);
@@ -85,15 +89,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// DB 동기화 후 서버 실행
-sequelize.sync({ alter: true })
-  .then(() => {
-    console.log('✅ MySQL 테이블 동기화 완료');
-
-    app.listen(port, () => {
-      console.log(`서버 실행 중: http://localhost:${port}`);
-    });
-  })
-  .catch((err) => {
-    console.error('❌ 테이블 생성 실패. 이유는?:', err);
-  });
+app.listen(port, () => {
+  console.log(`서버 실행 중: http://localhost:${port}`);
+});

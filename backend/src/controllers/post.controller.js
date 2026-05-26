@@ -1,5 +1,5 @@
 const postService = require('../services/post.service');
-const ApiResponse = require('../utils/api-response.util');
+const ApiResponse = require('../utils/api.response.util');
 
 const {
   CreatePostReqDTO,

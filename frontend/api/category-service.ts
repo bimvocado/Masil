@@ -11,7 +11,7 @@ export const categoryService = {
     }
   },
 
-  createCategory: async (userId: number, data: { name: string }) => {
+  createCategory: async (userId: number, data: { categoryName: string }) => {
     try {
       const response = await apiClient.post(`/api/users/${userId}/categories`, data);
       return response.data;
@@ -21,7 +21,7 @@ export const categoryService = {
     }
   },
 
-  updateCategory: async (categoryId: number, data: { name: string }) => {
+  updateCategory: async (categoryId: number, data: { categoryName: string }) => {
     try {
       const response = await apiClient.put(`/api/users/categories/${categoryId}`, data);
       return response.data;
