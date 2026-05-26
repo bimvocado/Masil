@@ -1,27 +1,24 @@
 import axios from 'axios';
 import { User } from '@/types/user';
-import { saveToken, getToken } from '@/utils/storage';
+import { saveToken, getToken,removeToken } from '@/utils/storage';
 import { Platform } from 'react-native';
 console.log("!!!!!!!!!! 나 지금 실행됨 !!!!!!!!!!")
 export const BASE_URL = 'http://localhost:3000'; 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+import apiClient from '../api/client'; // 👈 직접 만든 axios 인스턴스 (인터셉터 포함)
 
 export const authService = {
   /**
    * 일반 로그인 요청
    */
-  login: async (loginId: string, password: string): Promise<any> => {
+  login: async (loginId: string, password: string) => {
     try {
-      const response = await axios.post(`${BASE_URL}/api/users/login`, {
-        loginId,
-        password,
-      });
-
-      // ✅ 일반 로그인 성공 시 토큰 저장
-      if (response.data.success && response.data.token) {
-        await saveToken(response.data.token);
+      const response = await apiClient.post('/users/login', { loginId, password });
+      // 백엔드 구조에 맞춰서 토큰 추출 (보통 response.data.data.token)
+      const token = response.data.data?.token || response.data.token;
+      if (response.data.success && token) {
+        await saveToken(token);
       }
-      
       return response.data;
     } catch (error) {
       console.error('로그인 에러:', error);
@@ -30,50 +27,32 @@ export const authService = {
   },
 
   /**
-   * 구글 로그인 요청
+   * 구글 로그인 요청 (코드 살려두기)
    */
   loginWithGoogle: async (code: string, codeVerifier?: string) => {
-    console.log("🚀 [디버그] 구글 로그인 시작. code 존재 여부:", !!code);
     try {
-      const response = await axios.post(`${API_URL}/auth/google`, {
-        code,          
-        codeVerifier   
-      });
-
-      if (response.data.success && response.data.token) {
-        console.log("💾 [디버그] 백엔드 토큰 수신 성공. 저장 시도...");
-        await saveToken(response.data.token);
-        console.log("✅ [디버그] 토큰 저장 완료");
+      const response = await apiClient.post('/auth/google', { code, codeVerifier });
+      const token = response.data.data?.token || response.data.token;
+      if (response.data.success && token) {
+        await saveToken(token);
       }
-
-      return response.data; 
+      return response.data;
     } catch (error) {
-      console.error('🚨 [디버그] 구글 로그인 통신 에러:', error);
+      console.error('구글 로그인 에러:', error);
       throw error;
     }
   },
 
   /**
-   * 프로필 로드 (토큰을 꺼내서 헤더에 실어 보냅니다)
+   * 프로필 로드 (💡 이제 토큰 수동으로 안 꺼내도 됨!)
    */
   getProfile: async (userId: number) => {
-    // 터미널에 강제로 찍히게 하려면 에러를 던지기 전에 명시적으로 확인
-    console.log("🔥 터미널/브라우저 동시 확인용 로그: getProfile 실행됨!");
-    if (Platform.OS === 'web') {
-      console.warn("현재 웹 환경입니다. LocalStorage를 사용해야 합니다.");
-    }
-  
     try {
-      const token = await getToken(); 
-      // 만약 여기서 에러가 난다면 tokenStorage 내부가 범인입니다.
-      
-      const response = await axios.get(`${BASE_URL}/api/users/profile/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // apiClient를 쓰면 인터셉터가 알아서 헤더에 토큰을 실어줍니다.
+      const response = await apiClient.get(`/users/profile/${userId}`);
       return response.data;
-    } catch (error: any) {
-      // 💡 이 로그가 터미널이나 브라우저 콘솔 어디든 찍혀야 합니다.
-      console.error('🔥 [필독] 여기서 에러 발생:', error.message);
+    } catch (error) {
+      console.error('프로필 로딩 에러:', error);
       throw error;
     }
   },
@@ -83,7 +62,7 @@ export const authService = {
    */
   checkDuplicate: async (type: 'loginId' | 'email', value: string) => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/users/check-duplicate`, {
+      const response = await apiClient.get('/users/check-duplicate', {
         params: { type, value } 
       });
       return response.data;
@@ -98,7 +77,7 @@ export const authService = {
    */
   register: async (userData: Partial<User>) => {
     try {
-      const response = await axios.post(`${BASE_URL}/api/users/signup`, userData);
+      const response = await apiClient.post('/users/signup', userData);
       return response.data;
     } catch (error) {
       console.error('회원가입 에러:', error);
@@ -111,17 +90,23 @@ export const authService = {
    */
   changePassword: async (userId: number, currentPassword: string, newPassword: string) => {
     try {
-      const token = await getToken();
-      const response = await axios.patch(`${BASE_URL}/api/users/change-password`, {
+      // 💡 수동으로 getToken 안 해도 인터셉터가 토큰을 알아서 챙겨줍니다.
+      const response = await apiClient.patch('/users/change-password', {
         userId,
         currentPassword,
         newPassword
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       return response.data;
     } catch (error) {
+      console.error('비밀번호 변경 에러:', error);
       throw error;
     }
   },
+
+  /**
+   * 로그아웃
+   */
+  logout: async () => {
+    await removeToken();
+  }
 };

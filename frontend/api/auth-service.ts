@@ -1,5 +1,5 @@
 import apiClient from './client'; 
-import { tokenStorage } from '@/utils/storage'; // 👈 우리가 만든 웹 호환 저장소 가져오기
+import { saveToken, removeToken } from '@/utils/storage'; // 👈 우리가 만든 웹 호환 저장소 가져오기
 import { User } from '@/types/user';
 
 export const BASE_URL = 'http://localhost:3000'; // 필요한 경우 추가
@@ -18,7 +18,7 @@ export const authService = {
       const token = response.data.data?.token; 
       if (token) {
 
-        await tokenStorage.saveToken(token);
+        await saveToken(token);
         console.log("✅ 토큰 저장 완료");
       }
 
@@ -65,7 +65,7 @@ export const authService = {
   logout: async () => {
     try {
 
-      await tokenStorage.removeToken();
+      await removeToken();
       console.log("✅ 로그아웃: 토큰 삭제 완료");
     } catch (error) {
       console.error('로그아웃 에러:', error);
