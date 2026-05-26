@@ -1,23 +1,52 @@
 const userService = require('../services/user.service');
 
-// 회원가입
-const signup = async (req, res, next) => {
+
+const checkDuplicate = async (req, res, next) => {
   try {
-    const userData = req.body;
+    const { type, value } = req.query; 
+    
+    const isDuplicate = await userService.checkExists(type, value);
+
+    return res.status(200).json({
+      success: true,
+      isDuplicate,
+      message: isDuplicate ? `이미 사용 중인 ${type}입니다.` : `사용 가능한 ${type}입니다.`
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const signup = async (req, res, next) => {
+  console.log("드디어 백엔드에 요청 도착!!! 데이터:", req.body);
+  try {
+    const { loginId, email } = req.body;
+
+    
+    const idExists = await userService.checkExists('loginId', loginId);
+    const emailExists = await userService.checkExists('email', email);
+
+    if (idExists || emailExists) {
+      return res.status(400).json({
+        success: false,
+        message: idExists ? '이미 존재하는 아이디입니다.' : '이미 존재하는 이메일입니다.'
+      });
+    }
+
     const newUser = await userService.signup(req.body);
 
     return res.status(201).json({
       success: true,
       message: '회원가입 성공! 마실에 오신 것을 환영합니다.',
-      data: { userId: newUser.user_id }
+      data: { userId: newUser.userId }
     });
   } catch (error) {
     next(error); 
   }
 };
 
-// 로그인
 const login = async (req, res, next) => {
+  console.log("백엔드 로그인 요청 도착:", req.body);
   try {
     const { loginId, password } = req.body;
     const result = await userService.loginUser(loginId, password);
@@ -31,22 +60,51 @@ const login = async (req, res, next) => {
     next(error);
   }
 };
-
 const getProfile = async (req, res, next) => {
   try {
-  
     const { userId } = req.params; 
-    console.log("프론트에서 넘어온 userId 값:", userId);
-    console.log("userId의 타입:", typeof userId);
     const user = await userService.getUserById(userId);
-
-    res.status(200).json({
-      success: true,
-      data: user
-    });
+    res.status(200).json({ success: true, data: user });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { signup, login, getProfile};
+const changePassword = async (req, res, next) => {
+  try {
+    //토큰or user id 인데 아직 토큰 안해서 userid 
+    const { userId, currentPassword, newPassword } = req.body;
+
+    await userService.updatePassword(userId, currentPassword, newPassword);
+
+    return res.status(200).json({
+      success: true,
+      message: '비밀번호가 성공적으로 변경되었습니다.'
+    });
+  } catch (error) {
+    next(error); 
+  }
+};
+
+const updateProfile = async (req, res, next) => {
+  try {
+    const userId = req.user?.id || req.body.userId; 
+    
+    const updateData = {
+      nickname: req.body.nickname,
+      bio: req.body.bio,
+      profileImageUrl: req.file ? req.file.path : req.body.profileImageUrl 
+    };
+
+    const updatedUser = await userService.updateUserProfile(userId, updateData);
+
+    return res.status(200).json({
+      success: true,
+      message: '프로필이 수정되었습니다.',
+      data: updatedUser
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+module.exports = { signup, login, getProfile, checkDuplicate, changePassword,updateProfile  };

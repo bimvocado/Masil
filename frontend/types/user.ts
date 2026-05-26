@@ -4,12 +4,12 @@ export interface User {
     nickname: string;
     email: string;
     profileImageUrl: string;
-    isKorean: 'KOREAN' | 'FORIEGN';
+    isKorean: Boolean
     birthDate: string | Date;
     password: string;
     createdAt: string;
     updatedAt: string;
-    deletdAt: string;
+    deletedAt: string;
 
 
 

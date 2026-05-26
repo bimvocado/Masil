@@ -83,7 +83,7 @@ export default function SearchScreen() {
 
       {/* 3열 그리드 브랜드 리스트 영역 */}
       <ScrollView contentContainerStyle={styles.gridContainer}>
-      {filteredBrands.map((brand) => (
+      {filteredBrands?.map((brand) => (
         <TouchableOpacity 
           key={brand.brandId} 
           style={styles.brandCard}

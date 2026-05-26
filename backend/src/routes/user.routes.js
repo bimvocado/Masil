@@ -1,14 +1,16 @@
-// src/routes/user.routes.js
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 
-// POST /api/users/signup
 router.post('/signup', userController.signup);
-
-// POST /api/users/login
 router.post('/login', userController.login);
+router.get('/check-duplicate', userController.checkDuplicate);
 
 router.get('/profile/:userId', userController.getProfile);
+
+router.patch('/profile', authMiddleware, userController.updateProfile);
+
+router.patch('/change-password', authMiddleware, userController.changePassword);
 
 module.exports = router;

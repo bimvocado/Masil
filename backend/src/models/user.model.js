@@ -8,17 +8,24 @@ const User = sequelize.define('User', {
     autoIncrement: true,
   },
   loginId: {
-    type: DataTypes.STRING(20),
+    type: DataTypes.STRING(255),
     allowNull: false,
+    unique: {
+      name: 'idx_unique_loginId', // 👈 여기도 이름을 박아줍니다.
+      msg: '이미 사용 중인 아이디입니다.'
+    }
   },
   email: {
     type: DataTypes.STRING(50),
     allowNull: false,
-    unique: true,
+    unique: {
+      name: 'idx_unique_email', // 👈 인덱스 이름을 직접 지정! 
+      msg: '이미 가입된 이메일입니다.'
+    }
   },
   passwordHash: {
     type: DataTypes.STRING(255),
-    allowNull: false,
+    allowNull: true,
   },
   nickname: {
     type: DataTypes.STRING(20),
@@ -38,11 +45,26 @@ const User = sequelize.define('User', {
     allowNull: false,
     defaultValue: true,
   },
+
+  provider: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    defaultValue: 'local', // local, google, kakao
+  },
+  socialId: {
+    type: DataTypes.STRING(255),
+    allowNull: true, // 소셜 로그인일 때만 구글 고유 ID 저장
+  },
 }, {
-  tableName: 'users',      
-  underscored: true,     
-  timestamps: true,        
-  paranoid: true,         
-});
+  tableName: 'users',
+  underscored: true,
+  timestamps: true,      
+}
+
+
+
+
+
+);
 
 module.exports = User;

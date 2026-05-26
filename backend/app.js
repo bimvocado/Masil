@@ -54,6 +54,7 @@ Scrap.belongsTo(Category, { foreignKey: 'categoryId' });
 
 User.hasMany(Post, { foreignKey : 'userId' });
 Post.belongsTo(User, { foreignKey : 'userId' });
+const authRoutes = require('./src/routes/auth.route');
 
 User.hasMany(Interaction, { foreignKey: 'userId' });
 Interaction.belongsTo(User, { foreignKey: 'userId' });
@@ -76,6 +77,8 @@ app.use(express.json());
 // 라우터 등록
 app.use('/api/users', userRouter);
 app.use('/api/posts', postRouter);
+
+app.use('/api/auth', authRoutes);
 // 상품/검색 관련 API 연결
 app.use('/api/stuffs', stuffRouter);
 app.use('/api/posts', commentRouter);
