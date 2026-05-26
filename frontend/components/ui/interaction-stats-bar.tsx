@@ -14,8 +14,8 @@ interface InteractionStatsBarProps {
   dislikeStats?: InteractionStatDetail;
 }
 
-const COLOR_LIKE_KOR = '#FF6B6B';
-const COLOR_LIKE_FOR = '#FFC9C9';
+const COLOR_LIKE_KOR = '#45a350';
+const COLOR_LIKE_FOR = '#2a4732';
 const COLOR_DISLIKE_KOR = '#4A4A4A';
 const COLOR_DISLIKE_FOR = '#D3D3D3';
 const COLOR_BG = '#F5F5F5';
