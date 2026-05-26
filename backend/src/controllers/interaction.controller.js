@@ -1,5 +1,5 @@
 const interactionService = require('../services/interaction.service');
-const ApiResponse = require('../utils/ApiResponse');
+const ApiResponse = require('../utils/api.response.util');
 const { ToggleInteractionReqDTO } = require('../dtos/interaction.dto');
 
 const toggleInteraction = async (req, res, next) => {

@@ -1,6 +1,6 @@
 const { param, body, validationResult } = require('express-validator');
 
-const ApiResponse = require('../utils/api-response.util');
+const ApiResponse = require('../utils/api.response.util');
 
 const checkValidationResult = (req, res, next) => {
   const errors = validationResult(req);

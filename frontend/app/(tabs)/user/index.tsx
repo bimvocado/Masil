@@ -1,10 +1,4 @@
-import { 
-  View, 
-  Text, 
-  Image, 
-  TouchableOpacity, 
-  ScrollView,
-  TextInput 
+import { View, Text, Image, TouchableOpacity, ScrollView, TextInput 
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TopBar } from '@/components/layout/top-bar';
@@ -25,7 +19,6 @@ const MOCK_POSTS: Post[] = [
     postId: 1,
     userId: 3,
     stuffId: 101,
-    title: '롯데리아 새우버거 폼 미쳤다',
     content: '오랜만에 먹었는데 패티가 아주 바삭하고 맛있네요. 추천합니다!',
     imageUrl: '',
     createdAt: '2024-05-19', // 
@@ -43,7 +36,6 @@ const MOCK_POSTS: Post[] = [
     postId: 2,
     userId: 5,
     stuffId: 102,
-    title: '이건 좀 별로임',
     content: '기대했는데 생각보다 느끼하네요. 다음엔 안 먹을 듯.',
     imageUrl: '',
     createdAt: '2024-05-18',

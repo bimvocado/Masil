@@ -32,7 +32,7 @@ User.hasMany(Post, { foreignKey : 'userId' });
 Post.belongsTo(User, { foreignKey : 'userId' });
 const authRoutes = require('./src/routes/auth.route');
 
-sequelize.sync({ alter: true }) // alter: true는 바뀐 설계도대로 테이블을 수정/생성함
+sequelize.sync({ alter: true }) 
   .then(() => {
     console.log('✅ 드디어 MySQL에 테이블이 생겼습니다!');
   })

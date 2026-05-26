@@ -3,17 +3,23 @@ const axios = require('axios');
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+  );
 
 const googleLogin = async (req, res) => {
-  try {
-    const { code } = req.body; // 프론트에서 전달한 인가 코드
-
-    // 1. 인가 코드를 토큰으로 교환
-    const { tokens } = await client.getToken({
-      code,
-      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
-    });
+    const { code, codeVerifier } = req.body;
+    try {
+        const { tokens } = await client.getToken({
+          code: code,
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+          // 🚨 구글아, 여기 열쇠(verifier) 가져왔다! 문 열어!
+          codeVerifier: codeVerifier, 
+        });
 
     // 2. 토큰에서 유저 정보 추출 (id_token 디코딩)
     const ticket = await client.verifyIdToken({

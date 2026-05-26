@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+
 /* 회원가입 로직 */
 const signup = async (userData) => {
   const { loginId, email, password, nickname, birthDate } = userData;
@@ -132,11 +133,21 @@ const socialLoginOrSignup = async (googleData) => {
   return user;
 };
 
+const updateUserProfile = async (userId, updateData) => {
+  const user = await User.findByPk(userId);
+  if (!user) throw new Error('사용자를 찾을 수 없습니다.');
+
+  // 전달된 데이터만 업데이트
+  return await user.update(updateData);
+};
+
 module.exports = { 
   signup, 
   loginUser,
   getUserById,
   checkExists,
   updatePassword,
-  socialLoginOrSignup
+  socialLoginOrSignup,
+  updateUserProfile 
 };
+

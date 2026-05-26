@@ -1,22 +1,29 @@
 const express = require('express');
 
 const interactionController = require('../controllers/interaction.controller');
-const authMiddleware = require('../middlewares/auth.middleware');
+const {authMiddleware} = require('../middlewares/auth.middleware');
 const interactionValidator = require('../validators/interaction.validator');
-
+const { validateToggleInteraction, validateGetStats } = require('../validators/interaction.validator');
 const router = express.Router();
+
+
+console.log('--- 미들웨어 점검 ---');
+console.log('1. authMiddleware:', typeof authMiddleware);
+console.log('2. validator:', typeof interactionValidator?.validateToggleInteraction);
+console.log('3. controller:', typeof interactionController?.toggleInteraction);
 
 router.post(
     '/:stuffId/interactions',
     authMiddleware,
-    interactionValidator.validateToggleInteraction,
+    validateToggleInteraction,
     interactionController.toggleInteraction
 );
 
 router.get(
     '/:stuffId/interactions',
-    interactionValidator.validateGetStats,
+    validateGetStats,
     interactionController.getInteractionStats
 );
 
 module.exports = router;
+

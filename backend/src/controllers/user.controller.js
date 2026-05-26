@@ -1,6 +1,6 @@
 const userService = require('../services/user.service');
 
-// 1. 중복 확인 API (아이디 또는 이메일)
+
 const checkDuplicate = async (req, res, next) => {
   try {
     const { type, value } = req.query; 
@@ -17,7 +17,6 @@ const checkDuplicate = async (req, res, next) => {
   }
 };
 
-// 2. 회원가입 (가입 직전 최종 중복 검사 추가)
 const signup = async (req, res, next) => {
   console.log("드디어 백엔드에 요청 도착!!! 데이터:", req.body);
   try {
@@ -45,7 +44,6 @@ const signup = async (req, res, next) => {
     next(error); 
   }
 };
-
 
 const login = async (req, res, next) => {
   console.log("백엔드 로그인 요청 도착:", req.body);
@@ -87,4 +85,26 @@ const changePassword = async (req, res, next) => {
     next(error); 
   }
 };
-module.exports = { signup, login, getProfile, checkDuplicate, changePassword  };
+
+const updateProfile = async (req, res, next) => {
+  try {
+    const userId = req.user?.id || req.body.userId; 
+    
+    const updateData = {
+      nickname: req.body.nickname,
+      bio: req.body.bio,
+      profileImageUrl: req.file ? req.file.path : req.body.profileImageUrl 
+    };
+
+    const updatedUser = await userService.updateUserProfile(userId, updateData);
+
+    return res.status(200).json({
+      success: true,
+      message: '프로필이 수정되었습니다.',
+      data: updatedUser
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+module.exports = { signup, login, getProfile, checkDuplicate, changePassword,updateProfile  };
