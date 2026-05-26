@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
 const Brand = sequelize.define('Brand', {
+    
     brandId: {
         type: DataTypes.BIGINT,
         primaryKey: true,
