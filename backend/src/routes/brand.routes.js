@@ -15,9 +15,8 @@ router.delete('/:brandId', brandController.deleteBrand);
 /* 브랜드 탐색 페이지
  GET /api/brands/search?category=FOOD
  GET /api/brands/search?category=HOUSEHOLD
- GET /api/brands/search?keyword=롯데리아&
+ GET /api/brands/search?keyword=롯데리아&category=FOOD
 */ 
-category=FOOD
 router.get(
   '/search',
   brandController.searchBrands
