@@ -22,6 +22,8 @@ const Comment = require('./src/models/comment.model');
 const Scrap = require('./src/models/scrap.model');
 const Category = require('./src/models/category.model');
 const Interaction = require('./src/models/interaction.model');
+const Hashtag = require('./src/models/hashtag.model');
+const PostHashtag = require('./src/models/postHashtag.model');
 
 // 관계 설정
 Brand.hasMany(Stuff, { foreignKey: 'brandId' });
@@ -46,6 +48,10 @@ User.hasMany(Interaction, { foreignKey: 'userId' });
 Interaction.belongsTo(User, { foreignKey: 'userId' });
 Post.hasMany(Interaction, { foreignKey: 'postId' });
 Interaction.belongsTo(Post, { foreignKey: 'postId' });
+Post.hasMany(PostHashtag, { foreignKey: 'postId' });
+PostHashtag.belongsTo(Post, { foreignKey: 'postId'});
+Hashtag.hasMany(PostHashtag, { foreignKey: 'hashtagId' });
+PostHashtag.belongsTo(Hashtag, { foreignKey: 'hashtagId' });
 
 sequelize.sync({ alter: true })
   .then(() => console.log('MySQL 테이블 생성/수정 완료'))

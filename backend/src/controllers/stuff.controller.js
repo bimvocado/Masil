@@ -1,4 +1,5 @@
 const stuffService = require('../services/stuff.service');
+const ApiResponse = require('../utils/api.response.util');
 
 const {
   CreateStuffReqDTO,
@@ -170,6 +171,36 @@ const getStuffDetail = async (req, res, next) => {
   }
 };
 
+// 상품 자동완성 검색
+const searchStuffs = async (req, res, next) => {
+  try {
+    const { keyword } = req.query;
+
+    const result = await stuffService.searchStuffs(keyword);
+
+    return res.status(200).json(
+      ApiResponse.success(200, '상품 자동완성 검색 성공', result)
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 상품 찾기 또는 생성
+const findOrCreateStuff = async (req, res, next) => {
+  try {
+    const { stuffName } = req.body;
+
+    const result = await stuffService.findOrCreateStuff(stuffName);
+    
+    return res.status(200).json(
+      ApiResponse.success(200, '상품 확인 성공', result)
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 module.exports = {
   createStuff,
@@ -177,4 +208,6 @@ module.exports = {
   deleteStuff,
   getStuffsByBrandId,
   getStuffDetail,
+  searchStuffs,
+  findOrCreateStuff,
 };

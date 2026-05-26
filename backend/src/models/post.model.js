@@ -15,10 +15,6 @@ const Post = sequelize.define('Post', {
         type: DataTypes.BIGINT,
         allowNull: false
     },
-    // title: {
-    //     type: DataTypes.STRING(100),
-    //     allowNull: false
-    // }
     content: {
         type: DataTypes.TEXT,
         allowNull: false
