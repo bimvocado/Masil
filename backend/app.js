@@ -13,8 +13,6 @@ const postRouter = require('./src/routes/post.routes')
 // 상품
 const stuffRouter = require('./src/routes/stuff.routes');
 
-
-const sequelize = require('./src/config/db'); // DB 연결 설정 파일 경로 확인!
 const User = require('./src/models/user.model'); // 유저 모델 불러오기 (중요!)
 // 상호작용 - 옳소/싫소
 const commentRouter = require('./src/routes/comment.routes');
