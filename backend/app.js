@@ -13,7 +13,6 @@ const postRouter = require('./src/routes/post.routes')
 // 상품
 const stuffRouter = require('./src/routes/stuff.routes');
 
-const User = require('./src/models/user.model'); // 유저 모델 불러오기 (중요!)
 // 상호작용 - 옳소/싫소
 const commentRouter = require('./src/routes/comment.routes');
 const interactionRouter = require('./src/routes/interaction.routes');
