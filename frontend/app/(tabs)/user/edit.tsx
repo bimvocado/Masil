@@ -5,7 +5,7 @@ import axios from 'axios'; // 👈 axios 꼭 있어야 함
 import { TopBar } from '@/components/layout/top-bar';
 import { ProfileInput } from '@/components/ui/profile-input';
 import { authService as userService, BASE_URL } from '@/services/auth-service'; // 👈 BASE_URL 같이 가져오기
-import { tokenStorage } from '@/utils/storage'; // 👈 토큰 가져오기용
+import { getToken } from '@/utils/storage'; // 👈 토큰 가져오기용
 import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileEditScreen() {
@@ -28,7 +28,7 @@ export default function ProfileEditScreen() {
     console.log("💾 [디버그] 저장 버튼 눌림!");
 
     try {
-      const token = await tokenStorage.getToken();
+      const token = await getToken();
       
       // 1. 이미지 포함해서 보낼 땐 FormData 필수
       const formData = new FormData();
