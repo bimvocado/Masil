@@ -14,13 +14,13 @@ const authMiddleware = (req, res, next) => {
         const token = authHeader.split(' ')[1];
 
         // 2. 토큰 검증 (JWT_SECRET은 .env에 있어야 함)
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
         // 3. 유저 정보 req에 담기
         req.user = decoded;
         next();
     } catch (error) {
-        console.error('인증 에러:', error);
+        console.error('❌ 인증 에러 상세:', error.message); 
         return res.status(401).json(ApiResponse.error(401, '유효하지 않은 토큰입니다.'));
     }
 };

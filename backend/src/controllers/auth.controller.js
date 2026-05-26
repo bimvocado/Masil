@@ -45,16 +45,16 @@ const googleLogin = async (req, res) => {
 
     // 4. 우리 서비스 전용 JWT 발행
     const accessToken = jwt.sign(
-      { userId: user.userId },
+      { userId: user.userId || user.id || user.dataValues?.userId }, 
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
-
+    
     res.status(200).json({
       success: true,
       token: accessToken,
       user: {
-        userId: user.userId,
+        userId: user.userId || user.id || user.dataValues?.userId,
         nickname: user.nickname,
         email: user.email
       }

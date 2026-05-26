@@ -5,10 +5,10 @@ import {
 import { useRouter, Redirect } from 'expo-router';
 import { useState,useEffect } from 'react';
 import { authStyles as styles } from '@/components/styles/auth';
-import { authService } from '@/services/auth-service';
 import { useAuthStore } from '@/store/use-auth-store';
 import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
 import { getToken,removeToken } from '@/utils/storage';
+import { authService } from '@/services/auth-service';
 
 export default function EntryScreen() {
   const router = useRouter();

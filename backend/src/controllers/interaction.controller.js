@@ -6,7 +6,7 @@ const toggleInteraction = async (req, res, next) => {
   try {
     const { stuffId } = req.params;
     const { reactionType } = req.body;
-    const userId = req.user.user.id;
+    const userId = req.user.userId;
 
     const reqDTO = new ToggleInteractionReqDTO(userId, stuffId, reactionType);
 

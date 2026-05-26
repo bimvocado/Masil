@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
+const upload = require('../middlewares/upload');
 
 router.post('/signup', userController.signup);
 router.post('/login', userController.login);
@@ -9,8 +10,7 @@ router.get('/check-duplicate', userController.checkDuplicate);
 
 router.get('/profile/:userId', userController.getProfile);
 
-router.patch('/profile', authMiddleware, userController.updateProfile);
-
+router.patch('/profile', authMiddleware, upload.single('image'), userController.updateProfile);
 router.patch('/change-password', authMiddleware, userController.changePassword);
 
 module.exports = router;

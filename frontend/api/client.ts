@@ -15,6 +15,7 @@ apiClient.interceptors.request.use(
   async (config) => {
     const token = await getToken();
     if (token) {
+      console.log("📡 [인터셉터] 전송 직전 토큰 상태:", `|${token}|`); 
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;

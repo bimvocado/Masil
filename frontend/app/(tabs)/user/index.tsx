@@ -6,7 +6,7 @@ import { styles } from '@/components/styles/user';
 import { useRouter } from 'expo-router'; 
 import { Post } from '@/types/post';
 import { User } from '@/types/user';
-
+import { useAuthStore } from '@/store/use-auth-store';
 import { InteractionButton } from '@/constants/interaction-button';
 
 import React, { useEffect, useState } from 'react'; 
@@ -56,29 +56,31 @@ export default function UserScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter(); 
 
-  const [user, setUser] = useState<any>(null); 
+  // ✅ 1. Zustand Store에서 유저 정보와 로딩 함수 가져오기
+  // (만약 store에 fetchMyProfile 같은 함수를 안 만드셨다면 아래 useEffect 방식 유지)
+  const { user, setUser } = useAuthStore(); 
+  
   const [posts, setPosts] = useState(MOCK_POSTS);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // 스토어에 데이터가 있으면 바로 보여주려고 false 시작 가능
   
   useEffect(() => {
+    // ✅ 2. 화면 진입 시 한 번은 최신 데이터를 긁어와서 Store를 업데이트 해줍니다.
     const fetchMyData = async () => {
       try {
-        // 일단 테스트로 1번 유저 가져오기 (나중엔 로그인한 ID 넣기)
-        const response = await authService.getProfile(1); 
-        console.log("프론트가 받은 응답:", response);
+        const response = await authService.getProfile(user?.userId || 1); 
         if (response.success) {
-          setUser(response.data); // 백엔드에서 온 데이터로 교체!
-          console.log("실제 데이터 안의 닉네임:", response.data.nickname);
+          // ✅ 3. 직접 useState에 넣지 않고 Store에 넣습니다.
+          // 이렇게 하면 EditScreen에서 바꿨을 때도 이미 Store가 바뀌어 있어서 이 로직이 필요 없을 수도 있습니다.
+          setUser(response.data); 
         }
       } catch (error) {
         console.error("내 정보 로딩 실패:", error);
-      } finally {
-        setLoading(false);
       }
     };
-    fetchMyData();
-  }, []);
 
+    // 앱 실행 후 처음 들어왔거나 데이터가 없을 때만 실행하도록 조건부로 걸면 더 좋습니다.
+    if (!user) fetchMyData();
+  }, []);
 
   const toggleHeart = (postId: number) => {
     setPosts(posts.map(p => 
@@ -118,6 +120,7 @@ export default function UserScreen() {
         <View style={styles.profileContainer}>
           <View style={styles.profileRow}>
             <View style={styles.avatarCircle}>
+              {/* ✅ Zustand의 user 정보를 실시간으로 렌더링 */}
               {user?.profileImageUrl ? (
                 <Image source={{ uri: user.profileImageUrl }} style={styles.avatarImage} />
               ) : (
@@ -126,10 +129,13 @@ export default function UserScreen() {
             </View>
 
             <View style={styles.profileTextContainer}>
-              <Text style={styles.nicknameText}>{user?.nickname}</Text>
-              <Text style={styles.bioText}>{user?.bio}</Text>
+              <Text style={styles.nicknameText}>{user?.nickname || '닉네임 없음'}</Text>
+              <Text style={styles.bioText}>{user?.bio || '아직 소개글이 없습니다.'}</Text>
               
-              <TouchableOpacity style={styles.profileEditButton} onPress={() => router.push('/(tabs)/user/edit')}>
+              <TouchableOpacity 
+                style={styles.profileEditButton} 
+                onPress={() => router.push('/(tabs)/user/edit')}
+              >
                 <Text style={styles.profileEditButtonText}>프로필 설정</Text>
               </TouchableOpacity>
             </View>
@@ -157,22 +163,20 @@ export default function UserScreen() {
         <View style={styles.listContainer}>
           {filteredPosts.map((post) => (
             <TouchableOpacity 
-            key={post.postId} 
-            style={styles.postCard}
-            // 🔥 내 게시물 전용 릴스 뷰로 이동
-            onPress={() => router.push({
-              pathname: `/user/post-feed/${post.postId}`, 
-            } as any)}
-          >  
-              {/* 텍스트 및 인터랙션 정보 */}
+              key={post.postId} 
+              style={styles.postCard}
+              onPress={() => router.push({
+                pathname: `/user/post-feed/${post.postId}`, 
+              } as any)}
+            >  
               <View style={styles.cardLeft}>
-              <Text style={styles.postTitle} numberOfLines={1}>
-        {post.content.length > 20 
-          ? `${post.content.substring(0, 20)}...` 
-          : post.content}
-      </Text>
-      
-      <Text style={styles.postDate}>{post.createdAt}</Text>  
+                <Text style={styles.postTitle} numberOfLines={1}>
+                  {post.content.length > 20 
+                    ? `${post.content.substring(0, 20)}...` 
+                    : post.content}
+                </Text>
+                
+                <Text style={styles.postDate}>{post.createdAt}</Text>  
                 <View style={styles.interactionRow}>
                   <View style={styles.iconGroup}>
                     <InteractionButton 
@@ -194,11 +198,9 @@ export default function UserScreen() {
                 </View>
               </View>
 
-              {/* 게시글 이미지 영역 */}
               <View style={styles.cardRight}>
                 <View style={styles.thumbnailPlaceholder} />
               </View>
-
             </TouchableOpacity>
           ))}
         </View>

@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import axios from 'axios'; // 👈 axios 꼭 있어야 함
 import { TopBar } from '@/components/layout/top-bar';
 import { ProfileInput } from '@/components/ui/profile-input';
-import { authService as userService, BASE_URL } from '@/services/auth-service'; // 👈 BASE_URL 같이 가져오기
-import { getToken } from '@/utils/storage'; // 👈 토큰 가져오기용
+import { authService } from '@/services/auth-service';
 import * as ImagePicker from 'expo-image-picker';
+import { useAuthStore } from '@/store/use-auth-store'; 
 
 export default function ProfileEditScreen() {
   const router = useRouter();
+  const { user, setUser } = useAuthStore();
   const [nickname, setNickname] = useState('');
   const [bio, setBio] = useState('');
   const [profileImageUrl, setProfileImageUrl] = useState('');
   const [newImage, setNewImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // ... (useEffect 부분은 잘 되니까 그대로 두셔도 됩니다)
+  useEffect(() => {
+    if (user) {
+      setNickname(user.nickname || '');
+      setBio(user.bio || '');
+      setProfileImageUrl(user.profileImageUrl || '');
+    }
+  }, [user]);
 
   const handleSave = async () => {
     if (!nickname.trim()) {
@@ -28,40 +34,31 @@ export default function ProfileEditScreen() {
     console.log("💾 [디버그] 저장 버튼 눌림!");
 
     try {
-      const token = await getToken();
-      
-      // 1. 이미지 포함해서 보낼 땐 FormData 필수
       const formData = new FormData();
       formData.append('nickname', nickname);
       formData.append('bio', bio);
       
       if (newImage) {
-        // 웹 브라우저용 이미지 처리
+        // 웹 브라우저용 이미지 처리 (기존 로직 유지)
         const response = await fetch(newImage.uri);
         const blob = await response.blob();
         formData.append('image', blob, 'profile.jpg');
       }
 
-      // 2. 서버로 전송 (PATCH로 일단 시도)
-      console.log("📡 [디버그] 서버로 쏘는 중...", `${BASE_URL}/api/users/profile`);
+      console.log("[디버그] 서버로 쏘는 중...");
       
-      const res = await axios.patch(`${BASE_URL}/api/users/profile`, formData, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      console.log("✅ [디버그] 서버 응답:", res.data);
-      Alert.alert('성공', '프로필이 변경되었습니다.', [
-        { text: '확인', onPress: () => router.back() }
-      ]);
+    
+      const res = await authService.updateProfile(formData);
+      if (res.success) {
+        
+        setUser(res.data);
+        Alert.alert('성공', '프로필이 변경되었습니다.', [
+          { text: '확인', onPress: () => router.back() }
+        ]);
+      }
     } catch (error: any) {
       console.error("❌ [디버그] 저장 에러:", error.response?.data || error.message);
-      
-      // 만약 405 에러 뜨면 .patch를 .post로만 바꾸면 됩니다.
-      const errorMsg = error.response?.status === 405 ? "서버 메서드 오류(POST로 시도해보세요)" : "저장에 실패했습니다.";
-      Alert.alert('오류', errorMsg);
+      Alert.alert('오류', '저장에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }

@@ -1,4 +1,5 @@
 const userService = require('../services/user.service');
+const jwt = require('jsonwebtoken');
 
 
 const checkDuplicate = async (req, res, next) => {
@@ -44,17 +45,29 @@ const signup = async (req, res, next) => {
     next(error); 
   }
 };
-
 const login = async (req, res, next) => {
   console.log("백엔드 로그인 요청 도착:", req.body);
   try {
     const { loginId, password } = req.body;
-    const result = await userService.loginUser(loginId, password);
+    const user = await userService.loginUser(loginId, password);
+
+    // ✅ 2. JWT 토큰 생성 (비밀키 'your_jwt_secret'은 본인 설정에 맞게 변경)
+    // 보통 process.env.JWT_SECRET 을 사용합니다.
+    const token = jwt.sign(
+      { id: user.userId, loginId: user.loginId }, 
+      process.env.JWT_SECRET || 'your_jwt_secret', 
+      { expiresIn: '24h' }
+    );
 
     return res.status(200).json({
       success: true,
       message: '로그인 성공',
-      data: result 
+      token: token, 
+      data: {
+        userId: user.userId,
+        loginId: user.loginId,
+        nickname: user.nickname
+      }
     });
   } catch (error) {
     next(error);
@@ -85,11 +98,17 @@ const changePassword = async (req, res, next) => {
     next(error); 
   }
 };
-
 const updateProfile = async (req, res, next) => {
   try {
-    const userId = req.user?.id || req.body.userId; 
-    
+    const userId = req.user?.id || req.user?.userId || req.body.userId;
+    console.log("🔍 [디버그] 추출된 userId:", userId);
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "인증되지 않은 사용자입니다." 
+      });
+    }
+
     const updateData = {
       nickname: req.body.nickname,
       bio: req.body.bio,

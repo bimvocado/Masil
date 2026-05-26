@@ -8,20 +8,20 @@ export const authService = {
   /**
    * 로그인 요청
    */
-  login: async (loginId: string, password: string): Promise<any> => { 
+  login: async (loginId: string, password: string) => {
     try {
-      const response = await apiClient.post('/api/users/login', {
-        loginId,
-        password,
-      });
+      const response = await apiClient.post('/api/users/login', { loginId, password });
       
-      const token = response.data.data?.token; 
+      // 💡 백엔드가 토큰을 어디에 담아주느냐가 핵심입니다.
+      const token = response.data?.token || response.data?.data?.token;
+  
       if (token) {
-
-        await saveToken(token);
-        console.log("✅ 토큰 저장 완료");
+        // 💡 여기서 확실히 저장!
+        await saveToken(token); 
+        console.log("✅ [성공] 주머니에 토큰 넣음! 값:", token);
+      } else {
+        console.error("❌ [실패] 서버 응답에 토큰이 없어요! 응답구조:", response.data);
       }
-
       return response.data;
     } catch (error) {
       console.error('로그인 에러:', error);
@@ -77,13 +77,10 @@ export const authService = {
    */
   updateProfile: async (formData: FormData) => {
     try {
-      const response = await apiClient.patch('/api/users/profile', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const response = await apiClient.patch('/api/users/profile', formData); // 💡 헤더 명시 삭제 (브라우저 자동 설정)
       return response.data;
     } catch (error) {
       console.error('프로필 수정 에러:', error);
       throw error;
     }
-  }
-};
+  } };
