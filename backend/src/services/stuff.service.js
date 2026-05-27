@@ -120,9 +120,12 @@ const getStuffsByBrandId = async (
   page = 0,
   size = 10
 ) => {
+  // URL params는 문자열로 들어오므로 숫자로 변환
+  const brandIdNum = Number(brandId);
+
   // 브랜드 존재 여부 확인
-  const brand = await stuffRepository.findBrandById(brandId);
-  console.log('[DEBUG] brandId 수신값:', brandId, '/ 타입:', typeof brandId);
+  const brand = await stuffRepository.findBrandById(brandIdNum);
+  console.log('[DEBUG] brandId 수신값:', brandIdNum, '/ 타입:', typeof brandIdNum);
   console.log('[DEBUG] brand 조회 결과:', brand ? `${brand.brandId} - ${brand.brandName}` : 'null (브랜드 없음)');
 
   if (!brand) {
@@ -139,14 +142,14 @@ const getStuffsByBrandId = async (
   }
 
   const stuffList = await stuffRepository.findStuffsByBrandId(
-    brandId,
+    brandIdNum,
     sort,
     page,
     size
   );
   console.log('[DEBUG] stuffList 결과:', stuffList.length, '개');
 
-  const totalElements = await stuffRepository.countStuffsByBrandId(brandId);
+  const totalElements = await stuffRepository.countStuffsByBrandId(brandIdNum);
   console.log('[DEBUG] totalElements:', totalElements);
 
   const pageNumber = Number(page);

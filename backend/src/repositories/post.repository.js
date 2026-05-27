@@ -64,7 +64,7 @@ const findPostsByUserId = async (userId) => {
         LEFT JOIN brands b ON st.brand_id = b.brand_id
         
         LEFT JOIN comments c ON p.post_id = c.post_id AND c.deleted_at IS NULL
-        LEFT JOIN interactions i ON p.post_id = i.post_id AND i.deleted_at IS NULL
+        LEFT JOIN interactions i ON p.stuff_id = i.stuff_id AND i.deleted_at IS NULL
         LEFT JOIN scraps s ON p.post_id = s.post_id AND s.deleted_at IS NULL
         
         WHERE p.user_id = :userId AND p.deleted_at IS NULL

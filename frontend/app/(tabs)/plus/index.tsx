@@ -84,7 +84,7 @@ export default function PlusScreen() {
   const handleStuffNameChange = async (value: string) => {
     setBrandName(value);
     setStuffId(null);
-    setSelectedBrandId(null);
+    // selectedBrandId는 초기화하지 않음 — 브랜드 선택 후 상품명 입력 시 브랜드가 사라지는 버그 방지
 
     const keyword = value.replace('@', '').trim();
 
@@ -154,6 +154,21 @@ export default function PlusScreen() {
     }
   };
 
+  // 업로드 완료 후 폼 전체 초기화
+  const resetForm = () => {
+    setStep(1);
+    setBrandName('');
+    setSelectedBrandId(null);
+    setSelectedBrandName('');
+    setBrandQuery('');
+    setBrandResults([]);
+    setContent('');
+    setImageUri(null);
+    setPrice('');
+    setStuffId(null);
+    setSuggestions([]);
+  };
+
   const handleUpload = async () => {
     try {
       if (!stuffId) {
@@ -173,8 +188,11 @@ export default function PlusScreen() {
       });
 
       console.log('게시글 등록 성공:', result);
-      Alert.alert('성공', '게시글이 등록되었습니다.');
 
+      // 성공 후 즉시 폼 초기화 (다시 + 탭 열었을 때 빈 화면으로 시작)
+      resetForm();
+
+      Alert.alert('성공', '게시글이 등록되었습니다.');
       router.push('/(tabs)/home' as Href);
     } catch (error: any) {
       console.error('게시글 등록 실패:', error);

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { TopBar } from '@/components/layout/top-bar';
 import { ProductCard } from '@/components/ui/product-card';
@@ -47,11 +47,14 @@ export default function BrandDetailScreen() {
     }
   };
 
-  useEffect(() => {
-    if (id) {
-      fetchStuffs();
-    }
-  }, [id]);
+  // 스크린에 포커스될 때마다 최신 상품 목록 재조회 (게시글 작성 후 돌아왔을 때도 반영)
+  useFocusEffect(
+    useCallback(() => {
+      if (id) {
+        fetchStuffs();
+      }
+    }, [id, sort])
+  );
 
   return (
     <View style={detailStyles.container}>

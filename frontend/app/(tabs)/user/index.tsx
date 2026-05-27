@@ -11,45 +11,51 @@ import { InteractionButton } from '@/constants/interaction-button';
 import { postService } from '@/services/post-service';
 import { authService } from '@/api/auth-service'; 
 
-import React, { useEffect, useState } from 'react'; 
-
+import React, { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 
 
 
 export default function UserScreen() {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
-  const router = useRouter(); 
+  const router = useRouter();
 
-  const { user, setUser } = useAuthStore(); 
-  
+  const { user, setUser } = useAuthStore();
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchMyData = async () => {
-      try {
-        if (!user?.userId) {
-          return; 
-        }
 
-        const response = await authService.getProfile(user.userId); 
-        if (response.success) {
-          setUser(response.data); 
-        }
+  // 탭 전환 후 돌아올 때도 최신 게시글을 불러오기 위해 useFocusEffect 사용
+  useFocusEffect(
+    useCallback(() => {
+      const fetchMyData = async () => {
+        try {
+          if (!user?.userId) {
+            setLoading(false);
+            return;
+          }
 
-        // 사용자 게시글 로드
-        const userPosts = await postService.getUserPosts(user.userId);
-        setPosts(userPosts || []);
-      } catch (error) {
-        console.error("게시글 로딩 실패:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchMyData();
-  }, [user?.userId]);
+          setLoading(true);
+
+          const response = await authService.getProfile(user.userId);
+          if (response.success) {
+            setUser(response.data);
+          }
+
+          // 사용자 게시글 로드
+          const userPosts = await postService.getUserPosts(user.userId);
+          setPosts(userPosts || []);
+        } catch (error) {
+          console.error("게시글 로딩 실패:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchMyData();
+    }, [user?.userId])
+  );
   
   const toggleHeart = (postId: number) => {
     setPosts(posts.map(p => 
