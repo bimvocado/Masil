@@ -1,4 +1,5 @@
 const userService = require('../services/user.service');
+const postService = require('../services/post.service');
 const jwt = require('jsonwebtoken');
 const ApiResponse = require('../utils/api.response.util');
 /**
@@ -120,4 +121,18 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-module.exports = { signup, login, getProfile, checkDuplicate, changePassword, updateProfile };
+/**
+ * 7. 사용자별 게시글 조회
+ */
+const getUserPosts = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const posts = await postService.getUserPosts(Number(userId));
+    
+    return ApiResponse.send(res, posts, '사용자 게시글 조회 성공');
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { signup, login, getProfile, checkDuplicate, changePassword, updateProfile, getUserPosts };

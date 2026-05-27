@@ -108,10 +108,40 @@ const deletePost = async (postId, userId) => {
 };
 
 
+// 사용자별 게시글 조회
+const getUserPosts = async (userId) => {
+  const posts = await postRepository.findPostsByUserId(userId);
+  
+  return posts.map((post) => ({
+    postId: post.postId,
+    userId: post.userId,
+    stuffId: post.stuffId,
+    content: post.content,
+    imageUrl: post.imageUrl,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    
+    nickname: post.nickname,
+    profileImageUrl: post.profileImageUrl,
+    
+    stuffName: post.stuffName,
+    price: Number(post.price || 0),
+    
+    brandId: post.brandId,
+    brandName: post.brandName,
+    
+    commentCount: Number(post.commentCount || 0),
+    likeCount: Number(post.likeCount || 0),
+    dislikeCount: Number(post.dislikeCount || 0),
+    scrapCount: Number(post.scrapCount || 0),
+  }));
+};
+
 module.exports = {
   createPost,
   getPosts,
   getPost,
   updatePost,
   deletePost,
+  getUserPosts,
 };

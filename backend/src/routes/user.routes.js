@@ -10,6 +10,7 @@ router.post('/signup', validateSignup, userController.signup);
 router.get('/check-duplicate', userController.checkDuplicate);
 
 router.get('/profile/:userId', userController.getProfile);
+router.get('/:userId/posts', userController.getUserPosts);
 
 router.patch('/profile', authMiddleware, upload.single('image'), userController.updateProfile);
 router.patch('/change-password', authMiddleware, userController.changePassword);

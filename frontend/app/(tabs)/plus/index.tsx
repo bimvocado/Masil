@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -34,6 +34,7 @@ export default function PlusScreen() {
   const [content, setContent] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [price, setPrice] = useState<string>('');
+  const [brandCategory, setBrandCategory] = useState<'FOOD' | 'HOUSEHOLD'>('FOOD');
 
   const [stuffId, setStuffId] = useState<number | null>(null);
   const [suggestions, setSuggestions] = useState<StuffSuggestion[]>([]);
@@ -63,6 +64,22 @@ export default function PlusScreen() {
       setImageUri(result.assets[0].uri);
     }
   };
+
+  useEffect(() => {
+    if (isBrandModalVisible) {
+      // 모달 열릴 때 해당 카테고리의 모든 브랜드 로드
+      const loadBrands = async () => {
+        try {
+          const res = await searchService.getBrands('', brandCategory);
+          setBrandResults(res.data || []);
+        } catch (e) {
+          console.error('브랜드 로드 실패:', e);
+          setBrandResults([]);
+        }
+      };
+      loadBrands();
+    }
+  }, [isBrandModalVisible, brandCategory]);
 
   const handleStuffNameChange = async (value: string) => {
     setBrandName(value);
@@ -212,6 +229,41 @@ export default function PlusScreen() {
 
               <Modal visible={isBrandModalVisible} animationType="slide">
                 <View style={{ flex: 1, padding: 20 }}>
+                  {/* 카테고리 토글 */}
+                  <View style={{ flexDirection: 'row', marginBottom: 12, gap: 8 }}>
+                    <TouchableOpacity
+                      onPress={() => setBrandCategory('FOOD')}
+                      style={{
+                        flex: 1,
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 8,
+                        backgroundColor: brandCategory === 'FOOD' ? Colors.masil.button : '#eee',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: brandCategory === 'FOOD' ? '#fff' : '#333', fontWeight: '600' }}>
+                        음식
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setBrandCategory('HOUSEHOLD')}
+                      style={{
+                        flex: 1,
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 8,
+                        backgroundColor: brandCategory === 'HOUSEHOLD' ? Colors.masil.button : '#eee',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: brandCategory === 'HOUSEHOLD' ? '#fff' : '#333', fontWeight: '600' }}>
+                        물건
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* 검색 입력 */}
                   <View style={{ flexDirection: 'row', marginBottom: 12 }}>
                     <TextInput
                       placeholder="브랜드 검색"
@@ -222,7 +274,7 @@ export default function PlusScreen() {
                     <TouchableOpacity
                       onPress={async () => {
                         try {
-                          const res = await searchService.getBrands(brandQuery || '', 'FOOD');
+                          const res = await searchService.getBrands(brandQuery || '', brandCategory);
                           setBrandResults(res.data || []);
                         } catch (e) {
                           console.error(e);

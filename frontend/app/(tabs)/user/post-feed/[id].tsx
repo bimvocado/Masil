@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity,
-  Modal, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView,
+  Modal, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Post } from '@/types/post';
@@ -11,25 +11,9 @@ import { commentService } from '@/api/comment-service';
 import { scrapService } from '@/api/scrap-service';
 import { categoryService } from '@/api/category-service';
 import { useAuthStore } from '@/store/use-auth-store';
+import { postService } from '@/services/post-service';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
-
-const MOCK_POSTS: Post[] = [
-  {
-    postId: 1,
-    userId: 999,
-    stuffId: 101,
-    content: '맛있네요ㄷㄷㄷㄷㄷㄷㄷㄷㄷㄷㅇㅇㅇㅇㅇ',
-    createdAt: '2024.05.19',
-    updatedAt: '2024.05.19',
-    brandId: 3,
-    stuffName: '새우버거',
-    likeCount: 123,
-    commentCount: 10,
-    isScrapped: false,
-    scrapCount: 3,
-  },
-];
 
 export default function UserPostFeedScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -37,16 +21,36 @@ export default function UserPostFeedScreen() {
   const { user } = useAuthStore();
   const postId = Number(id);
 
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [newCommentText, setNewCommentText] = useState('');
 
+  const [interactions, setInteractions] = useState<{ [key: number]: { liked: boolean; disliked: boolean } }>({});
   const [isScrapped, setIsScrapped] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  const initialIndex = MOCK_POSTS.findIndex(p => p.postId.toString() === id);
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        if (!user?.userId) return;
+        
+        // 사용자의 모든 게시글 로드
+        const userPosts = await postService.getUserPosts(user.userId);
+        setAllPosts(userPosts || []);
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('게시글 로드 실패:', error);
+        setLoading(false);
+      }
+    };
+    
+    loadPosts();
+  }, [user?.userId]);
 
   useEffect(() => {
     if (!user || !postId) return;
@@ -105,24 +109,66 @@ export default function UserPostFeedScreen() {
     } catch {}
   };
 
+  const toggleLike = (postId: number) => {
+    setInteractions(prev => ({
+      ...prev,
+      [postId]: {
+        liked: !prev[postId]?.liked,
+        disliked: false,
+      }
+    }));
+  };
+
+  const toggleDislike = (postId: number) => {
+    setInteractions(prev => ({
+      ...prev,
+      [postId]: {
+        liked: false,
+        disliked: !prev[postId]?.disliked,
+      }
+    }));
+  };
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color="#fff" size="large" />
+      </View>
+    );
+  }
+
+  const initialIndex = Math.max(0, allPosts.findIndex(p => p.postId === postId));
+
   const renderItem = ({ item }: { item: Post }) => (
     <View style={styles.page}>
       <View style={styles.backgroundContainer}>
-        <Text style={styles.emptyText}>내가 올린 사진 영역</Text>
+        {item.imageUrl ? (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={{ flex: 1, width: '100%' }}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={styles.emptyText}>이미지 없음</Text>
+        )}
       </View>
 
       <View style={styles.rightOverlay}>
         <View style={styles.iconGroup}>
-          <Text style={styles.icon}>👍</Text>
-          <Text style={styles.iconCount}>{item.likeCount}</Text>
+          <TouchableOpacity onPress={() => toggleLike(item.postId)} style={{ alignItems: 'center' }}>
+            <Text style={[styles.icon, { color: interactions[item.postId]?.liked ? '#FF6B6B' : '#fff' }]}>👍</Text>
+            <Text style={styles.iconCount}>{interactions[item.postId]?.liked ? (item.likeCount || 0) + 1 : (item.likeCount || 0)}</Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.iconGroup}>
-          <Text style={styles.icon}>👎</Text>
-          <Text style={styles.iconCount}>{item.likeCount}</Text>
+          <TouchableOpacity onPress={() => toggleDislike(item.postId)} style={{ alignItems: 'center' }}>
+            <Text style={[styles.icon, { color: interactions[item.postId]?.disliked ? '#6B9BD1' : '#fff' }]}>👎</Text>
+            <Text style={styles.iconCount}>{interactions[item.postId]?.disliked ? (item.dislikeCount || 0) + 1 : (item.dislikeCount || 0)}</Text>
+          </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.iconGroup} onPress={handleOpenComments}>
           <Text style={styles.icon}>💬</Text>
-          <Text style={styles.iconCount}>{item.commentCount}</Text>
+          <Text style={styles.iconCount}>{item.commentCount || 0}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconGroup} onPress={handleScrapPress}>
           <Text style={styles.icon}>{isScrapped ? '🔖' : '📌'}</Text>
@@ -132,9 +178,11 @@ export default function UserPostFeedScreen() {
       <View style={styles.bottomOverlay}>
         <View style={styles.userRow}>
           <View style={styles.userCircle}>
-            <Text style={{ color: '#fff', fontSize: 12 }}>L</Text>
+            <Text style={{ color: '#fff', fontSize: 12 }}>
+              {item.nickname?.charAt(0) || 'U'}
+            </Text>
           </View>
-          <Text style={styles.postTitle}>{item.stuffName}</Text>
+          <Text style={styles.postTitle}>{item.stuffName} - {item.brandName}</Text>
         </View>
         <Text style={styles.content}>{item.content}</Text>
       </View>
@@ -148,7 +196,7 @@ export default function UserPostFeedScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <FlatList
-        data={MOCK_POSTS}
+        data={allPosts}
         renderItem={renderItem}
         keyExtractor={(item) => item.postId.toString()}
         pagingEnabled
