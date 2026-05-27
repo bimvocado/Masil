@@ -7,6 +7,8 @@ const Comment = require('./comment.model');
 const Scrap = require('./scrap.model');
 const Category = require('./category.model');
 const Interaction = require('./interaction.model');
+const hashtag = require('./hashtag.model');
+const PostHashtag = require('./postHashtag.model');
 
 module.exports = {
   sequelize,
@@ -18,4 +20,6 @@ module.exports = {
   Scrap,
   Category,
   Interaction,
+  hashtag,
+  PostHashtag
 };

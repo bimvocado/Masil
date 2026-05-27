@@ -1,4 +1,5 @@
-import { View, Text, Image, TouchableOpacity, ScrollView, TextInput, ActivityIndicator
+import { 
+  View, Text, Image, TouchableOpacity, ScrollView, TextInput, ActivityIndicator 
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TopBar } from '@/components/layout/top-bar';
@@ -14,7 +15,8 @@ import { authService } from '@/api/auth-service';
 import React, { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 
-
+// 💡 서버 주소 설정 (환경에 맞게 수정하세요)
+const BASE_URL = 'http://localhost:3000';
 
 export default function UserScreen() {
   const insets = useSafeAreaInsets();
@@ -26,35 +28,42 @@ export default function UserScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 탭 전환 후 돌아올 때도 최신 게시글을 불러오기 위해 useFocusEffect 사용
+const getImageUrl = (url: string | null | undefined) => {
+  if (!url) return undefined; // 👈 null 대신 undefined!
+  return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+};
+
+  // 탭 전환 후 돌아올 때도 최신 데이터를 불러오기 위해 useFocusEffect 사용
   useFocusEffect(
     useCallback(() => {
       const fetchMyData = async () => {
+        if (!user?.userId) {
+          console.log("⚠️ 유저 정보가 아직 없습니다.");
+          setLoading(false); 
+          return;
+        }
+  
         try {
-          if (!user?.userId) {
-            setLoading(false);
-            return;
-          }
-
           setLoading(true);
-
-          const response = await authService.getProfile(user.userId);
-          if (response.success) {
-            setUser(response.data);
+          // 1. 프로필 최신 정보로 갱신 (Zustand 동기화)
+          const profileRes = await authService.getProfile(user.userId);
+          
+          if (profileRes.success && profileRes.data) {
+            setUser({ ...profileRes.data }); // 새 객체로 업데이트하여 반응성 보장
+            
+            // 2. 게시글 리스트 갱신
+            const userPosts = await postService.getUserPosts(profileRes.data.userId);
+            setPosts(userPosts || []);
           }
-
-          // 사용자 게시글 로드
-          const userPosts = await postService.getUserPosts(user.userId);
-          setPosts(userPosts || []);
-        } catch (error) {
-          console.error("게시글 로딩 실패:", error);
+        } catch (error: any) {
+          console.error("❌ 데이터 로딩 중 에러:", error.message);
         } finally {
           setLoading(false);
         }
       };
-
+  
       fetchMyData();
-    }, [user?.userId])
+    }, [user?.userId]) 
   );
   
   const toggleHeart = (postId: number) => {
@@ -72,12 +81,14 @@ export default function UserScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 상단 바 영역 */}
       <TopBar 
         title="내 정보" 
         showBackButton={true}
         rightIcon={
-          <TouchableOpacity onPress={() => router.push('/(tabs)/user/settings')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity 
+            onPress={() => router.push('/(tabs)/user/settings')} 
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Image
               source={require('@/assets/icons/setting.png')}
               style={{ width: 18, height: 18, tintColor: '#aaa'}}
@@ -94,14 +105,18 @@ export default function UserScreen() {
         {/* 프로필 정보 영역 */}
         <View style={styles.profileContainer}>
           <View style={styles.profileRow}>
-            <View style={styles.avatarCircle}>
-              {/* ✅ Zustand의 user 정보를 실시간으로 렌더링 */}
-              {user?.profileImageUrl ? (
-                <Image source={{ uri: user.profileImageUrl }} style={styles.avatarImage} />
-              ) : (
-                <View style={styles.avatarPlaceholder} />
-              )}
-            </View>
+          <View style={styles.avatarCircle}>
+  {user?.profileImageUrl ? (
+    <Image 
+      key={user.profileImageUrl}
+
+      source={{ uri: getImageUrl(user.profileImageUrl) }} 
+      style={styles.avatarImage}
+    />
+  ) : (
+    <View style={styles.avatarPlaceholder} />
+  )}
+</View>
 
             <View style={styles.profileTextContainer}>
               <Text style={styles.nicknameText}>{user?.nickname || '닉네임 없음'}</Text>
@@ -117,7 +132,7 @@ export default function UserScreen() {
           </View>
         </View>
 
-        {/* 올렸던 상품/작성일자 중간 검색창 */}
+        {/* 검색창 영역 */}
         <View style={styles.filterContainer}>
           <View style={styles.filterBar}>
             <Image
@@ -183,7 +198,7 @@ export default function UserScreen() {
                 <View style={styles.cardRight}>
                   {post.imageUrl ? (
                     <Image
-                      source={{ uri: post.imageUrl }}
+                      source={{ uri: getImageUrl(post.imageUrl) }} // 👈 게시글 사진에도 서버 주소 적용
                       style={styles.thumbnailPlaceholder}
                       resizeMode="cover"
                     />

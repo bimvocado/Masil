@@ -16,7 +16,7 @@ export default function TabLayout() {
       <Tabs.Screen name="bookmark/index" />
       <Tabs.Screen name="search/index" />
       <Tabs.Screen name="plus/index" />
-      <Tabs.Screen name="user/index" />
+      <Tabs.Screen name="user" />
     </Tabs>
   );
 }
