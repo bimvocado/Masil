@@ -18,6 +18,11 @@ export const stuffService = {
     return response.data.data;
   },
 
+  createStuff: async (data: { brandId: number; stuffName: string; price?: number }) => {
+    const response = await axios.post(`${BASE_URL}/api/stuffs`, data);
+    return response.data.data;
+  },
+
   findOrCreateStuff: async (stuffName: string): Promise<StuffSuggestion> => {
     const response = await axios.post(`${BASE_URL}/api/stuffs/find-or-create`, {
       stuffName,

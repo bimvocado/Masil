@@ -33,8 +33,9 @@ export const styles = StyleSheet.create({
 
   // 정사각형 이미지 업로드 
   imageUploadCard: {
-    width: '100%',
-    aspectRatio: 1,
+    width: '70%',
+    height: 200,
+    alignSelf: 'center',
     backgroundColor: '#ffffff',
     borderRadius: 32,
     justifyContent: 'center',
@@ -50,6 +51,11 @@ export const styles = StyleSheet.create({
     width: 60,
     height: 60,
     tintColor: Colors.masil.icon,
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 32,
   },
 
   // 브랜드 이름 입력

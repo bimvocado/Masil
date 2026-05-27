@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Modal,
 } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,6 +18,7 @@ import { styles } from '@/components/styles/plus';
 import { Colors } from '@/constants/colors';
 import { postService } from '@/services/post-service';
 import { stuffService, StuffSuggestion } from '@/services/stuff-service';
+import { searchService } from '@/api/search-service';
 import { TopBar } from '@/components/layout/top-bar';
 
 export default function PlusScreen() {
@@ -24,8 +26,14 @@ export default function PlusScreen() {
 
   const [step, setStep] = useState<1 | 2>(1);
   const [brandName, setBrandName] = useState('');
+  const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
+  const [selectedBrandName, setSelectedBrandName] = useState('');
+  const [isBrandModalVisible, setIsBrandModalVisible] = useState(false);
+  const [brandQuery, setBrandQuery] = useState('');
+  const [brandResults, setBrandResults] = useState<any[]>([]);
   const [content, setContent] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [price, setPrice] = useState<string>('');
 
   const [stuffId, setStuffId] = useState<number | null>(null);
   const [suggestions, setSuggestions] = useState<StuffSuggestion[]>([]);
@@ -59,6 +67,7 @@ export default function PlusScreen() {
   const handleStuffNameChange = async (value: string) => {
     setBrandName(value);
     setStuffId(null);
+    setSelectedBrandId(null);
 
     const keyword = value.replace('@', '').trim();
 
@@ -91,10 +100,35 @@ export default function PlusScreen() {
         return;
       }
 
-      const result = await stuffService.findOrCreateStuff(cleanName);
+      if (!selectedBrandId) {
+        Alert.alert('알림', '브랜드를 먼저 선택해주세요. 좌측 원을 눌러 브랜드를 선택하세요.');
+        return;
+      }
 
-      setStuffId(result.stuffId);
-      setBrandName(`@${result.stuffName}`);
+      // 먼저 같은 이름의 상품이 있는지 조회
+      const searchResult = await stuffService.searchStuffs(cleanName);
+      const existing = searchResult.find((s: any) => s.stuffName === cleanName && s.brandId === selectedBrandId);
+
+      if (existing) {
+        setStuffId(existing.stuffId);
+        setBrandName(`@${existing.stuffName}`);
+        setSelectedBrandName(selectedBrandName || '');
+        setSuggestions([]);
+        setStep(2);
+        return;
+      }
+
+      // 없으면 새로 생성 (가격 포함)
+      const priceValue = Number(price) || 0;
+      const created = await stuffService.createStuff({
+        brandId: selectedBrandId,
+        stuffName: cleanName,
+        price: priceValue,
+      });
+
+      setStuffId(created.stuffId);
+      setBrandName(`@${created.stuffName}`);
+      setSelectedBrandName(created.brandName || selectedBrandName || '');
       setSuggestions([]);
       setStep(2);
     } catch (error: any) {
@@ -149,7 +183,7 @@ export default function PlusScreen() {
                 {imageUri ? (
                   <Image
                     source={{ uri: imageUri }}
-                    style={styles.imageIconPlaceHolder}
+                    style={styles.previewImage}
                     resizeMode="cover"
                   />
                 ) : (
@@ -162,7 +196,9 @@ export default function PlusScreen() {
               </TouchableOpacity>
 
               <View style={styles.userInfoCard}>
-                <View style={styles.avatarPlaceholder} />
+                <TouchableOpacity onPress={() => setIsBrandModalVisible(true)}>
+                  <View style={styles.avatarPlaceholder} />
+                </TouchableOpacity>
                 <View style={styles.nameInputWrapper}>
                   <TextInput
                     placeholder="@이름 작성"
@@ -173,6 +209,49 @@ export default function PlusScreen() {
                   />
                 </View>
               </View>
+
+              <Modal visible={isBrandModalVisible} animationType="slide">
+                <View style={{ flex: 1, padding: 20 }}>
+                  <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+                    <TextInput
+                      placeholder="브랜드 검색"
+                      value={brandQuery}
+                      onChangeText={setBrandQuery}
+                      style={{ flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 8 }}
+                    />
+                    <TouchableOpacity
+                      onPress={async () => {
+                        try {
+                          const res = await searchService.getBrands(brandQuery || '', 'FOOD');
+                          setBrandResults(res.data || []);
+                        } catch (e) {
+                          console.error(e);
+                          setBrandResults([]);
+                        }
+                      }}
+                      style={{ marginLeft: 8, justifyContent: 'center', paddingHorizontal: 12, backgroundColor: Colors.masil.button, borderRadius: 8 }}
+                    >
+                      <Text style={{ color: '#fff' }}>찾기</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <ScrollView>
+                    {brandResults.map((b) => (
+                      <TouchableOpacity key={b.brandId} style={{ padding: 12, borderBottomWidth: 1, borderColor: '#eee' }} onPress={() => {
+                        setSelectedBrandId(b.brandId);
+                        setSelectedBrandName(b.brandName);
+                        setIsBrandModalVisible(false);
+                      }}>
+                        <Text>{b.brandName}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+
+                  <TouchableOpacity onPress={() => setIsBrandModalVisible(false)} style={{ marginTop: 12, padding: 12, alignItems: 'center' }}>
+                    <Text>닫기</Text>
+                  </TouchableOpacity>
+                </View>
+              </Modal>
 
               {suggestions.length > 0 && (
                 <View style={{ backgroundColor: '#fff', borderRadius: 12, marginTop: 8, padding: 8 }}>
@@ -187,6 +266,17 @@ export default function PlusScreen() {
                   ))}
                 </View>
               )}
+
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>가격 (선택, 신규 생성 시 사용)</Text>
+                <TextInput
+                  placeholder="예: 12000"
+                  keyboardType="numeric"
+                  value={price}
+                  onChangeText={setPrice}
+                  style={{ borderWidth: 1, borderColor: '#eee', padding: 8, borderRadius: 8 }}
+                />
+              </View>
 
               <TouchableOpacity style={styles.submitButton} onPress={handleNext}>
                 <Text style={styles.submitButtonText}>다음</Text>
