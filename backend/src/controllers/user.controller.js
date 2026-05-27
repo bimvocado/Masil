@@ -24,15 +24,10 @@ const checkDuplicate = async (req, res, next) => {
 const signup = async (req, res, next) => {
   try {
     const { loginId, email } = req.body;
-    
     const idExists = await userService.checkExists('loginId', loginId);
-    const emailExists = await userService.checkExists('email', email);
+    if (idExists) return ApiResponse.sendError(res, '이미 존재하는 아이디입니다.', 400);
 
-    if (idExists || emailExists) {
-      return ApiResponse.sendError(res, idExists ? '이미 존재하는 아이디입니다.' : '이미 존재하는 이메일입니다.', 400);
-    }
     const newUser = await userService.signup(req.body);
-
     return ApiResponse.send(res, { userId: newUser.userId }, '회원가입 성공!', 201);
   } catch (error) {
     next(error); 

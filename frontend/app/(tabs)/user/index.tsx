@@ -56,32 +56,33 @@ export default function UserScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter(); 
 
-  // ✅ 1. Zustand Store에서 유저 정보와 로딩 함수 가져오기
-  // (만약 store에 fetchMyProfile 같은 함수를 안 만드셨다면 아래 useEffect 방식 유지)
   const { user, setUser } = useAuthStore(); 
   
   const [posts, setPosts] = useState(MOCK_POSTS);
   const [loading, setLoading] = useState(false); // 스토어에 데이터가 있으면 바로 보여주려고 false 시작 가능
   
   useEffect(() => {
-    // ✅ 2. 화면 진입 시 한 번은 최신 데이터를 긁어와서 Store를 업데이트 해줍니다.
     const fetchMyData = async () => {
       try {
-        const response = await authService.getProfile(user?.userId || 1); 
+        console.log("🔍 [화면] 현재 스토어의 user 정보:", user); // 1. 현재 스토어 상태 확인
+  
+        if (!user?.userId) {
+          console.log("⚠️ [화면] userId가 없어서 fetch를 중단함");
+          return; 
+        }
+
+        const response = await authService.getProfile(user.userId); 
+        console.log("✅ [화면] 서버 응답 데이터:", response.data); // 2. 서버가 준 데이터 확인
+
         if (response.success) {
-          // ✅ 3. 직접 useState에 넣지 않고 Store에 넣습니다.
-          // 이렇게 하면 EditScreen에서 바꿨을 때도 이미 Store가 바뀌어 있어서 이 로직이 필요 없을 수도 있습니다.
           setUser(response.data); 
         }
       } catch (error) {
-        console.error("내 정보 로딩 실패:", error);
+        console.error("❌ [화면] 내 정보 로딩 실패:", error);
       }
     };
-
-    // 앱 실행 후 처음 들어왔거나 데이터가 없을 때만 실행하도록 조건부로 걸면 더 좋습니다.
-    if (!user) fetchMyData();
-  }, []);
-
+    fetchMyData();
+  }, [user?.userId]);
   const toggleHeart = (postId: number) => {
     setPosts(posts.map(p => 
       p.postId === postId 
