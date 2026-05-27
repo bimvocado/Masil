@@ -10,7 +10,7 @@ export const authService = {
    */
   login: async (loginId: string, password: string) => {
     try {
-      const response = await apiClient.post('/api/users/login', { loginId, password });
+      const response = await apiClient.post('/api/auth/login', { loginId, password });
       
       // 💡 백엔드가 토큰을 어디에 담아주느냐가 핵심입니다.
       const token = response.data?.token || response.data?.data?.token;
