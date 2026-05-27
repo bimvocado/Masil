@@ -30,7 +30,7 @@ export const authService = {
   login: async (loginId: string, password: string) => {
     try {
       console.log("🚀 [디버그] 로그인 API 호출 시작 (ID: " + loginId + ")");
-      const response = await apiClient.post('/api/users/login', { loginId, password });
+      const response = await apiClient.post('/api/auth/login', { loginId, password });
       
       console.log("📡 [디버그] 서버 응답 도착:", response.data);
 

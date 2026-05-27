@@ -101,6 +101,16 @@ app.get('/', (req, res) => {
   });
 });
 
+// 글로벌 에러 핸들러 (반드시 라우터 등록 뒤에 위치해야 함)
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  console.error(`[에러] ${status} - ${err.message}`);
+  res.status(status).json({
+    success: false,
+    message: err.message || '서버 오류가 발생했습니다.',
+  });
+});
+
 app.listen(port, () => {
   console.log(`서버 실행 중: http://localhost:${port}`);
 });
