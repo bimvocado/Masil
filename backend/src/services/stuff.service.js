@@ -122,6 +122,8 @@ const getStuffsByBrandId = async (
 ) => {
   // 브랜드 존재 여부 확인
   const brand = await stuffRepository.findBrandById(brandId);
+  console.log('[DEBUG] brandId 수신값:', brandId, '/ 타입:', typeof brandId);
+  console.log('[DEBUG] brand 조회 결과:', brand ? `${brand.brandId} - ${brand.brandName}` : 'null (브랜드 없음)');
 
   if (!brand) {
     throw new Error('존재하지 않는 브랜드입니다.');
@@ -142,8 +144,10 @@ const getStuffsByBrandId = async (
     page,
     size
   );
+  console.log('[DEBUG] stuffList 결과:', stuffList.length, '개');
 
   const totalElements = await stuffRepository.countStuffsByBrandId(brandId);
+  console.log('[DEBUG] totalElements:', totalElements);
 
   const pageNumber = Number(page);
   const pageSize = Number(size);
