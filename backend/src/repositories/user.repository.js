@@ -1,14 +1,24 @@
-const pool = require('../config/db');
+const User = require('../models/user.model');
 
 const createUser = async (userData) => {
-  const { login_id, email, password_hash, nickname, birth_date } = userData;
-  const query = `
-    INSERT INTO users (login_id, email, password_hash, nickname, birth_date)
-    VALUES ($1, $2, $3, $4, $5) RETURNING user_id;
-  `;
-  const values = [login_id, email, password_hash, nickname, birth_date];
-  const result = await pool.query(query, values);
-  return result.rows[0];
+  const newUser = await User.create({
+    loginId: userData.loginId,
+    email: userData.email,
+    passwordHash: userData.passwordHash,
+    nickname: userData.nickname,
+    birthDate: userData.birthDate,
+    isKorean: userData.isKorean ?? true
+  });
+  
+  return newUser;
 };
 
-module.exports = { createUser };
+
+const findByLoginId = async (loginId) => {
+  return await User.findOne({ where: { loginId } });
+};
+
+module.exports = { 
+  createUser,
+  findByLoginId 
+};

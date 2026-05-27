@@ -76,62 +76,61 @@ const getUserById = async (userId) => {
 
 /*비밀번호 수정 로직*/
 const updatePassword = async (userId, currentPassword, newPassword) => {
-  console.log(`[서비스] 비밀번호 변경 시도 - userId: ${userId}`);
-
-  // 1. 유저 조회 (raw: true를 쓰면 save()를 못하므로 인스턴스로 가져옵니다)
   const user = await User.findByPk(userId); 
   
-  if (!user) {
-    throw new Error('해당 유저를 찾을 수 없습니다.');
+  if (!user) throw new Error('해당 유저를 찾을 수 없습니다.');
+
+  if (user.provider !== 'local') {
+    const error = new Error('소셜 계정은 비밀번호를 변경할 수 없습니다. 해당 소셜 서비스에서 변경해주세요.');
+    error.status = 400;
+    throw error;
   }
 
-  // 2. 비밀번호 비교 (모델 필드명인 passwordHash 사용!)
-  // currentPassword: 사용자가 입력한 값 / user.passwordHash: DB에 저장된 암호화 값
   const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
-  
   if (!isMatch) {
     const error = new Error('현재 비밀번호가 일치하지 않습니다.');
     error.status = 400;
     throw error;
   }
-
-  // 3. 새 비밀번호 암호화
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(newPassword, salt);
   
-  // 4. DB 업데이트 (모델 필드명에 맞춰서 저장)
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
   user.passwordHash = hashedPassword;
   await user.save(); 
   
-  console.log(`[서비스] userId: ${userId} 비밀번호 변경 완료`);
   return true;
 };
 
 const socialLoginOrSignup = async (googleData) => {
   const { sub, email, name, picture } = googleData;
 
-  // 1. 이미 구글로 가입한 유저가 있는지 확인
   let user = await User.findOne({ 
     where: { socialId: sub, provider: 'google' } 
   });
 
   if (!user) {
-    // 2. 없으면 회원가입
+    const existingEmailUser = await User.findOne({ where: { email } });
+    
+    if (existingEmailUser) {
+      const error = new Error(`이미 해당 이메일(${email})로 가입된 계정이 존재합니다. 기존 계정으로 로그인해 주세요.`);
+      error.status = 409; // Conflict
+      throw error;
+    }
+
     user = await User.create({
-      loginId: `google_${sub}`, // 중복 방지용 임시 ID
+      loginId: `google_${sub}`,
       email: email,
       nickname: name,
-      passwordHash: 'SOCIAL_AUTH_USER', // 소셜 유저 구분용
+      passwordHash: 'SOCIAL_AUTH_USER', 
       socialId: sub,
       provider: 'google',
       profileImageUrl: picture,
-      isKorean: true // 기본값
+      isKorean: true 
     });
   }
 
-  // 3. 유저 정보 반환 (이후 컨트롤러에서 JWT 발급)
   return user;
 };
+
 
 const updateUserProfile = async (userId, updateData) => {
   try {

@@ -1,6 +1,6 @@
 const userService = require('../services/user.service');
 const jwt = require('jsonwebtoken');
-
+const ApiResponse = require('../utils/api.response.util');
 /**
  * 1. 중복 확인
  */
@@ -9,11 +9,10 @@ const checkDuplicate = async (req, res, next) => {
     const { type, value } = req.query; 
     const isDuplicate = await userService.checkExists(type, value);
 
-    return res.status(200).json({
-      success: true,
-      isDuplicate,
-      message: isDuplicate ? `이미 사용 중인 ${type}입니다.` : `사용 가능한 ${type}입니다.`
-    });
+    return ApiResponse.send(res, 
+      { isDuplicate }, 
+      isDuplicate ? `이미 사용 중인 ${type}입니다.` : `사용 가능한 ${type}입니다.`
+    );
   } catch (error) {
     next(error);
   }
@@ -30,19 +29,11 @@ const signup = async (req, res, next) => {
     const emailExists = await userService.checkExists('email', email);
 
     if (idExists || emailExists) {
-      return res.status(400).json({
-        success: false,
-        message: idExists ? '이미 존재하는 아이디입니다.' : '이미 존재하는 이메일입니다.'
-      });
+      return ApiResponse.sendError(res, idExists ? '이미 존재하는 아이디입니다.' : '이미 존재하는 이메일입니다.', 400);
     }
-
     const newUser = await userService.signup(req.body);
 
-    return res.status(201).json({
-      success: true,
-      message: '회원가입 성공!',
-      data: { userId: newUser.userId }
-    });
+    return ApiResponse.send(res, { userId: newUser.userId }, '회원가입 성공!', 201);
   } catch (error) {
     next(error); 
   }
@@ -62,17 +53,15 @@ const login = async (req, res, next) => {
       { expiresIn: '24h' }
     );
 
-    return res.status(200).json({
-      success: true,
-      message: '로그인 성공',
-      token: token, 
-      data: {
-        userId: user.userId || user.id,
+    return ApiResponse.send(res, {
+      token,
+      user: {
+        userId: user.userId,
         loginId: user.loginId,
         nickname: user.nickname,
         profileImageUrl: user.profileImageUrl
       }
-    });
+    }, '로그인 성공');
   } catch (error) {
     next(error);
   }
@@ -85,7 +74,7 @@ const getProfile = async (req, res, next) => {
   try {
     const { userId } = req.params; 
     const user = await userService.getUserById(userId);
-    res.status(200).json({ success: true, data: user });
+    return ApiResponse.send(res, user, '프로필 조회 성공');
   } catch (error) {
     next(error);
   }
@@ -96,13 +85,11 @@ const getProfile = async (req, res, next) => {
  */
 const changePassword = async (req, res, next) => {
   try {
-    const { userId, currentPassword, newPassword } = req.body;
+    const userId = req.user.userId;
+    const { currentPassword, newPassword } = req.body;
     await userService.updatePassword(userId, currentPassword, newPassword);
 
-    return res.status(200).json({
-      success: true,
-      message: '비밀번호가 변경되었습니다.'
-    });
+    return ApiResponse.send(res, null, '비밀번호가 변경되었습니다.');
   } catch (error) {
     next(error); 
   }
@@ -113,15 +100,8 @@ const changePassword = async (req, res, next) => {
  */
 const updateProfile = async (req, res, next) => {
   try {
-    console.log("🔍 [컨트롤러] 토큰 유저:", req.user);
-    console.log("🔍 [컨트롤러] 파일 정보:", req.file);
-
-    const userId = req.user?.userId || req.user?.id;
+    const userId = req.user.userId;
     
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "사용자 인증 실패" });
-    }
-
     const updateData = {
       nickname: req.body.nickname,
       bio: req.body.bio,
@@ -133,18 +113,14 @@ const updateProfile = async (req, res, next) => {
 
     const updatedUser = await userService.updateUserProfile(userId, updateData);
 
-    if (updatedUser.profileImageUrl && updatedUser.profileImageUrl.startsWith('/uploads')) {
+    // 이미지 풀 경로 처리
+    if (updatedUser.profileImageUrl?.startsWith('/uploads')) {
         const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
         updatedUser.profileImageUrl = `${SERVER_URL}${updatedUser.profileImageUrl}`;
     }
 
-    return res.status(200).json({
-      success: true,
-      message: '프로필이 수정되었습니다.',
-      data: updatedUser
-    });
+    return ApiResponse.send(res, updatedUser, '프로필이 수정되었습니다.');
   } catch (error) {
-    console.error("프로필 수정 에러:", error);
     next(error);
   }
 };

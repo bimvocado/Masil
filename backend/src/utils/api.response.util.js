@@ -17,6 +17,21 @@ class ApiResponse {
       data: null,
     };
   }
+
+  static send(res, data = null, message = 'Success', status = 200) {
+    return res.status(status).json({
+      success: true,
+      message,
+      data,
+    });
+  }
+
+  static sendError(res, message = 'Error', status = 500) {
+    return res.status(status).json({
+      success: false,
+      message,
+    });
+  }
 }
 
 module.exports = ApiResponse;
