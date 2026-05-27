@@ -3,16 +3,37 @@ import {
   KeyboardAvoidingView, Platform, Alert 
 } from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { authStyles as styles } from '@/components/styles/auth';
-import { authService } from '@/services/auth-service';
 import { useAuthStore } from '@/store/use-auth-store';
 import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
+import { getToken,removeToken } from '@/utils/storage';
+import { authService } from '@/services/auth-service';
 
 export default function EntryScreen() {
   const router = useRouter();
-  const setUser = useAuthStore((state) => state.setUser); // 창고에 저장하는 함수
+  const { setUser, isLoggedIn } = useAuthStore();
 
+  useEffect(() => {
+    const checkLogin = async () => {
+      const token = await getToken();
+      if (token && !isLoggedIn) {
+        // 💡 토큰이 있다면 유저 정보를 가져와서 자동 로그인 처리
+        // (보통 서버에 'me' API를 하나 만들어두면 좋습니다. 일단은 더미 혹은 프로필 로드)
+        try {
+          const result = await authService.getProfile(0); // 0이나 특정 키워드로 내 정보 로드
+          if (result.success) {
+            setUser(result.data);
+            router.replace('/(tabs)/home');
+          }
+        } catch (e) {
+          console.log("토큰 만료 혹은 유효하지 않음");
+          await removeToken();
+        }
+      }
+    };
+    checkLogin();
+  }, []);
   const [isLoginView, setIsLoginView] = useState(true);
 
   const [isIdChecked, setIsIdChecked] = useState(false); // 아이디 중복 체크 통과 여부

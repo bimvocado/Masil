@@ -7,6 +7,16 @@ const router = express.Router();
 const stuffController =
   require('../controllers/stuff.controller');
 
+// 상품 자동완성 검색
+router.get('/search',
+  stuffController.searchStuffs
+);
+
+// 상품 찾기 또는 생성
+router.post('/find-or-create',
+  stuffController.findOrCreateStuff
+);
+
 
 // 상품 생성
 // POST /api/stuffs
@@ -40,6 +50,5 @@ router.get('/brand/:brandId',
 router.get('/:stuffId/detail',
   stuffController.getStuffDetail
 );
-
 
 module.exports = router;

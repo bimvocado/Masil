@@ -237,6 +237,41 @@ const getStuffDetail = async (stuffId) => {
   };
 };
 
+// 상품 자동완성 검색
+const searchStuffs = async (keyword) => {
+  if (!keyword || !keyword.trim()) {
+    return [];
+  }
+
+  const cleanKeyword = keyword.replace('@', '').trim();
+
+  const stuffs = await stuffRepository.searchStuffsByName(cleanKeyword);
+
+  return stuffs.map((stuff) => ({
+    stuffId: stuff.stuffId,
+    stuffName: stuff.stuffName,
+    brandId: stuff.brandId,
+  }));
+};
+
+// 상품 찾기 또는 생성
+const findOrCreateStuff = async (stuffName) => {
+  if (!stuffName || !stuffName.trim()) {
+    throw new Error('상품명을 입력해주세요.');
+  }
+
+  const cleanStuffName = stuffName.replace('@', '').trim();
+
+  const { stuff, created } = await stuffRepository.findOrCreateStuffByName(cleanStuffName);
+
+  return {
+    stuffId: stuff.stuffId,
+    stuffName: stuff.stuffName,
+    brandId: stuff.brandId,
+    created,
+  };
+};
+
 
 module.exports = {
   createStuff,
@@ -244,4 +279,6 @@ module.exports = {
   deleteStuff,
   getStuffsByBrandId,
   getStuffDetail,
+  searchStuffs,
+  findOrCreateStuff,
 };

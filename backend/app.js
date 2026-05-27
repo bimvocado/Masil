@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { port } = require('./src/config/env');
+const path = require('path');
 
 // DB
 const sequelize = require('./src/config/db');
@@ -25,6 +26,8 @@ const Comment = require('./src/models/comment.model');
 const Scrap = require('./src/models/scrap.model');
 const Category = require('./src/models/category.model');
 const Interaction = require('./src/models/interaction.model');
+const Hashtag = require('./src/models/hashtag.model');
+const PostHashtag = require('./src/models/postHashtag.model');
 
 // 관계 설정
 Brand.hasMany(Stuff, { foreignKey: 'brandId' });
@@ -58,13 +61,20 @@ User.hasMany(Interaction, { foreignKey: 'userId' });
 Interaction.belongsTo(User, { foreignKey: 'userId' });
 Post.hasMany(Interaction, { foreignKey: 'postId' });
 Interaction.belongsTo(Post, { foreignKey: 'postId' });
+Post.hasMany(PostHashtag, { foreignKey: 'postId' });
+PostHashtag.belongsTo(Post, { foreignKey: 'postId'});
+Hashtag.hasMany(PostHashtag, { foreignKey: 'hashtagId' });
+PostHashtag.belongsTo(Hashtag, { foreignKey: 'hashtagId' });
 
 sequelize.sync({ alter: true })
   .then(() => console.log('MySQL 테이블 생성/수정 완료'))
   .catch((err) => console.error('테이블 생성 실패:', err));
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 app.use(express.json());
 
 // 라우터 등록
@@ -81,6 +91,8 @@ app.use('/api/categories', categoryRouter);
 app.use('/api/posts', commentRouter);
 app.use('/api/comments', commentRouter);
 
+app.use('/api/users', categoryRouter);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // 서버 상태 확인
 app.get('/', (req, res) => {
   res.json({

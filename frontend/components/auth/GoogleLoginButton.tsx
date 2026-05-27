@@ -7,6 +7,7 @@ import { authStyles as styles } from '@/components/styles/auth';
 import { authService } from '@/services/auth-service';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useRouter } from 'expo-router';
+import { saveToken } from '@/utils/storage';
 
 // 웹 환경에서 팝업이 닫히도록 도와주는 함수
 WebBrowser.maybeCompleteAuthSession();
@@ -50,11 +51,16 @@ export function GoogleLoginButton() {
     try {
       console.log("🚀 백엔드로 코드와 열쇠 전송 시작...");
       
-      // 💡 authService.loginWithGoogle(code, codeVerifier) 형태로 수정 필요
       const result = await authService.loginWithGoogle(code, codeVerifier);
       
       if (result.success) {
-        setUser(result.data);
+    
+        if (result.data.user) {
+          setUser(result.data.user); 
+          
+          await saveToken(result.data.token);
+        }
+
         router.replace('/(tabs)/home');
       }
     } catch (error) {

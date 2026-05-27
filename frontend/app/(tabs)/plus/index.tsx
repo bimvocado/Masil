@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { styles } from '@/components/styles/plus';
 import { Colors } from '@/constants/colors';
 import { postService } from '@/services/post-service';
+import { stuffService, StuffSuggestion } from '@/services/stuff-service';
 import { TopBar } from '@/components/layout/top-bar';
 
 export default function PlusScreen() {
@@ -25,6 +26,9 @@ export default function PlusScreen() {
   const [brandName, setBrandName] = useState('');
   const [content, setContent] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const [stuffId, setStuffId] = useState<number | null>(null);
+  const [suggestions, setSuggestions] = useState<StuffSuggestion[]>([]);
 
   const handleBackPress = () => {
     if (step === 2) {
@@ -52,8 +56,60 @@ export default function PlusScreen() {
     }
   };
 
+  const handleStuffNameChange = async (value: string) => {
+    setBrandName(value);
+    setStuffId(null);
+
+    const keyword = value.replace('@', '').trim();
+
+    if (!keyword) {
+      setSuggestions([]);
+      return;
+    }
+
+    try {
+      const result = await stuffService.searchStuffs(keyword);
+      setSuggestions(result);
+    } catch (error) {
+      console.error('상품 자동완성 검색 실패:', error);
+      setSuggestions([]);
+    }
+  };
+
+  const handleSelectSuggestion = (item: StuffSuggestion) => {
+    setBrandName(`@${item.stuffName}`);
+    setStuffId(item.stuffId);
+    setSuggestions([]);
+  };
+
+  const handleNext = async () => {
+    try {
+      const cleanName = brandName.replace('@', '').trim();
+
+      if (!cleanName) {
+        Alert.alert('알림', '상품명을 입력해주세요.');
+        return;
+      }
+
+      const result = await stuffService.findOrCreateStuff(cleanName);
+
+      setStuffId(result.stuffId);
+      setBrandName(`@${result.stuffName}`);
+      setSuggestions([]);
+      setStep(2);
+    } catch (error: any) {
+      console.error('상품 확인 실패:', error);
+      Alert.alert('오류', error.response?.data?.message || '상품 확인에 실패했습니다.');
+    }
+  };
+
   const handleUpload = async () => {
     try {
+      if (!stuffId) {
+        Alert.alert('알림', '상품을 먼저 선택해주세요.');
+        return;
+      }
+
       if (!content.trim()) {
         Alert.alert('알림', '소개글을 작성해주세요.');
         return;
@@ -62,7 +118,7 @@ export default function PlusScreen() {
       const result = await postService.createPost({
         content,
         imageUrl: imageUri ?? undefined,
-        stuffId: 1,
+        stuffId,
       });
 
       console.log('게시글 등록 성공:', result);
@@ -113,12 +169,26 @@ export default function PlusScreen() {
                     placeholderTextColor={Colors.gray.light}
                     style={styles.nameInput}
                     value={brandName}
-                    onChangeText={setBrandName}
+                    onChangeText={handleStuffNameChange}
                   />
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.submitButton} onPress={() => setStep(2)}>
+              {suggestions.length > 0 && (
+                <View style={{ backgroundColor: '#fff', borderRadius: 12, marginTop: 8, padding: 8 }}>
+                  {suggestions.map((item) => (
+                    <TouchableOpacity
+                      key={item.stuffId}
+                      onPress={() => handleSelectSuggestion(item)}
+                      style={{ paddingVertical: 10 }}
+                    >
+                      <Text>{`@${item.stuffName}`}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <TouchableOpacity style={styles.submitButton} onPress={handleNext}>
                 <Text style={styles.submitButtonText}>다음</Text>
               </TouchableOpacity>
             </>
@@ -132,7 +202,7 @@ export default function PlusScreen() {
                     placeholderTextColor={Colors.gray.light}
                     style={styles.nameInput}
                     value={brandName}
-                    onChangeText={setBrandName}
+                    editable={false}
                   />
                 </View>
               </View>

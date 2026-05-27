@@ -1,110 +1,123 @@
 const userService = require('../services/user.service');
-
-
+const jwt = require('jsonwebtoken');
+const ApiResponse = require('../utils/api.response.util');
+/**
+ * 1. 중복 확인
+ */
 const checkDuplicate = async (req, res, next) => {
   try {
     const { type, value } = req.query; 
-    
     const isDuplicate = await userService.checkExists(type, value);
 
-    return res.status(200).json({
-      success: true,
-      isDuplicate,
-      message: isDuplicate ? `이미 사용 중인 ${type}입니다.` : `사용 가능한 ${type}입니다.`
-    });
+    return ApiResponse.send(res, 
+      { isDuplicate }, 
+      isDuplicate ? `이미 사용 중인 ${type}입니다.` : `사용 가능한 ${type}입니다.`
+    );
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * 2. 회원가입
+ */
 const signup = async (req, res, next) => {
-  console.log("드디어 백엔드에 요청 도착!!! 데이터:", req.body);
   try {
     const { loginId, email } = req.body;
-
-    
     const idExists = await userService.checkExists('loginId', loginId);
-    const emailExists = await userService.checkExists('email', email);
-
-    if (idExists || emailExists) {
-      return res.status(400).json({
-        success: false,
-        message: idExists ? '이미 존재하는 아이디입니다.' : '이미 존재하는 이메일입니다.'
-      });
-    }
+    if (idExists) return ApiResponse.sendError(res, '이미 존재하는 아이디입니다.', 400);
 
     const newUser = await userService.signup(req.body);
-
-    return res.status(201).json({
-      success: true,
-      message: '회원가입 성공! 마실에 오신 것을 환영합니다.',
-      data: { userId: newUser.userId }
-    });
+    return ApiResponse.send(res, { userId: newUser.userId }, '회원가입 성공!', 201);
   } catch (error) {
     next(error); 
   }
 };
 
+/**
+ * 3. 로그인 (토큰 키값을 userId로 통일!)
+ */
 const login = async (req, res, next) => {
-  console.log("백엔드 로그인 요청 도착:", req.body);
   try {
     const { loginId, password } = req.body;
-    const result = await userService.loginUser(loginId, password);
+    const user = await userService.loginUser(loginId, password);
 
-    return res.status(200).json({
-      success: true,
-      message: '로그인 성공',
-      data: result 
-    });
+    const token = jwt.sign(
+      { userId: user.userId || user.id }, 
+      process.env.JWT_SECRET || 'your_jwt_secret', 
+      { expiresIn: '24h' }
+    );
+
+    return ApiResponse.send(res, {
+      token,
+      user: {
+        userId: user.userId,
+        loginId: user.loginId,
+        nickname: user.nickname,
+        profileImageUrl: user.profileImageUrl
+      }
+    }, '로그인 성공');
   } catch (error) {
     next(error);
   }
 };
+
+/**
+ * 4. 프로필 조회
+ */
 const getProfile = async (req, res, next) => {
   try {
     const { userId } = req.params; 
     const user = await userService.getUserById(userId);
-    res.status(200).json({ success: true, data: user });
+    return ApiResponse.send(res, user, '프로필 조회 성공');
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * 5. 비밀번호 변경
+ */
 const changePassword = async (req, res, next) => {
   try {
-    //토큰or user id 인데 아직 토큰 안해서 userid 
-    const { userId, currentPassword, newPassword } = req.body;
-
+    const userId = req.user.userId;
+    const { currentPassword, newPassword } = req.body;
     await userService.updatePassword(userId, currentPassword, newPassword);
 
-    return res.status(200).json({
-      success: true,
-      message: '비밀번호가 성공적으로 변경되었습니다.'
-    });
+    return ApiResponse.send(res, null, '비밀번호가 변경되었습니다.');
   } catch (error) {
     next(error); 
   }
 };
 
+/**
+ * 6. 프로필 수정 (핵심 로직)
+ */
 const updateProfile = async (req, res, next) => {
   try {
-    const userId = req.user?.id || req.body.userId; 
+    const userId = req.user.userId;
     
     const updateData = {
       nickname: req.body.nickname,
       bio: req.body.bio,
-      profileImageUrl: req.file ? req.file.path : req.body.profileImageUrl 
     };
+
+    if (req.file) {
+      updateData.profileImageUrl = `/uploads/${req.file.filename}`; 
+    }
 
     const updatedUser = await userService.updateUserProfile(userId, updateData);
 
-    return res.status(200).json({
-      success: true,
-      message: '프로필이 수정되었습니다.',
-      data: updatedUser
-    });
+    // 이미지 풀 경로 처리
+    if (updatedUser.profileImageUrl?.startsWith('/uploads')) {
+        const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
+        updatedUser.profileImageUrl = `${SERVER_URL}${updatedUser.profileImageUrl}`;
+    }
+
+    return ApiResponse.send(res, updatedUser, '프로필이 수정되었습니다.');
   } catch (error) {
     next(error);
   }
 };
-module.exports = { signup, login, getProfile, checkDuplicate, changePassword,updateProfile  };
+
+module.exports = { signup, login, getProfile, checkDuplicate, changePassword, updateProfile };
