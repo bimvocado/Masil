@@ -75,7 +75,7 @@ const findStuffsByBrandId = async (brandId, sort, page, size) => {
 
     WHERE s.brand_id = :brandId
       AND s.deleted_at IS NULL
-      AND s.is_discontinued = false
+      AND s.is_discontinued IS NOT TRUE
 
     GROUP BY
       s.stuff_id,
@@ -104,7 +104,10 @@ const countStuffsByBrandId = async (brandId) => {
   return await Stuff.count({
     where: {
       brandId,
-      isDiscontinued: false,
+      [Op.or]: [
+        { isDiscontinued: false },
+        { isDiscontinued: null },
+      ],
     },
   });
 };
