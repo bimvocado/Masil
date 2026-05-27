@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TopBar } from '@/components/layout/top-bar';
 import { ProfileInput } from '@/components/ui/profile-input';
-import { authService } from '@/services/auth-service';
+import { authService } from '@/api/auth-service'; // 💡 경로 확인해주세요!
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '@/store/use-auth-store'; 
 
@@ -24,6 +24,28 @@ export default function ProfileEditScreen() {
     }
   }, [user]);
 
+  // ✅ 1. 이미지 선택 함수
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('알림', '사진 권한이 필요합니다.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setNewImage(result.assets[0]);
+      setProfileImageUrl(result.assets[0].uri); // 프리뷰 즉시 반영
+    }
+  };
+
+  // ✅ 2. 저장 함수
   const handleSave = async () => {
     if (!nickname.trim()) {
       Alert.alert('알림', '닉네임은 필수입니다.');
@@ -31,7 +53,7 @@ export default function ProfileEditScreen() {
     }
 
     setIsLoading(true);
-    console.log("💾 [디버그] 저장 버튼 눌림!");
+    console.log("💾 [디버그] 저장 시도 중...");
 
     try {
       const formData = new FormData();
@@ -39,19 +61,35 @@ export default function ProfileEditScreen() {
       formData.append('bio', bio);
       
       if (newImage) {
-        // 웹 브라우저용 이미지 처리 (기존 로직 유지)
-        const response = await fetch(newImage.uri);
-        const blob = await response.blob();
-        formData.append('image', blob, 'profile.jpg');
+        const localUri = newImage.uri;
+        
+        if (Platform.OS === 'web') {
+          const response = await fetch(localUri);
+          const blob = await response.blob();
+          formData.append('image', blob, 'profile.jpg');
+        } else {
+          const filename = localUri.split('/').pop();
+          const match = /\.(\w+)$/.exec(filename || '');
+          const type = match ? `image/${match[1]}` : `image/jpeg`;
+      
+          formData.append('image', {
+            uri: localUri,
+            name: filename || 'profile.jpg',
+            type: type,
+          } as any);
+        }
       }
 
-      console.log("[디버그] 서버로 쏘는 중...");
-      
-    
-      const res = await authService.updateProfile(formData);
+      // ✅ 기존 authService 사용하되, multipart 헤더 명시
+      const res = await authService.updateProfile(formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
       if (res.success) {
-        
-        setUser(res.data);
+        console.log("✅ 서버 응답 데이터:", res.data);
+        setUser(res.data); // Zustand 업데이트
         Alert.alert('성공', '프로필이 변경되었습니다.', [
           { text: '확인', onPress: () => router.back() }
         ]);
@@ -63,18 +101,19 @@ export default function ProfileEditScreen() {
       setIsLoading(false);
     }
   };
+
   return (
     <View style={styles.container}>
       <TopBar title="프로필 설정" showBackButton={true} />
 
       <View style={styles.content}>
         <View style={styles.avatarSection}>
-          {profileImageUrl ? (
-            <Image source={{ uri: profileImageUrl }} style={styles.avatarImage} />
-          ) : (
-            <View style={styles.avatarPlaceholder} />
-          )}
-          <TouchableOpacity onPress={() => {/* ImagePicker 로직 */}}>
+          <TouchableOpacity onPress={pickImage}>
+            {profileImageUrl ? (
+              <Image source={{ uri: profileImageUrl }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarPlaceholder} />
+            )}
             <Text style={styles.changePhotoText}>사진 변경</Text>
           </TouchableOpacity>
         </View>
@@ -110,14 +149,13 @@ export default function ProfileEditScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   content: { padding: 20, alignItems: 'center' },
   avatarSection: { alignItems: 'center', marginBottom: 30 },
   avatarPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#E0E0E0' },
   avatarImage: { width: 120, height: 120, borderRadius: 60 },
-  changePhotoText: { marginTop: 10, color: '#aaa' },
+  changePhotoText: { marginTop: 10, color: '#aaa', textAlign: 'center' },
   saveButton: { 
     backgroundColor: '#E8F5E9', 
     width: '100%', 

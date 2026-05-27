@@ -1,11 +1,12 @@
 const userService = require('../services/user.service');
 const jwt = require('jsonwebtoken');
 
-
+/**
+ * 1. 중복 확인
+ */
 const checkDuplicate = async (req, res, next) => {
   try {
     const { type, value } = req.query; 
-    
     const isDuplicate = await userService.checkExists(type, value);
 
     return res.status(200).json({
@@ -18,11 +19,12 @@ const checkDuplicate = async (req, res, next) => {
   }
 };
 
+/**
+ * 2. 회원가입
+ */
 const signup = async (req, res, next) => {
-  console.log("드디어 백엔드에 요청 도착!!! 데이터:", req.body);
   try {
     const { loginId, email } = req.body;
-
     
     const idExists = await userService.checkExists('loginId', loginId);
     const emailExists = await userService.checkExists('email', email);
@@ -38,23 +40,24 @@ const signup = async (req, res, next) => {
 
     return res.status(201).json({
       success: true,
-      message: '회원가입 성공! 마실에 오신 것을 환영합니다.',
+      message: '회원가입 성공!',
       data: { userId: newUser.userId }
     });
   } catch (error) {
     next(error); 
   }
 };
+
+/**
+ * 3. 로그인 (토큰 키값을 userId로 통일!)
+ */
 const login = async (req, res, next) => {
-  console.log("백엔드 로그인 요청 도착:", req.body);
   try {
     const { loginId, password } = req.body;
     const user = await userService.loginUser(loginId, password);
 
-    // ✅ 2. JWT 토큰 생성 (비밀키 'your_jwt_secret'은 본인 설정에 맞게 변경)
-    // 보통 process.env.JWT_SECRET 을 사용합니다.
     const token = jwt.sign(
-      { id: user.userId, loginId: user.loginId }, 
+      { userId: user.userId || user.id }, 
       process.env.JWT_SECRET || 'your_jwt_secret', 
       { expiresIn: '24h' }
     );
@@ -64,15 +67,20 @@ const login = async (req, res, next) => {
       message: '로그인 성공',
       token: token, 
       data: {
-        userId: user.userId,
+        userId: user.userId || user.id,
         loginId: user.loginId,
-        nickname: user.nickname
+        nickname: user.nickname,
+        profileImageUrl: user.profileImageUrl
       }
     });
   } catch (error) {
     next(error);
   }
 };
+
+/**
+ * 4. 프로필 조회
+ */
 const getProfile = async (req, res, next) => {
   try {
     const { userId } = req.params; 
@@ -83,39 +91,52 @@ const getProfile = async (req, res, next) => {
   }
 };
 
+/**
+ * 5. 비밀번호 변경
+ */
 const changePassword = async (req, res, next) => {
   try {
-    //토큰or user id 인데 아직 토큰 안해서 userid 
     const { userId, currentPassword, newPassword } = req.body;
-
     await userService.updatePassword(userId, currentPassword, newPassword);
 
     return res.status(200).json({
       success: true,
-      message: '비밀번호가 성공적으로 변경되었습니다.'
+      message: '비밀번호가 변경되었습니다.'
     });
   } catch (error) {
     next(error); 
   }
 };
+
+/**
+ * 6. 프로필 수정 (핵심 로직)
+ */
 const updateProfile = async (req, res, next) => {
   try {
-    const userId = req.user?.id || req.user?.userId || req.body.userId;
-    console.log("🔍 [디버그] 추출된 userId:", userId);
+    console.log("🔍 [컨트롤러] 토큰 유저:", req.user);
+    console.log("🔍 [컨트롤러] 파일 정보:", req.file);
+
+    const userId = req.user?.userId || req.user?.id;
+    
     if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: "인증되지 않은 사용자입니다." 
-      });
+      return res.status(401).json({ success: false, message: "사용자 인증 실패" });
     }
 
     const updateData = {
       nickname: req.body.nickname,
       bio: req.body.bio,
-      profileImageUrl: req.file ? req.file.path : req.body.profileImageUrl 
     };
 
+    if (req.file) {
+      updateData.profileImageUrl = `/uploads/${req.file.filename}`; 
+    }
+
     const updatedUser = await userService.updateUserProfile(userId, updateData);
+
+    if (updatedUser.profileImageUrl && updatedUser.profileImageUrl.startsWith('/uploads')) {
+        const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
+        updatedUser.profileImageUrl = `${SERVER_URL}${updatedUser.profileImageUrl}`;
+    }
 
     return res.status(200).json({
       success: true,
@@ -123,7 +144,9 @@ const updateProfile = async (req, res, next) => {
       data: updatedUser
     });
   } catch (error) {
+    console.error("프로필 수정 에러:", error);
     next(error);
   }
 };
-module.exports = { signup, login, getProfile, checkDuplicate, changePassword,updateProfile  };
+
+module.exports = { signup, login, getProfile, checkDuplicate, changePassword, updateProfile };

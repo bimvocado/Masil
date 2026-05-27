@@ -75,9 +75,9 @@ export const authService = {
   /**
    * 프로필 수정 
    */
-  updateProfile: async (formData: FormData) => {
+  updateProfile: async (formData: FormData, config?: any) => {
     try {
-      const response = await apiClient.patch('/api/users/profile', formData); // 💡 헤더 명시 삭제 (브라우저 자동 설정)
+      const response = await apiClient.patch('/api/users/profile', formData, config); 
       return response.data;
     } catch (error) {
       console.error('프로필 수정 에러:', error);

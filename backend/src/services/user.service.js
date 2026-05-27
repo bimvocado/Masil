@@ -134,13 +134,23 @@ const socialLoginOrSignup = async (googleData) => {
 };
 
 const updateUserProfile = async (userId, updateData) => {
-  const user = await User.findByPk(userId);
-  if (!user) throw new Error('사용자를 찾을 수 없습니다.');
+  try {
+    console.log(`[서비스] 프로필 업데이트 시작 - userId: ${userId}`);
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('사용자를 찾을 수 없습니다.');
+    }
+    await user.update(updateData);
 
-  // 전달된 데이터만 업데이트
-  return await user.update(updateData);
+    const result = user.toJSON();
+    delete result.passwordHash;
+    
+    return result;
+  } catch (error) {
+    console.error("서비스 에러 (updateUserProfile):", error);
+    throw error; 
+  }
 };
-
 module.exports = { 
   signup, 
   loginUser,

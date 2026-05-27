@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { port } = require('./src/config/env');
+const path = require('path');
 
 // 라우터
 const userRouter = require('./src/routes/user.routes');
@@ -52,7 +53,10 @@ sequelize.sync({ alter: true })
   .catch((err) => console.error('테이블 생성 실패:', err));
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 app.use(express.json());
 
 // 라우터 등록
@@ -65,7 +69,7 @@ app.use('/api/comments', commentRouter);
 app.use('/api/interactions', interactionRouter);
 app.use('/api/scraps', scrapRouter);
 app.use('/api/users', categoryRouter);
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // 서버 상태 확인
 app.get('/', (req, res) => {
   res.json({ success: true, message: '마실 서버 실행 중' });
