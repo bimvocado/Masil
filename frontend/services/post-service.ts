@@ -1,8 +1,16 @@
 import axios from 'axios';
 import { Post } from '@/types/post';
+import { getToken } from '@/utils/storage';
 
-// const BASE_URL = 'http://192.168.219.102:3000';
 const BASE_URL = 'http://localhost:3000';
+
+const getAuthHeader = async () => {
+  const token = await getToken();
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+};
 
 export const postService = {
   // 게시글 전체 조회
@@ -23,7 +31,14 @@ export const postService = {
     imageUrl?: string;
     stuffId: number;
   }): Promise<Post> => {
-    const response = await axios.post(`${BASE_URL}/api/posts`, postData);
+    const headers = await getAuthHeader();
+
+    const response = await axios.post(
+      `${BASE_URL}/api/posts`,
+      postData,
+      { headers }
+    );
+
     return response.data.data;
   },
 
@@ -35,13 +50,26 @@ export const postService = {
       imageUrl?: string;
     }
   ): Promise<Post> => {
-    const response = await axios.patch(`${BASE_URL}/api/posts/${postId}`, postData);
+    const headers = await getAuthHeader();
+
+    const response = await axios.patch(
+      `${BASE_URL}/api/posts/${postId}`,
+      postData,
+      { headers }
+    );
+
     return response.data.data;
   },
 
   // 게시글 삭제
   deletePost: async (postId: number) => {
-    const response = await axios.delete(`${BASE_URL}/api/posts/${postId}`);
+    const headers = await getAuthHeader();
+
+    const response = await axios.delete(
+      `${BASE_URL}/api/posts/${postId}`,
+      { headers }
+    );
+
     return response.data.data;
   },
 };

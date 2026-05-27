@@ -4,6 +4,9 @@ const sequelize = require('../config/db');
 const Stuff = require('../models/stuff.model');
 const Brand = require('../models/brand.model');
 
+// sequelize 연산자 (LIKE, OR, AND, >=, <=)
+const { Op } = require('sequelize');
+
 // 상품 생성
 const createStuff = async (stuffData) => {
   return await Stuff.create(stuffData);
@@ -302,6 +305,35 @@ const findBestReviewByStuffId = async (stuffId) => {
   return result[0] || null;
 };
 
+// 자동완성 : 상품 검색
+const searchStuffsByName = async (keyword) => {
+  return await Stuff.findAll({
+    where: {
+      stuffName: {
+        [Op.like]: `%${keyword}%`,
+      },
+      isDiscontinued:false,
+    },
+    limit: 10,
+    order: [['createdAt', 'DESC']]
+  });
+};
+
+// 자동완성 : 상품명으로 찾으며, 없으면 생성
+const findOrCreateStuffByName = async (stuffName) => {
+  const [stuff, created] = await Stuff.findOrCreate({
+    where: { stuffName },
+    defaults: {
+      stuffName,
+      brandId: 9999,
+      price: 0,
+      isDiscontinued: false,
+    },
+  });
+
+  return { stuff, created };
+}
+
 module.exports = {
   createStuff,
   findStuffById,
@@ -314,4 +346,6 @@ module.exports = {
   findBestReviewImageByStuffId,
   findRecommendedStuffs,
   findBestReviewByStuffId,
+  searchStuffsByName,
+  findOrCreateStuffByName,
 };
