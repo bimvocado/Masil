@@ -19,6 +19,12 @@ export const postService = {
     return response.data.data;
   },
 
+  // 사용자별 게시글 조회
+  getUserPosts: async (userId: number): Promise<Post[]> => {
+    const response = await axios.get(`${BASE_URL}/api/users/${userId}/posts`);
+    return response.data.data;
+  },
+
   // 게시글 개별 조회
   getPost: async (postId: number): Promise<Post> => {
     const response = await axios.get(`${BASE_URL}/api/posts/${postId}`);
@@ -30,6 +36,7 @@ export const postService = {
     content: string;
     imageUrl?: string;
     stuffId: number;
+    price?: number;
   }): Promise<Post> => {
     const headers = await getAuthHeader();
 

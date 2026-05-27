@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, ScrollView, TextInput 
+import { View, Text, Image, TouchableOpacity, ScrollView, TextInput, ActivityIndicator
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TopBar } from '@/components/layout/top-bar';
@@ -8,48 +8,13 @@ import { Post } from '@/types/post';
 import { User } from '@/types/user';
 import { useAuthStore } from '@/store/use-auth-store';
 import { InteractionButton } from '@/constants/interaction-button';
-
-import React, { useEffect, useState } from 'react'; 
+import { postService } from '@/services/post-service';
 import { authService } from '@/api/auth-service'; 
 
+import React, { useEffect, useState } from 'react'; 
 
 
-const MOCK_POSTS: Post[] = [
-  { 
-    postId: 1,
-    userId: 3,
-    stuffId: 101,
-    content: '오랜만에 먹었는데 패티가 아주 바삭하고 맛있네요. 추천합니다!',
-    imageUrl: '',
-    createdAt: '2024-05-19', // 
-    updatedAt: '2024-05-19',
-    
-    nickname: '버거왕',      
-    stuffName: '새우버거',     
-    brandName: '롯데리아',     
-    likeCount: 12,    
-    commentCount: 5,  
-    isScrapped: true,
-    scrapCount: 12 // 화면에서 쓸 스크랩 숫자
-  },
-  { 
-    postId: 2,
-    userId: 5,
-    stuffId: 102,
-    content: '기대했는데 생각보다 느끼하네요. 다음엔 안 먹을 듯.',
-    imageUrl: '',
-    createdAt: '2024-05-18',
-    updatedAt: '2024-05-18',
-    
-    nickname: '솔직리뷰어',      
-    stuffName: '치즈버거',     
-    brandName: '맥도날드',     
-    likeCount: 45,    
-    commentCount: 22,  
-    isScrapped: false,
-    scrapCount: 45
-  },
-];
+
 
 export default function UserScreen() {
   const insets = useSafeAreaInsets();
@@ -58,42 +23,45 @@ export default function UserScreen() {
 
   const { user, setUser } = useAuthStore(); 
   
-  const [posts, setPosts] = useState(MOCK_POSTS);
-  const [loading, setLoading] = useState(false); // 스토어에 데이터가 있으면 바로 보여주려고 false 시작 가능
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     const fetchMyData = async () => {
       try {
-        console.log("🔍 [화면] 현재 스토어의 user 정보:", user); // 1. 현재 스토어 상태 확인
-  
         if (!user?.userId) {
-          console.log("⚠️ [화면] userId가 없어서 fetch를 중단함");
           return; 
         }
 
         const response = await authService.getProfile(user.userId); 
-        console.log("✅ [화면] 서버 응답 데이터:", response.data); // 2. 서버가 준 데이터 확인
-
         if (response.success) {
           setUser(response.data); 
         }
+
+        // 사용자 게시글 로드
+        const userPosts = await postService.getUserPosts(user.userId);
+        setPosts(userPosts || []);
       } catch (error) {
-        console.error("❌ [화면] 내 정보 로딩 실패:", error);
+        console.error("게시글 로딩 실패:", error);
+      } finally {
+        setLoading(false);
       }
     };
+    
     fetchMyData();
   }, [user?.userId]);
+  
   const toggleHeart = (postId: number) => {
     setPosts(posts.map(p => 
       p.postId === postId 
-        ? { ...p, isScrapped: !p.isScrapped, likeCount: p.isScrapped ? (p.likeCount || 0) - 1 : (p.likeCount || 0) + 1 } 
+        ? { ...p, isScrapped: !p.isScrapped, scrapCount: p.isScrapped ? (p.scrapCount || 0) - 1 : (p.scrapCount || 0) + 1 } 
         : p
     ));
   };
 
-
   const filteredPosts = posts.filter((post) => 
-    post.content.includes(searchQuery) || post.createdAt.includes(searchQuery)
+    post.content.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    post.createdAt.includes(searchQuery)
   );
 
   return (
@@ -162,48 +130,64 @@ export default function UserScreen() {
 
         {/* 게시글 리스트 영역 */}
         <View style={styles.listContainer}>
-          {filteredPosts.map((post) => (
-            <TouchableOpacity 
-              key={post.postId} 
-              style={styles.postCard}
-              onPress={() => router.push({
-                pathname: `/user/post-feed/${post.postId}`, 
-              } as any)}
-            >  
-              <View style={styles.cardLeft}>
-                <Text style={styles.postTitle} numberOfLines={1}>
-                  {post.content.length > 20 
-                    ? `${post.content.substring(0, 20)}...` 
-                    : post.content}
-                </Text>
-                
-                <Text style={styles.postDate}>{post.createdAt}</Text>  
-                <View style={styles.interactionRow}>
-                  <View style={styles.iconGroup}>
-                    <InteractionButton 
-                      type="heart"
-                      count={post.likeCount.toLocaleString()}
-                      textPosition="right"
-                      isActive={post.isScrapped}
-                      onPress={() => toggleHeart(post.postId)}
-                    />
-                  </View>
+          {loading ? (
+            <ActivityIndicator size="large" color="#888" style={{ marginTop: 40 }} />
+          ) : filteredPosts.length === 0 ? (
+            <Text style={{ textAlign: 'center', marginTop: 40, color: '#999' }}>
+              올린 게시글이 없습니다.
+            </Text>
+          ) : (
+            filteredPosts.map((post) => (
+              <TouchableOpacity 
+                key={post.postId} 
+                style={styles.postCard}
+                onPress={() => router.push({
+                  pathname: `/user/post-feed/${post.postId}`, 
+                } as any)}
+              >  
+                <View style={styles.cardLeft}>
+                  <Text style={styles.postTitle} numberOfLines={1}>
+                    {post.content.length > 10 
+                      ? `${post.content.substring(0, 10)}...` 
+                      : post.content}
+                  </Text>
                   
-                  <View style={styles.iconGroup}>
-                    <InteractionButton 
-                      type="comment"
-                      count={post.commentCount.toLocaleString()}
-                      textPosition="right"
-                    />
+                  <Text style={styles.postDate}>{post.createdAt}</Text>  
+                  <View style={styles.interactionRow}>
+                    <View style={styles.iconGroup}>
+                      <InteractionButton 
+                        type="comment"
+                        count={post.commentCount?.toLocaleString() || '0'}
+                        textPosition="right"
+                      />
+                    </View>
+                    
+                    <View style={styles.iconGroup}>
+                      <InteractionButton 
+                        type="heart"
+                        count={post.scrapCount?.toLocaleString() || '0'}
+                        textPosition="right"
+                        isActive={post.isScrapped}
+                        onPress={() => toggleHeart(post.postId)}
+                      />
+                    </View>
                   </View>
                 </View>
-              </View>
 
-              <View style={styles.cardRight}>
-                <View style={styles.thumbnailPlaceholder} />
-              </View>
-            </TouchableOpacity>
-          ))}
+                <View style={styles.cardRight}>
+                  {post.imageUrl ? (
+                    <Image
+                      source={{ uri: post.imageUrl }}
+                      style={styles.thumbnailPlaceholder}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.thumbnailPlaceholder} />
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
     </View>
