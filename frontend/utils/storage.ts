@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-// 💡 객체 통째로 말고, 함수 하나하나를 내보냅니다.
+
 export const getToken = async () => {
   if (Platform.OS === 'web') {
     const token = localStorage.getItem('userToken');

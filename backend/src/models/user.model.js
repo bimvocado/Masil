@@ -55,6 +55,10 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(255),
     allowNull: true, // 소셜 로그인일 때만 구글 고유 ID 저장
   },
+  bio: { // 🚨 이 부분이 있는지 확인하세요! 없으면 추가해야 합니다.
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
 }, {
   tableName: 'users',
   underscored: true,

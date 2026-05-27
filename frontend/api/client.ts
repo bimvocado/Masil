@@ -1,7 +1,7 @@
 import { getToken } from '@/utils/storage';
 import axios from 'axios'; 
 
-const BASE_URL = 'http://192.168.219.102:3000'; 
+const BASE_URL = 'http://localhost:3000'; 
 
 const apiClient = axios.create({
   baseURL: BASE_URL, 
@@ -15,6 +15,7 @@ apiClient.interceptors.request.use(
   async (config) => {
     const token = await getToken();
     if (token) {
+      console.log("📡 [인터셉터] 전송 직전 토큰 상태:", `|${token}|`); 
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;

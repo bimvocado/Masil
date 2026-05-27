@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
+const { validateLogin } = require('../middlewares/validator.middleware');
 
-// 프론트엔드에서 구글 인가 코드를 보낼 주소
+router.post('/login', validateLogin, authController.login);
 router.post('/google', authController.googleLogin);
-
 module.exports = router;
