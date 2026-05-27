@@ -65,12 +65,8 @@ const findStuffsByBrandId = async (brandId, sort, page, size) => {
 
     FROM stuffs s
 
-    LEFT JOIN posts p
-      ON s.stuff_id = p.stuff_id
-      AND p.deleted_at IS NULL
-
     LEFT JOIN interactions i
-      ON p.post_id = i.post_id
+      ON s.stuff_id = i.stuff_id
       AND i.deleted_at IS NULL
 
     WHERE s.brand_id = :brandId
@@ -136,17 +132,12 @@ const findStuffDetailById = async (stuffId) => {
     JOIN brands b
       ON s.brand_id = b.brand_id
 
-    LEFT JOIN posts p
-      ON s.stuff_id = p.stuff_id
-      AND p.deleted_at IS NULL
-
     LEFT JOIN interactions i
-      ON p.post_id = i.post_id
+      ON s.stuff_id = i.stuff_id
       AND i.deleted_at IS NULL
 
     LEFT JOIN users u
       ON i.user_id = u.user_id
-      AND u.deleted_at IS NULL
 
     WHERE s.stuff_id = :stuffId
       AND s.deleted_at IS NULL
@@ -178,7 +169,7 @@ const findBestReviewImageByStuffId = async (stuffId) => {
     FROM posts p
 
     LEFT JOIN interactions i
-      ON p.post_id = i.post_id
+      ON p.stuff_id = i.stuff_id
       AND i.deleted_at IS NULL
 
     WHERE p.stuff_id = :stuffId
@@ -206,53 +197,9 @@ const findBestReviewImageByStuffId = async (stuffId) => {
 };
 
 // 추천 조합 상위 2개
+// post_tags 테이블이 아직 생성되지 않아 빈 배열 반환 (추천 조합 기능 미구현)
 const findRecommendedStuffs = async (stuffId) => {
-  return await sequelize.query(
-    `
-    SELECT
-      tagged.stuff_id AS stuffId,
-      tagged.stuff_name AS stuffName,
-      tagged.price AS price,
-
-      COUNT(CASE WHEN i.reaction_type = 'LIKE' THEN 1 END) AS likeCount,
-      COUNT(CASE WHEN i.reaction_type = 'DISLIKE' THEN 1 END) AS dislikeCount
-
-    FROM posts p
-
-    JOIN post_tags pt
-      ON p.post_id = pt.post_id
-
-    JOIN stuffs tagged
-      ON pt.connected_stuff_id = tagged.stuff_id
-
-    LEFT JOIN posts tagged_posts
-      ON tagged.stuff_id = tagged_posts.stuff_id
-      AND tagged_posts.deleted_at IS NULL
-
-    LEFT JOIN interactions i
-      ON tagged_posts.post_id = i.post_id
-      AND i.deleted_at IS NULL
-
-    WHERE p.stuff_id = :stuffId
-      AND p.deleted_at IS NULL
-      AND tagged.deleted_at IS NULL
-
-    GROUP BY
-      tagged.stuff_id,
-      tagged.stuff_name,
-      tagged.price
-
-    ORDER BY
-      likeCount DESC,
-      dislikeCount ASC
-
-    LIMIT 2
-    `,
-    {
-      replacements: { stuffId },
-      type: QueryTypes.SELECT,
-    }
-  );
+  return [];
 };
 
 // 옳소가 가장 많은 리뷰
@@ -278,7 +225,7 @@ const findBestReviewByStuffId = async (stuffId) => {
       ON p.user_id = u.user_id
 
     LEFT JOIN interactions i
-      ON p.post_id = i.post_id
+      ON p.stuff_id = i.stuff_id
       AND i.deleted_at IS NULL
 
     WHERE p.stuff_id = :stuffId
