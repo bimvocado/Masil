@@ -14,6 +14,13 @@ import { useAuthStore } from '@/store/use-auth-store';
 import { postService } from '@/services/post-service';
 import apiClient from '@/api/client';
 
+const BASE_URL = 'http://localhost:3000';
+
+const getImageUrl = (url?: string | null) => {
+  if (!url) return undefined;
+  return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+};
+
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
 export default function UserPostFeedScreen() {
@@ -168,7 +175,7 @@ export default function UserPostFeedScreen() {
       <View style={styles.backgroundContainer}>
         {item.imageUrl ? (
           <Image
-            source={{ uri: item.imageUrl }}
+            source={{ uri: getImageUrl(item.imageUrl) }}
             style={{ flex: 1, width: '100%' }}
             resizeMode="cover"
           />
