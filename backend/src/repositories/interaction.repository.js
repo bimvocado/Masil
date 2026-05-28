@@ -10,6 +10,13 @@ class InteractionRepository {
         });
     }
 
+    static async findDeletedByUserAndStuff(userId, stuffId) {
+        return await Interaction.findOne({
+            where: { userId, stuffId },
+            paranoid: false,
+        });
+    }
+
     static async createInteraction({ userId, stuffId, reactionType }) {
         return await Interaction.create({ userId, stuffId, reactionType });
     }
@@ -28,7 +35,15 @@ class InteractionRepository {
         return await Interaction.destroy({
             where: { userId, stuffId },
             force: true,
+            paranoid: false,
         });
+    }
+
+    static async restoreInteraction(userId, stuffId) {
+        const interaction = await this.findDeletedByUserAndStuff(userId, stuffId);
+        if (!interaction) return null;
+        await interaction.restore();
+        return interaction;
     }
 
     static async getInteractionStats(stuffId) {

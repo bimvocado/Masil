@@ -12,17 +12,29 @@ const processInteraction = async (interactionData) => {
     }
 
     const existingInteraction = await interactionRepository.findByUserAndStuff(userId, stuffId);
+    const deletedInteraction = await interactionRepository.findDeletedByUserAndStuff(userId, stuffId);
 
     let currentAction = ''; 
     let savedEntity = null;
 
     if (!existingInteraction) {
-        savedEntity = await interactionRepository.createInteraction({
-            userId,
-            stuffId,
-            reactionType
-        });
-        currentAction = 'CREATED';
+        if (deletedInteraction) {
+            if (deletedInteraction.reactionType === reactionType) {
+                savedEntity = await interactionRepository.restoreInteraction(userId, stuffId);
+                currentAction = 'CREATED';
+            } else {
+                await interactionRepository.restoreInteraction(userId, stuffId);
+                savedEntity = await interactionRepository.updateInteraction(userId, stuffId, { reactionType });
+                currentAction = 'UPDATED';
+            }
+        } else {
+            savedEntity = await interactionRepository.createInteraction({
+                userId,
+                stuffId,
+                reactionType
+            });
+            currentAction = 'CREATED';
+        }
     } else if (existingInteraction.reactionType === reactionType) {
         await interactionRepository.deleteInteraction(existingInteraction.userId, existingInteraction.stuffId);
         currentAction = 'DELETED';
