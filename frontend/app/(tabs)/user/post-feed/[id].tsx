@@ -85,7 +85,7 @@ export default function UserPostFeedScreen() {
   };
 
   const handleScrapPress = async () => {
-    if (!user) return;
+    if (!user?.userId) return;
     if (isScrapped) {
       try {
         await scrapService.deleteScrap(postId, { userId: user.userId });
@@ -94,10 +94,12 @@ export default function UserPostFeedScreen() {
       return;
     }
     try {
-      const res = await categoryService.getCategories(user.userId);
-      setCategories(res.data ?? []);
+      const categories = await categoryService.getCategories(user.userId);
+      setCategories(categories ?? []);
       setShowCategoryPicker(true);
-    } catch {}
+    } catch (error) {
+      console.error('카테고리 조회 실패:', error);
+    }
   };
 
   const handleSelectCategory = async (categoryId: number) => {

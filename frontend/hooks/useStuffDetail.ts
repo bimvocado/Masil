@@ -1,24 +1,44 @@
 import { useState, useEffect } from 'react';
 import apiClient from '@/api/client';
+import { BASE_URL } from '@/api/auth-service';
 
-export interface InteractionStat {
-  total: number;
-  korean: number;
-  foreigner: number;
-  ratio: number;
-}
+const getAbsoluteUrl = (url: string | null | undefined) => {
+  if (!url) return null;
+  return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+};
 
 export interface StuffDetail {
   stuffId: number;
   stuffName: string;
-  brandName: string;
+  brandId: number;
+  brandName: number;
   price: number;
-  interactionStats: {
-    total: number;
-    like: InteractionStat;
-    dislike: InteractionStat;
-    myReaction: 'LIKE' | 'DISLIKE' | null;
-  };
+  bestReviewImageUrl: string | null;
+  likeCount: number;
+  dislikeCount: number;
+  koreanLikeCount: number;
+  foreignLikeCount: number;
+  recommendedStuffs: Array<{
+    stuffId: number;
+    stuffName: string;
+    price: number;
+    likeCount: number;
+    dislikeCount: number;
+  }>;
+  bestReview: {
+    postId: number;
+    content: string;
+    imageUrl: string | null;
+    createdAt: string;
+    likeCount: number;
+    dislikeCount: number;
+    user: {
+      userId: number;
+      nickname: string;
+      profileImageUrl: string | null;
+    };
+  } | null;
+  myReaction?: 'LIKE' | 'DISLIKE' | null;
 }
 
 export function useStuffDetail(id: string) {
@@ -30,8 +50,23 @@ export function useStuffDetail(id: string) {
     const fetchStuffDetail = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get(`/api/stuffs/${id}`);
-        setDetailData(response.data.data);
+        const response = await apiClient.get(`/api/stuffs/${id}/detail`);
+        const responseData = response.data.data;
+        setDetailData({
+          ...responseData,
+          bestReviewImageUrl: getAbsoluteUrl(responseData.bestReviewImageUrl),
+          bestReview: responseData.bestReview
+            ? {
+                ...responseData.bestReview,
+                imageUrl: getAbsoluteUrl(responseData.bestReview.imageUrl),
+                user: {
+                  ...responseData.bestReview.user,
+                  profileImageUrl: getAbsoluteUrl(responseData.bestReview.user.profileImageUrl),
+                },
+              }
+            : null,
+          myReaction: responseData.myReaction ?? null,
+        });
       } catch (error) {
         console.error('상품 상세 로딩 에러:', error);
       } finally {
@@ -43,19 +78,32 @@ export function useStuffDetail(id: string) {
 
   const handleToggle = async (reactionType: 'LIKE' | 'DISLIKE') => {
     if (!detailData) return;
+    const prevReaction = detailData.myReaction || null;
+    const isSame = prevReaction === reactionType;
+
     try {
       setDetailData((prev) => {
         if (!prev) return prev;
-        const isSame = prev.interactionStats.myReaction === reactionType;
+
+        let likeCount = prev.likeCount;
+        let dislikeCount = prev.dislikeCount;
+
+        if (prevReaction === 'LIKE') likeCount = Math.max(0, likeCount - 1);
+        if (prevReaction === 'DISLIKE') dislikeCount = Math.max(0, dislikeCount - 1);
+
+        if (!isSame) {
+          if (reactionType === 'LIKE') likeCount += 1;
+          if (reactionType === 'DISLIKE') dislikeCount += 1;
+        }
+
         return {
           ...prev,
-          interactionStats: {
-            ...prev.interactionStats,
-            myReaction: isSame ? null : reactionType,
-          }
+          myReaction: isSame ? null : reactionType,
+          likeCount,
+          dislikeCount,
         };
       });
-      await apiClient.post(`/api/stuffs/${id}/interactions`, { reactionType });
+      await apiClient.post(`/api/interactions/${id}/interactions`, { reactionType });
     } catch (error) {
       console.error('반응 업데이트 에러:', error);
     }
