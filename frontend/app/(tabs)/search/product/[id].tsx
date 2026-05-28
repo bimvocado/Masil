@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { TopBar } from '@/components/layout/top-bar';
@@ -6,8 +6,7 @@ import { ProductCard } from '@/components/ui/product-card';
 import { InteractionButton } from '@/constants/interaction-button';
 import { InteractionStatsBar } from '@/components/ui/interaction-stats-bar';
 
-import { searchService } from '@/api/search-service';
-import { useSearchStore } from '@/store/search-store';
+import { useStuffDetail } from '@/hooks/useStuffDetail';
 
 export default function ProductDetailScreen() {
   const { id, stuffName, brandName } = useLocalSearchParams<{
@@ -17,37 +16,9 @@ export default function ProductDetailScreen() {
   }>();
 
   const router = useRouter();
+  const { loading, detailData, handleToggle } = useStuffDetail(id || '');
 
-  const {
-    stuffDetail,
-    loading,
-    setStuffDetail,
-    setLoading,
-    setError,
-  } = useSearchStore();
-
-  const fetchStuffDetail = async () => {
-    try {
-      setLoading(true);
-
-      const response = await searchService.getStuffDetail(Number(id));
-
-      setStuffDetail(response.data);
-    } catch (error: any) {
-      console.error('상품 상세 조회 실패:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (id) {
-      fetchStuffDetail();
-    }
-  }, [id]);
-
-  if (loading || !stuffDetail) {
+  if (loading || !detailData) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color="#FF8A00" />
@@ -58,14 +29,14 @@ export default function ProductDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <TopBar title={stuffDetail?.stuffName || stuffName || "상품 상세"} showBackButton={true} />
+      <TopBar title={detailData?.stuffName || stuffName || "상품 상세"} showBackButton={true} />
       
       <ScrollView contentContainerStyle={styles.scrollContent} style={{ backgroundColor: '#f5fbe7' }}>
         {/* 상단 리뷰 사진 영역 */}
         <View style={styles.imagePlaceholderBox}>
-          {stuffDetail.bestReviewImageUrl ? (
+          {detailData.bestReviewImageUrl ? (
             <Image
-              source={{ uri: stuffDetail.bestReviewImageUrl }}
+              source={{ uri: detailData.bestReviewImageUrl }}
               style={styles.reviewImage}
             />
           ) : (
@@ -80,18 +51,18 @@ export default function ProductDetailScreen() {
               router.push({
                 pathname: '/search/[id]',
                 params: {
-                  id: stuffDetail.brandId,
-                  name: stuffDetail.brandName,
+                  id: detailData.brandId,
+                  name: detailData.brandName,
                 },
               })
             }
           >
-            <Text style={styles.brandLink}>브랜드: {stuffDetail?.brandName || brandName || "브랜드 미정"}</Text>
+            <Text style={styles.brandLink}>브랜드: {detailData?.brandName || brandName || "브랜드 미정"}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.productTitle}>{stuffDetail?.stuffName || stuffName || "상품명 없음"}</Text>
+          <Text style={styles.productTitle}>{detailData?.stuffName || stuffName || "상품명 없음"}</Text>
           <Text style={styles.priceText}>
-            {stuffDetail?.price ? stuffDetail.price.toLocaleString() : '가격 정보 없음'}원
+            {detailData?.price ? detailData.price.toLocaleString() : '가격 정보 없음'}원
           </Text>
         </View>
 
@@ -100,12 +71,12 @@ export default function ProductDetailScreen() {
         {/* 통계 지표 */}
         <InteractionStatsBar 
           likeStats={{
-            total: stuffDetail.likeCount,
-            korean: stuffDetail.koreanLikeCount,
-            foreign: stuffDetail.foreignLikeCount,
+            total: detailData.likeCount,
+            korean: detailData.koreanLikeCount,
+            foreign: detailData.foreignLikeCount,
           } as any}
           dislikeStats={{
-            total: stuffDetail.dislikeCount,
+            total: detailData.dislikeCount,
           } as any}
         />
 
@@ -113,16 +84,22 @@ export default function ProductDetailScreen() {
         <View style={styles.statsContainer}>
           <InteractionButton
             type="like"
-            count={stuffDetail.likeCount}
-            isActive={false}
-            onPress={() => {}}
+            count={detailData.likeCount}
+            isActive={detailData.myReaction === 'LIKE'}
+            onPress={() => {
+              console.log('[ProductDetailScreen] like button pressed');
+              handleToggle('LIKE');
+            }}
             textPosition="right"
           />
           <InteractionButton
             type="dislike"
-            count={stuffDetail.dislikeCount}
-            isActive={false}
-            onPress={() => {}}
+            count={detailData.dislikeCount}
+            isActive={detailData.myReaction === 'DISLIKE'}
+            onPress={() => {
+              console.log('[ProductDetailScreen] dislike button pressed');
+              handleToggle('DISLIKE');
+            }}
             textPosition="right"
           />
         </View>
@@ -132,8 +109,8 @@ export default function ProductDetailScreen() {
         {/* 추천 조합 */}
         <Text style={styles.sectionTitle}>추천조합</Text>
 
-        {stuffDetail.recommendedStuffs.length > 0 ? (
-          stuffDetail.recommendedStuffs.map((item, index) => (
+        {detailData.recommendedStuffs.length > 0 ? (
+          detailData.recommendedStuffs.map((item, index) => (
             <ProductCard
               key={item.stuffId}
               rank={index + 1}
@@ -147,7 +124,7 @@ export default function ProductDetailScreen() {
                   params: {
                     id: item.stuffId,
                     stuffName: item.stuffName,
-                    brandName: stuffDetail.brandName,
+                    brandName: detailData.brandName,
                   },
                 } as any)
               }
@@ -170,22 +147,22 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={styles.reviewBox}>
-          {stuffDetail.bestReview ? (
+          {detailData.bestReview ? (
             <>
               <Text style={{ fontWeight: 'bold' }}>
-                {stuffDetail.bestReview.user.nickname}
+                {detailData.bestReview.user.nickname}
               </Text>
               <Text style={{ color: '#666', marginTop: 5 }}>
-                {stuffDetail.bestReview.content}
+                {detailData.bestReview.content}
               </Text>
               <Text style={{ color: '#888', marginTop: 5 }}>
-                옳소 {stuffDetail.bestReview.likeCount}
+                옳소 {detailData.bestReview.likeCount}
               </Text>
             </>
           ) : (
             <Text style={{ color: '#666' }}>
               여기는 유저들이 작성한 게시글(Post) 중 {"\n"}
-              이 상품({stuffDetail?.stuffName || stuffName})에 대한 리뷰가 뜰 자리입니다!
+              이 상품({detailData?.stuffName || stuffName})에 대한 리뷰가 뜰 자리입니다!
             </Text>
           )}
         </View>

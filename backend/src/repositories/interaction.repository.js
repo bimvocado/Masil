@@ -1,10 +1,19 @@
-const { Interaction, User, sequelize } = require('../models/interaction.model');
+const Interaction = require('../models/interaction.model');
+const User = require('../models/user.model');
+const sequelize = require('../config/db');
 
 class InteractionRepository {
 
     static async findByUserAndStuff(userId, stuffId) {
         return await Interaction.findOne({
             where: { userId, stuffId }
+        });
+    }
+
+    static async findDeletedByUserAndStuff(userId, stuffId) {
+        return await Interaction.findOne({
+            where: { userId, stuffId },
+            paranoid: false,
         });
     }
 
@@ -24,8 +33,17 @@ class InteractionRepository {
 
     static async deleteInteraction(userId, stuffId) {
         return await Interaction.destroy({
-            where: { userId, stuffId }
+            where: { userId, stuffId },
+            force: true,
+            paranoid: false,
         });
+    }
+
+    static async restoreInteraction(userId, stuffId) {
+        const interaction = await this.findDeletedByUserAndStuff(userId, stuffId);
+        if (!interaction) return null;
+        await interaction.restore();
+        return interaction;
     }
 
     static async getInteractionStats(stuffId) {
