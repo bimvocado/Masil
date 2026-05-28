@@ -3,9 +3,12 @@ import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicat
 import { useRouter } from 'expo-router';
 import { TopBar } from '@/components/layout/top-bar';
 import { ProfileInput } from '@/components/ui/profile-input';
-import { authService } from '@/api/auth-service'; // 💡 경로 확인해주세요!
+import { authService } from '@/api/auth-service'; 
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '@/store/use-auth-store'; 
+
+// 서버 주소 상수로 관리 (팀장님 환경에 맞게 수정하세요)
+const BASE_URL = 'http://localhost:3000';
 
 export default function ProfileEditScreen() {
   const router = useRouter();
@@ -20,11 +23,14 @@ export default function ProfileEditScreen() {
     if (user) {
       setNickname(user.nickname || '');
       setBio(user.bio || '');
-      setProfileImageUrl(user.profileImageUrl || '');
+      // 초기 이미지 설정 (풀 경로)
+      const initialUrl = user.profileImageUrl?.startsWith('http') 
+        ? user.profileImageUrl 
+        : `${BASE_URL}${user.profileImageUrl}`;
+      setProfileImageUrl(initialUrl || '');
     }
   }, [user]);
 
-  // ✅ 1. 이미지 선택 함수
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -41,11 +47,10 @@ export default function ProfileEditScreen() {
 
     if (!result.canceled) {
       setNewImage(result.assets[0]);
-      setProfileImageUrl(result.assets[0].uri); // 프리뷰 즉시 반영
+      setProfileImageUrl(result.assets[0].uri); 
     }
   };
 
-  // ✅ 2. 저장 함수
   const handleSave = async () => {
     if (!nickname.trim()) {
       Alert.alert('알림', '닉네임은 필수입니다.');
@@ -53,7 +58,6 @@ export default function ProfileEditScreen() {
     }
 
     setIsLoading(true);
-    console.log("💾 [디버그] 저장 시도 중...");
 
     try {
       const formData = new FormData();
@@ -62,7 +66,6 @@ export default function ProfileEditScreen() {
       
       if (newImage) {
         const localUri = newImage.uri;
-        
         if (Platform.OS === 'web') {
           const response = await fetch(localUri);
           const blob = await response.blob();
@@ -80,22 +83,26 @@ export default function ProfileEditScreen() {
         }
       }
 
-      // ✅ 기존 authService 사용하되, multipart 헤더 명시
       const res = await authService.updateProfile(formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       if (res.success) {
-        console.log("✅ 서버 응답 데이터:", res.data);
-        setUser(res.data); // Zustand 업데이트
+        const updatedData = {
+          ...res.data,
+          profileImageUrl: res.data.profileImageUrl 
+          ? `${res.data.profileImageUrl}?t=${new Date().getTime()}` 
+          : null
+      };  
+        // ✅ [수정] Zustand 업데이트 시 새 객체로 전달하여 감지 보장
+        setUser(updatedData);
+
         Alert.alert('성공', '프로필이 변경되었습니다.', [
           { text: '확인', onPress: () => router.back() }
         ]);
       }
     } catch (error: any) {
-      console.error("❌ [디버그] 저장 에러:", error.response?.data || error.message);
+      console.error("❌ 저장 에러:", error.response?.data || error.message);
       Alert.alert('오류', '저장에 실패했습니다.');
     } finally {
       setIsLoading(false);
@@ -105,7 +112,6 @@ export default function ProfileEditScreen() {
   return (
     <View style={styles.container}>
       <TopBar title="프로필 설정" showBackButton={true} />
-
       <View style={styles.content}>
         <View style={styles.avatarSection}>
           <TouchableOpacity onPress={pickImage}>
@@ -117,32 +123,14 @@ export default function ProfileEditScreen() {
             <Text style={styles.changePhotoText}>사진 변경</Text>
           </TouchableOpacity>
         </View>
-        
-        <ProfileInput 
-          label="닉네임" 
-          value={nickname} 
-          onChangeText={setNickname} 
-          placeholder="닉네임을 입력하세요"
-        />
-
-        <ProfileInput 
-          label="계정 설명" 
-          value={bio} 
-          onChangeText={setBio} 
-          multiline 
-          placeholder="나를 소개해 보세요"
-        />
-
+        <ProfileInput label="닉네임" value={nickname} onChangeText={setNickname} placeholder="닉네임을 입력하세요" />
+        <ProfileInput label="계정 설명" value={bio} onChangeText={setBio} multiline placeholder="나를 소개해 보세요" />
         <TouchableOpacity 
           style={[styles.saveButton, isLoading && { opacity: 0.5 }]} 
-          onPress={handleSave}
+          onPress={handleSave} 
           disabled={isLoading}
         >
-          {isLoading ? (
-            <ActivityIndicator color="#8DBA7D" />
-          ) : (
-            <Text style={styles.saveButtonText}>변경사항 저장</Text>
-          )}
+          {isLoading ? <ActivityIndicator color="#8DBA7D" /> : <Text style={styles.saveButtonText}>변경사항 저장</Text>}
         </TouchableOpacity>
       </View>
     </View>
@@ -156,13 +144,6 @@ const styles = StyleSheet.create({
   avatarPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#E0E0E0' },
   avatarImage: { width: 120, height: 120, borderRadius: 60 },
   changePhotoText: { marginTop: 10, color: '#aaa', textAlign: 'center' },
-  saveButton: { 
-    backgroundColor: '#E8F5E9', 
-    width: '100%', 
-    padding: 15, 
-    borderRadius: 25, 
-    alignItems: 'center', 
-    marginTop: 20 
-  },
+  saveButton: { backgroundColor: '#E8F5E9', width: '100%', padding: 15, borderRadius: 25, alignItems: 'center', marginTop: 20 },
   saveButtonText: { color: '#8DBA7D', fontWeight: 'bold' }
 });

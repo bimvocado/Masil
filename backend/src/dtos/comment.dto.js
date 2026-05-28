@@ -1,3 +1,4 @@
+
 class CreateCommentReqDTO {
     constructor({ userId, postId, text, parentCommentId = null }) {
         this.userId = userId;
