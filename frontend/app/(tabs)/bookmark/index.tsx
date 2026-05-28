@@ -36,11 +36,11 @@ export default function BookmarkScreen() {
   };
 
   const fetchCategories = async () => {
-    if (!user) return;
+    if (!user?.userId) return;
     setIsLoading(true);
     try {
-      const res = await categoryService.getCategories(user.userId);
-      setCategories(res.data ?? []);
+      const categories = await categoryService.getCategories(user.userId);
+      setCategories(categories ?? []);
     } catch {
     } finally {
       setIsLoading(false);
@@ -48,12 +48,13 @@ export default function BookmarkScreen() {
   };
 
   const handleAdd = async () => {
-    if (!user) return;
+    if (!user?.userId) return;
     const newName = `새 폴더 ${categories.length + 1}`;
     try {
-      const res = await categoryService.createCategory(user.userId, { categoryName: newName });
-      setCategories(prev => [...prev, res.data]);
-    } catch {}
+      const category = await categoryService.createCategory(user.userId, { categoryName: newName });
+      setCategories(prev => [...prev, category]);
+    } catch {
+    }
   };
 
   const handleDelete = async (categoryId: number) => {

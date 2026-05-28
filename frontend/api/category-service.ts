@@ -4,7 +4,7 @@ export const categoryService = {
   getCategories: async (userId: number) => {
     try {
       const response = await apiClient.get(`/api/users/${userId}/categories`);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('카테고리 목록 조회 에러:', error);
       throw error;
@@ -14,7 +14,7 @@ export const categoryService = {
   createCategory: async (userId: number, data: { categoryName: string }) => {
     try {
       const response = await apiClient.post(`/api/users/${userId}/categories`, data);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('카테고리 생성 에러:', error);
       throw error;

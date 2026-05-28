@@ -88,10 +88,14 @@ export default function EntryScreen() {
         
         // 2. 서버 응답 구조 확인 (result.success가 true인 경우)
         if (result.success) {
-          const userData = result.data; // 실제 유저 정보는 data 안에 있음
+          const userData = result.data?.user; // 실제 유저 정보는 data.user 안에 있음
           
           console.log('로그인 성공 유저 정보:', userData);
           
+          if (!userData?.userId) {
+            throw new Error('로그인 후 사용자 정보가 올바르게 설정되지 않았습니다.');
+          }
+
           setUser(userData); // Zustand 창고에 저장
           Alert.alert('환영합니다!', `${userData.nickname}님, 마실에 오신 걸 환영해요!`);
           
