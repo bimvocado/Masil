@@ -2,9 +2,10 @@ const express = require('express')
 const router = express.Router();
 const postController = require('../controllers/post.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
+const upload = require('../middlewares/upload');
 
 // 게시글 등록
-router.post('/', authMiddleware, postController.createPost);
+router.post('/', authMiddleware, upload.single('image'), postController.createPost);
 
 // 게시글 전체 조회
 router.get('/', authMiddleware, postController.getPosts);

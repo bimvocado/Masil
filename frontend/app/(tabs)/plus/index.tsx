@@ -181,11 +181,29 @@ export default function PlusScreen() {
         return;
       }
 
-      const result = await postService.createPost({
-        content,
-        imageUrl: imageUri ?? undefined,
-        stuffId,
-      });
+      const formData = new FormData();
+      formData.append('content', content);
+      formData.append('stuffId', String(stuffId));
+
+      if (imageUri) {
+        if (Platform.OS === 'web') {
+          const response = await fetch(imageUri);
+          const blob = await response.blob();
+          formData.append('image', blob, 'post-image.jpg');
+        } else {
+          const filename = imageUri.split('/').pop() || 'post-image.jpg';
+          const match = /\.(\w+)$/.exec(filename);
+          const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+          formData.append('image', {
+            uri: imageUri,
+            name: filename,
+            type,
+          } as any);
+        }
+      }
+
+      const result = await postService.createPost(formData);
 
       console.log('게시글 등록 성공:', result);
 

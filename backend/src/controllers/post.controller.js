@@ -13,9 +13,16 @@ const createPost = async (req, res, next) => {
 
     const userId = req.user.userId;
 
+    let finalImageUrl = imageUrl;
+    if (req.file) {
+      finalImageUrl = `/uploads/${req.file.filename}`;
+    } else if (finalImageUrl && finalImageUrl.startsWith('file://')) {
+      finalImageUrl = null;
+    }
+
     const reqDTO = new CreatePostReqDTO(
       content,
-      imageUrl,
+      finalImageUrl,
       userId,
       stuffId
     );
