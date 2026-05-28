@@ -14,7 +14,10 @@ const createCategory = async (req, res, next) => {
   try {
     const { userId } = req.params;
     const { categoryName } = req.body;
-    const category = await categoryService.createCategory(userId, categoryName);
+    if (!categoryName || !categoryName.trim()) {
+      return res.status(400).json({ success: false, message: '카테고리 이름을 입력해주세요.' });
+    }
+    const category = await categoryService.createCategory(userId, categoryName.trim());
     return res.status(201).json({ success: true, message: '카테고리 생성 성공', data: category });
   } catch (error) {
     next(error);
@@ -25,7 +28,10 @@ const updateCategory = async (req, res, next) => {
   try {
     const { categoryId } = req.params;
     const { categoryName } = req.body;
-    const category = await categoryService.updateCategory(categoryId, categoryName);
+    if (!categoryName || !categoryName.trim()) {
+      return res.status(400).json({ success: false, message: '카테고리 이름을 입력해주세요.' });
+    }
+    const category = await categoryService.updateCategory(categoryId, categoryName.trim());
     return res.status(200).json({ success: true, message: '카테고리 수정 성공', data: category });
   } catch (error) {
     next(error);

@@ -85,13 +85,14 @@ app.use('/api/brands', brandRouter);
 app.use('/api/auth', authRoutes);
 app.use('/api/interactions', interactionRouter);
 app.use('/api/scraps', scrapRouter);
-app.use('/api/categories', categoryRouter);
+
+// 카테고리는 사용자 기준 경로로만 노출
+app.use('/api/users', categoryRouter);
 
 // 댓글 라우터 구조에 따라 둘 중 필요한 것만 써도 됨
 app.use('/api/posts', commentRouter);
 app.use('/api/comments', commentRouter);
 
-app.use('/api/users', categoryRouter);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // 서버 상태 확인
 app.get('/', (req, res) => {
