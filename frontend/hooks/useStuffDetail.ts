@@ -77,7 +77,11 @@ export function useStuffDetail(id: string) {
   }, [id]);
 
   const handleToggle = async (reactionType: 'LIKE' | 'DISLIKE') => {
-    if (!detailData) return;
+    console.log('[useStuffDetail] handleToggle called', { id, reactionType, currentReaction: detailData?.myReaction });
+    if (!detailData) {
+      console.warn('[useStuffDetail] detailData is null, toggle skipped');
+      return;
+    }
     const prevReaction = detailData.myReaction || null;
     const isSame = prevReaction === reactionType;
 
@@ -103,9 +107,15 @@ export function useStuffDetail(id: string) {
           dislikeCount,
         };
       });
-      await apiClient.post(`/api/interactions/${id}/interactions`, { reactionType });
-    } catch (error) {
+
+      console.log('[useStuffDetail] sending request', `/api/interactions/${id}/interactions`, reactionType);
+      const response = await apiClient.post(`/api/interactions/${id}/interactions`, { reactionType });
+      console.log('[useStuffDetail] request response', response.status, response.data);
+    } catch (error: any) {
       console.error('반응 업데이트 에러:', error);
+      if (error.response) {
+        console.error('API error response:', error.response.status, error.response.data);
+      }
     }
   };
 

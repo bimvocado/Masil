@@ -1,12 +1,12 @@
 const interactionRepository = require('../repositories/interaction.repository');
-const { toInteractionResDTO } = require('../converters/interaction.converter');
+const { toInteractionResDTO, toStatsResDTO } = require('../converters/interaction.converter');
 const stuffRepository = require('../repositories/stuff.repository');
 const { NotFoundException, BadRequestException } = require('../exceptions/custom.exception');
 
 const processInteraction = async (interactionData) => {
     const { userId, stuffId, reactionType } = interactionData;
 
-    const stuff = await stuffRepository.findById(stuffId);
+    const stuff = await stuffRepository.findStuffById(stuffId);
     if (!stuff) {
         throw new NotFoundException('Stuff not found');
     }
@@ -38,4 +38,18 @@ const processInteraction = async (interactionData) => {
         interaction: savedEntity ? toInteractionResDTO(savedEntity) : null,
         stats: toStatsResDTO(rawStats)
     };
+};
+
+const toggleInteraction = async (reqDTO) => {
+  return await processInteraction(reqDTO);
+};
+
+const getInteractionStats = async (stuffId) => {
+  const rawStats = await interactionRepository.getInteractionStats(stuffId);
+  return toStatsResDTO(rawStats);
+};
+
+module.exports = {
+  toggleInteraction,
+  getInteractionStats,
 };

@@ -86,14 +86,20 @@ export default function ProductDetailScreen() {
             type="like"
             count={detailData.likeCount}
             isActive={detailData.myReaction === 'LIKE'}
-            onPress={() => handleToggle('LIKE')}
+            onPress={() => {
+              console.log('[ProductDetailScreen] like button pressed');
+              handleToggle('LIKE');
+            }}
             textPosition="right"
           />
           <InteractionButton
             type="dislike"
             count={detailData.dislikeCount}
             isActive={detailData.myReaction === 'DISLIKE'}
-            onPress={() => handleToggle('DISLIKE')}
+            onPress={() => {
+              console.log('[ProductDetailScreen] dislike button pressed');
+              handleToggle('DISLIKE');
+            }}
             textPosition="right"
           />
         </View>

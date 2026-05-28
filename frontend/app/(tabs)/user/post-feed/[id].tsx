@@ -12,6 +12,7 @@ import { scrapService } from '@/api/scrap-service';
 import { categoryService } from '@/api/category-service';
 import { useAuthStore } from '@/store/use-auth-store';
 import { postService } from '@/services/post-service';
+import apiClient from '@/api/client';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
@@ -111,24 +112,45 @@ export default function UserPostFeedScreen() {
     } catch {}
   };
 
-  const toggleLike = (postId: number) => {
-    setInteractions(prev => ({
-      ...prev,
-      [postId]: {
-        liked: !prev[postId]?.liked,
-        disliked: false,
-      }
-    }));
-  };
+  const toggleReaction = async (post: Post, reactionType: 'LIKE' | 'DISLIKE') => {
+    if (!user) return;
+    console.log('[UserPostFeed] toggleReaction', { postId: post.postId, stuffId: post.stuffId, reactionType });
 
-  const toggleDislike = (postId: number) => {
-    setInteractions(prev => ({
-      ...prev,
-      [postId]: {
-        liked: false,
-        disliked: !prev[postId]?.disliked,
+    try {
+      const response = await apiClient.post(`/api/interactions/${post.stuffId}/interactions`, { reactionType });
+      console.log('[UserPostFeed] interaction response', response.data);
+
+      const action = response.data?.data?.action;
+      const stats = response.data?.data?.stats;
+      const newLikeCount = stats?.like?.total ?? post.likeCount;
+      const newDislikeCount = stats?.dislike?.total ?? post.dislikeCount;
+
+      const nextInteractionState = action === 'DELETED'
+        ? { liked: false, disliked: false }
+        : {
+            liked: reactionType === 'LIKE',
+            disliked: reactionType === 'DISLIKE',
+          };
+
+      setInteractions(prev => ({
+        ...prev,
+        [post.postId]: nextInteractionState,
+      }));
+
+      setAllPosts(prev => prev.map(p => {
+        if (p.postId !== post.postId) return p;
+        return {
+          ...p,
+          likeCount: newLikeCount,
+          dislikeCount: newDislikeCount,
+        };
+      }));
+    } catch (error: any) {
+      console.error('[UserPostFeed] interaction failed', error);
+      if (error.response) {
+        console.error('[UserPostFeed] interaction error response', error.response.status, error.response.data);
       }
-    }));
+    }
   };
 
   if (loading) {
@@ -157,15 +179,15 @@ export default function UserPostFeedScreen() {
 
       <View style={styles.rightOverlay}>
         <View style={styles.iconGroup}>
-          <TouchableOpacity onPress={() => toggleLike(item.postId)} style={{ alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => toggleReaction(item, 'LIKE')} style={{ alignItems: 'center' }}>
             <Text style={[styles.icon, { color: interactions[item.postId]?.liked ? '#FF6B6B' : '#fff' }]}>👍</Text>
-            <Text style={styles.iconCount}>{interactions[item.postId]?.liked ? (item.likeCount || 0) + 1 : (item.likeCount || 0)}</Text>
+            <Text style={styles.iconCount}>{item.likeCount || 0}</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.iconGroup}>
-          <TouchableOpacity onPress={() => toggleDislike(item.postId)} style={{ alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => toggleReaction(item, 'DISLIKE')} style={{ alignItems: 'center' }}>
             <Text style={[styles.icon, { color: interactions[item.postId]?.disliked ? '#6B9BD1' : '#fff' }]}>👎</Text>
-            <Text style={styles.iconCount}>{interactions[item.postId]?.disliked ? (item.dislikeCount || 0) + 1 : (item.dislikeCount || 0)}</Text>
+            <Text style={styles.iconCount}>{item.dislikeCount || 0}</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.iconGroup} onPress={handleOpenComments}>

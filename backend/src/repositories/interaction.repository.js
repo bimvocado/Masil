@@ -1,4 +1,6 @@
-const { Interaction, User, sequelize } = require('../models/interaction.model');
+const Interaction = require('../models/interaction.model');
+const User = require('../models/user.model');
+const sequelize = require('../config/db');
 
 class InteractionRepository {
 
@@ -24,7 +26,8 @@ class InteractionRepository {
 
     static async deleteInteraction(userId, stuffId) {
         return await Interaction.destroy({
-            where: { userId, stuffId }
+            where: { userId, stuffId },
+            force: true,
         });
     }
 
