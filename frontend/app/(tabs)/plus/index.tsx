@@ -28,6 +28,10 @@ export default function PlusScreen() {
   const [brandName, setBrandName] = useState('');
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
   const [selectedBrandName, setSelectedBrandName] = useState('');
+
+  // 브랜드 이미지
+  const [selectedBrandLogoUrl, setSelectedBrandLogoUrl] = useState('');
+  
   const [isBrandModalVisible, setIsBrandModalVisible] = useState(false);
   const [brandQuery, setBrandQuery] = useState('');
   const [brandResults, setBrandResults] = useState<any[]>([]);
@@ -249,8 +253,18 @@ export default function PlusScreen() {
               </TouchableOpacity>
 
               <View style={styles.userInfoCard}>
-                <TouchableOpacity onPress={() => setIsBrandModalVisible(true)}>
+                {/* <TouchableOpacity onPress={() => setIsBrandModalVisible(true)}>
                   <View style={styles.avatarPlaceholder} />
+                </TouchableOpacity> */}
+                <TouchableOpacity onPress={() => setIsBrandModalVisible(true)}>
+                  {selectedBrandLogoUrl ? (
+                    <Image
+                      source={{ uri: selectedBrandLogoUrl }}
+                      style={styles.avatarPlaceholder}
+                    />
+                  ) : (
+                    <View style={styles.avatarPlaceholder} />
+                  )}
                 </TouchableOpacity>
                 <View style={styles.nameInputWrapper}>
                   <TextInput
@@ -326,8 +340,13 @@ export default function PlusScreen() {
                   <ScrollView>
                     {brandResults.map((b) => (
                       <TouchableOpacity key={b.brandId} style={{ padding: 12, borderBottomWidth: 1, borderColor: '#eee' }} onPress={() => {
+                        
+                        console.log('선택 브랜드', b);
+                        console.log('logoUrl', b.logoUrl);
+                        
                         setSelectedBrandId(b.brandId);
                         setSelectedBrandName(b.brandName);
+                        setSelectedBrandLogoUrl(b.logoUrl || '');
                         setIsBrandModalVisible(false);
                       }}>
                         <Text>{b.brandName}</Text>
