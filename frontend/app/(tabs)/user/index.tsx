@@ -28,10 +28,12 @@ export default function UserScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
-const getImageUrl = (url: string | null | undefined) => {
-  if (!url) return undefined; // 👈 null 대신 undefined!
-  return url.startsWith('http') ? url : `${BASE_URL}${url}`;
-};
+  const getImageUrl = (url: string | null | undefined) => {
+    if (!url) return undefined;
+    if (url.startsWith('http')) return url;
+    const safePath = url.startsWith('/') ? url : `/${url}`;
+    return `${BASE_URL}${safePath}`;
+  };
 
   // 탭 전환 후 돌아올 때도 최신 데이터를 불러오기 위해 useFocusEffect 사용
   useFocusEffect(
