@@ -16,6 +16,13 @@ import { styles } from '@/components/styles/search';
 import { searchService } from '@/api/search-service';
 import { useSearchStore } from '@/store/search-store';
 
+const BASE_URL = 'http://localhost:3000';
+
+const getImageUrl = (url?: string | null) => {
+  if (!url) return undefined;
+  return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+};
+
 export default function SearchScreen() {
 
   const insets = useSafeAreaInsets();
@@ -184,7 +191,7 @@ export default function SearchScreen() {
             {/* 브랜드 로고 */}
             {brand.logoUrl ? (
               <Image
-                source={{ uri: brand.logoUrl }}
+                source={{ uri: getImageUrl(brand.logoUrl) }}
                 style={styles.logoCircle}
               />
             ) : (

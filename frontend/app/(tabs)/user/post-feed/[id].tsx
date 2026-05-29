@@ -48,7 +48,15 @@ export default function UserPostFeedScreen() {
         
         // 사용자의 모든 게시글 로드
         const userPosts = await postService.getUserPosts(user.userId);
-        setAllPosts(userPosts || []);
+
+        console.log('마이페이지 게시글 목록:', userPosts);
+
+        const normalizedPosts = (userPosts || []).map((post: any) => ({
+          ...post,
+          imageUrl: post.imageUrl ?? post.image_url ?? null,
+        }));
+
+        setAllPosts(normalizedPosts);
         
         setLoading(false);
       } catch (error) {
@@ -176,7 +184,7 @@ export default function UserPostFeedScreen() {
         {item.imageUrl ? (
           <Image
             source={{ uri: getImageUrl(item.imageUrl) }}
-            style={{ flex: 1, width: '100%' }}
+            style={{ flex: 1, width: '100%', height: '100%' }}
             resizeMode="cover"
           />
         ) : (

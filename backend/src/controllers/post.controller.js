@@ -9,20 +9,19 @@ const {
 // 게시글 등록
 const createPost = async (req, res, next) => {
   try {
-    const { content, imageUrl, stuffId } = req.body;
+    const { content, stuffId } = req.body;
+    
+    console.log('req.body:', req.body);
+    console.log('req.file:', req.file);
 
     const userId = req.user.userId;
 
-    let finalImageUrl = imageUrl;
-    if (req.file) {
-      finalImageUrl = `/uploads/${req.file.filename}`;
-    } else if (finalImageUrl && finalImageUrl.startsWith('file://')) {
-      finalImageUrl = null;
-    }
+    // 백엔드에서 imageUrl 만듦
+    const imageUrl = req.file ? `/uploads/${req.file.filename}`: null;
 
     const reqDTO = new CreatePostReqDTO(
       content,
-      finalImageUrl,
+      imageUrl,
       userId,
       stuffId
     );
