@@ -78,6 +78,23 @@ const findStuffDetail = async (stuffId) => {
         THEN i.interaction_id
       END) AS foreignerLikeCount,
 
+      COUNT(DISTINCT CASE
+        WHEN i.reaction_type = 'DISLIKE'
+        THEN i.interaction_id
+      END) AS totalDislikeCount,
+
+      COUNT(DISTINCT CASE
+        WHEN i.reaction_type = 'DISLIKE'
+          AND u.is_korean = true
+        THEN i.interaction_id
+      END) AS koreanDislikeCount,
+        
+      COUNT(DISTINCT CASE
+        WHEN i.reaction_type = 'DISLIKE'
+          AND u.is_korean = false
+        THEN i.interaction_id
+      END) AS foreignerDislikeCount,
+
       COUNT(DISTINCT p.post_id) AS totalPostCount
 
     FROM stuffs s

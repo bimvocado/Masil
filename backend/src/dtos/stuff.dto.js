@@ -37,7 +37,6 @@ const toTopPostDTO = (post) => {
 };
 
 // 상품창 - 상세 페이지 전체
-// 추천조합 탭은 아직 구현X
 const toStuffDetailDTO = ({
   stuff,
   topPost,
@@ -55,10 +54,14 @@ const toStuffDetailDTO = ({
     // 이미지 있는 게시글 중 스크랩이 가장 많은 글의 사진
     imageUrl: stuff.imageUrl,
 
-    // 상품 상세 정보
+    // 상품 Interaction 집계
     totalLikeCount: Number(stuff.totalLikeCount || 0),
     koreanLikeCount: Number(stuff.koreanLikeCount || 0),
     foreignerLikeCount: Number(stuff.foreignerLikeCount || 0),
+
+    totalDislikeCount: Number(stuff.totalDislikeCount || 0),
+    koreanDislikeCount: Number(stuff.koreanDislikeCount || 0),
+    foreignerDislikeCount: Number(stuff.foreignerDislikeCount || 0),
 
     totalPostCount: Number(stuff.totalPostCount || 0),
 
