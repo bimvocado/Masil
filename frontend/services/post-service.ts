@@ -1,5 +1,7 @@
 import { Post } from '@/types/post';
 import apiClient from '@/api/client';
+import { BASE_URL } from '@/api/auth-service';
+import axios from 'axios';
 
 export const postService = {
   // 게시글 전체 조회
@@ -45,26 +47,13 @@ export const postService = {
       imageUrl?: string;
     }
   ): Promise<Post> => {
-    const headers = await getAuthHeader();
-
-    const response = await axios.patch(
-      `${BASE_URL}/api/posts/${postId}`,
-      postData,
-      { headers }
-    );
-
+    const response = await apiClient.patch(`/api/posts/${postId}`, postData);
     return response.data.data;
   },
 
   // 게시글 삭제
   deletePost: async (postId: number) => {
-    const headers = await getAuthHeader();
-
-    const response = await axios.delete(
-      `${BASE_URL}/api/posts/${postId}`,
-      { headers }
-    );
-
+    const response = await apiClient.delete(`/api/posts/${postId}`);
     return response.data.data;
   },
 };

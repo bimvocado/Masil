@@ -8,44 +8,25 @@ import { authStyles as styles } from '@/components/styles/auth';
 import { useAuthStore } from '@/store/use-auth-store';
 import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
 import { getToken,removeToken } from '@/utils/storage';
-import { authService } from '@/services/auth-service';
+import { authService } from '@/api/auth-service';
 
 export default function EntryScreen() {
   const router = useRouter();
   const { setUser, isLoggedIn } = useAuthStore();
-
-  useEffect(() => {
-    const checkLogin = async () => {
-      const token = await getToken();
-      if (token && !isLoggedIn) {
-        // 💡 토큰이 있다면 유저 정보를 가져와서 자동 로그인 처리
-        // (보통 서버에 'me' API를 하나 만들어두면 좋습니다. 일단은 더미 혹은 프로필 로드)
-        try {
-          const result = await authService.getProfile(0); // 0이나 특정 키워드로 내 정보 로드
-          if (result.success) {
-            setUser(result.data);
-            router.replace('/(tabs)/home');
-          }
-        } catch (e) {
-          console.log("토큰 만료 혹은 유효하지 않음");
-          await removeToken();
-        }
-      }
-    };
-    checkLogin();
-  }, []);
   const [isLoginView, setIsLoginView] = useState(true);
-
-  const [isIdChecked, setIsIdChecked] = useState(false); // 아이디 중복 체크 통과 여부
+  const [isIdChecked, setIsIdChecked] = useState(false);
   
   const [formData, setFormData] = useState({
     loginId: '',
     password: '',
     email: '',
     nickname: '',
-    birthDate: '', // 0000-00-00 형식
+    birthDate: '', 
   });
 
+  if (isLoggedIn) {
+    return <Redirect href="/(tabs)/home" />;
+  }
 
   const handleChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));

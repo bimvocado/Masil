@@ -1,26 +1,27 @@
 import apiClient from './client'; 
-import { saveToken, removeToken } from '@/utils/storage'; // 👈 우리가 만든 웹 호환 저장소 가져오기
+import { saveToken, removeToken } from '@/utils/storage';
 import { User } from '@/types/user';
 
-export const BASE_URL = 'http://localhost:3000'; // 필요한 경우 추가
+export const BASE_URL = 'http://localhost:3000'; 
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 export const authService = {
-  /**
-   * 로그인 요청
-   */
+ 
   login: async (loginId: string, password: string) => {
     try {
+      console.log("[디버그] 로그인 API 호출 시작 (ID: " + loginId + ")");
       const response = await apiClient.post('/api/auth/login', { loginId, password });
       
-      // 💡 백엔드가 토큰을 어디에 담아주느냐가 핵심입니다.
-      const token = response.data?.token || response.data?.data?.token;
-  
+      const token = response.data?.token || 
+                    response.data?.data?.token || 
+                    response.data?.accessToken;
+
       if (token) {
-        // 💡 여기서 확실히 저장!
-        await saveToken(token); 
-        console.log("✅ [성공] 주머니에 토큰 넣음! 값:", token);
-      } else {
-        console.error("❌ [실패] 서버 응답에 토큰이 없어요! 응답구조:", response.data);
+        await saveToken(token);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('userToken', token);
+        }
+        console.log("✅ [디버그] 토큰 저장 완료");
       }
       return response.data;
     } catch (error) {
@@ -30,11 +31,28 @@ export const authService = {
   },
 
   /**
-   * 회원가입 요청
+   * 프로필 로드: 새로고침 시 404 방지를 위해 /me 주소를 활용하도록 설계
+   */
+  getProfile: async (userId?: number) => { 
+    try {
+      const url = userId ? `/api/users/profile/${userId}` : `/api/users/me`;
+      
+      const response = await apiClient.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('프로필 로딩 에러 (404 발생 시 백엔드 라우터 확인!):', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 회원가입
    */
   register: async (userData: Partial<User>) => {
     try {
       const response = await apiClient.post('/api/users/signup', userData);
+      const token = response.data.data?.token || response.data.token;
+      if (token) await saveToken(token);
       return response.data;
     } catch (error) {
       console.error('회원가입 에러:', error);
@@ -43,44 +61,73 @@ export const authService = {
   },
 
   /**
-   * 프로필 로드
+   * 중복 확인
    */
-  getProfile: async (userId?: number | string) => {
+  checkDuplicate: async (type: 'loginId' | 'email', value: string) => {
     try {
-      // 💡 여기서 apiClient가 내부적으로 토큰을 쓰는지 확인이 필요하지만, 
-      // 일단 url 구조 맞춰서 호출합니다.
-      const url = userId ? `/api/users/profile/${userId}` : `/api/users/profile`;
-      const response = await apiClient.get(url);
-      
-      return response.data; 
+      const response = await apiClient.get('/api/users/check-duplicate', {
+        params: { type, value } 
+      });
+      return response.data;
     } catch (error) {
-      console.error('프로필 로딩 에러:', error);
+      console.error(`${type} 중복 체크 에러:`, error);
       throw error;
     }
   },
-  
-  /**
-   * 로그아웃
-   */
-  logout: async () => {
-    try {
-
-      await removeToken();
-      console.log("✅ 로그아웃: 토큰 삭제 완료");
-    } catch (error) {
-      console.error('로그아웃 에러:', error);
-    }
-  },
 
   /**
-   * 프로필 수정 
+   * 프로필 수정
    */
-  updateProfile: async (formData: FormData, config?: any) => {
+  updateProfile: async (formData: FormData, config?: any) => { // 👈 config?: any 추가
     try {
-      const response = await apiClient.patch('/api/users/profile', formData, config); 
+
+      const response = await apiClient.patch('/api/users/profile', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        ...config, 
+      });
       return response.data;
     } catch (error) {
       console.error('프로필 수정 에러:', error);
       throw error;
     }
-  } };
+  },
+
+  /**
+   * 비밀번호 변경
+   */
+  changePassword: async (userId: number, currentPassword: string, newPassword: string) => {
+    try {
+      const response = await apiClient.patch('/api/users/change-password', {
+        userId, currentPassword, newPassword
+      });
+      return response.data;
+    } catch (error) {
+      console.error('비밀번호 변경 에러:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 구글 로그인
+   */
+  loginWithGoogle: async (code: string, codeVerifier?: string) => {
+    try {
+      const response = await apiClient.post('/api/auth/google', { code, codeVerifier });
+      const token = response.data.data?.token || response.data.token;
+      if (token) await saveToken(token);
+      return response.data;
+    } catch (error) {
+      console.error('구글 로그인 에러:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 로그아웃
+   */
+  logout: async () => {
+    await removeToken();
+    if (typeof window !== 'undefined') localStorage.removeItem('userToken');
+    console.log("✅로그아웃 완료");
+  },
+};
