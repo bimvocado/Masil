@@ -15,6 +15,7 @@ export interface Post {
     stuffName?: string;     // 상품명 (Stuff 테이블에서 가져올 값)
     brandName?: string;     // 브랜드명 (Brand 테이블에서 가져올 값)
     likeCount: number;     // Interaction 테이블에서 카운트할 값
+    dislikeCount: number;  
     commentCount: number;  // Comment 테이블에서 카운트할 값
     isScrapped?: boolean;
     scrapCount?: number;

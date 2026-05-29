@@ -9,9 +9,9 @@ router.get('/:postId/comments', commentController.getComments);
 router.post('/:postId/comments', commentController.createComment);
 
 // 댓글 수정
-router.put('/:commentId', commentController.updateComment);
+router.put('/:commentId', commentController.updateComment);    
 
 // 댓글 삭제
-router.delete('/:commentId', commentController.deleteComment);
+router.delete('/:commentId', commentController.deleteComment); 
 
 module.exports = router;
