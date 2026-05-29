@@ -55,6 +55,9 @@ export default function SearchScreen() {
           activeTab
         );
 
+      // 반환 값 확인
+      console.log(response);
+
       setBrands(response.data);
 
     } catch (error: any) {

@@ -2,7 +2,12 @@ import { StyleSheet, Dimensions } from 'react-native';
 import { Colors } from '@/constants/colors';
 
 const { width } = Dimensions.get('window');
-export const CARD_SIZE = (width - 48) / 3;
+
+// 기존 코드 : width가 전체 기기 화면 너비 기준이라 실제 설정 값보다 크게 계산될 수 있음.
+// export const CARD_SIZE = (width - 48) / 3;
+
+// 수정
+export const CARD_SIZE = '30%';
 
 export const styles = StyleSheet.create({
   container: {
@@ -56,18 +61,36 @@ export const styles = StyleSheet.create({
     color: Colors.masil.point,
   },
   gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 12,
-    backgroundColor: Colors.masil.background,
-    flexGrow: 1,
+    // 기존
+    // flexDirection: 'row',
+    // flexWrap: 'wrap',
+    // padding: 12,
+    // backgroundColor: Colors.masil.background,
+    // flexGrow: 1,
+
+    // 수정
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      padding: 12,
+      backgroundColor: Colors.masil.background,
+      flexGrow: 1,
   },
   brandCard: {
-    width: CARD_SIZE,
-    height: CARD_SIZE + 20,
+
+    // 기존 WINDOW 기준
+    // width: CARD_SIZE,
+    // height: CARD_SIZE + 20,
+
+    // 수정
+    width: '30%',
+    aspectRatio: 1,
+
     backgroundColor: Colors.white,
     borderRadius: 16,
-    margin: 4,
+
+    // margin: 4,
+    margin: '1.66%',
+
     alignItems: 'center',
     justifyContent: 'center',
     padding: 8,
