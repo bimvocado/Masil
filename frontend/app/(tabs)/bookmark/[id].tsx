@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles } from '@/components/styles/bookmark-detail';
@@ -8,6 +8,13 @@ import { Post } from '@/types/post';
 import { TopBar } from '@/components/layout/top-bar';
 import { scrapService } from '@/api/scrap-service';
 import { useAuthStore } from '@/store/use-auth-store';
+
+const BASE_URL = 'http://localhost:3000';
+
+const getImageUrl = (url?: string) => {
+  if (!url) return undefined;
+  return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+};
 
 export default function BookmarkDetailScreen() {
   const router = useRouter();
@@ -56,12 +63,13 @@ export default function BookmarkDetailScreen() {
           renderItem={({ item }) => (
             <View style={styles.postCard}>
               <View style={styles.cardLeft}>
-                <Text style={styles.postTitle} numberOfLines={1}>
+                <Text style={styles.postTitle} numberOfLines={2}>
                   {item.content}
                 </Text>
-                <Text style={styles.postHandle}>
-                  {item.brandName} - {item.stuffName}
+                <Text style={styles.postHandle} numberOfLines={1}>
+                  {item.brandName || '-'} • {item.stuffName || '-'}
                 </Text>
+                <Text style={styles.postDate}>{item.createdAt}</Text>
                 <View style={styles.interactionRow}>
                   <View style={styles.iconGroup}>
                     <InteractionButton
@@ -81,7 +89,15 @@ export default function BookmarkDetailScreen() {
                 </View>
               </View>
               <View style={styles.cardRight}>
-                <View style={styles.thumbnailPlaceholder} />
+                {item.imageUrl ? (
+                  <Image
+                    source={{ uri: getImageUrl(item.imageUrl) }}
+                    style={styles.thumbnailPlaceholder}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.thumbnailPlaceholder} />
+                )}
               </View>
             </View>
           )}
