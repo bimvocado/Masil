@@ -11,19 +11,19 @@ export interface Brand {
 }
 
 export interface Stuff {
-  rank?: number;
+  rank: number;
   stuffId: number;
-  brandId?: number;
-  stuffName: string;
-  price: number;
+  brandId: number;
 
-  imageUrl?: string | null;
+  stuffName: string;
+  brandName: string;
+
+  price: number;
 
   likeCount: number;
   dislikeCount: number;
-  postCount: number;
 
-  createdAt?: string;
+  createdAt: string;
 }
 
 // 상단 대표 이미지
