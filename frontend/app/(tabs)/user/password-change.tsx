@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TopBar } from '@/components/layout/top-bar';
-import { authService } from '@/services/auth-service';
+import { authService } from '@/api/auth-service';
 import { useAuthStore } from '@/store/use-auth-store';
 
 export default function PasswordChangeScreen() {

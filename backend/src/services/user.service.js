@@ -2,26 +2,35 @@ const User = require('../models/user.model');
 const bcrypt = require('bcrypt');
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const categoryService = require('./category.service');
+const sequelize = require('../config/db');
 
+const DEFAULT_SCRAP_CATEGORY_NAME = '기본 스크랩';
+
+const createDefaultScrapCategory = async (userId, transaction) => {
+  return await categoryService.createCategory(userId, DEFAULT_SCRAP_CATEGORY_NAME, { transaction });
+};
 
 /* 회원가입 로직 */
 const signup = async (userData) => {
   const { loginId, email, password, nickname, birthDate } = userData;
 
-  // 1. 비밀번호 암호화
-  const hashedPassword = await bcrypt.hash(password, 10);
+  return await sequelize.transaction(async (t) => {
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  // 2. DB 저장 (모델의 필드명인 passwordHash에 꽂아줌)
-  const newUser = await User.create({
-    loginId,
-    email,
-    passwordHash: hashedPassword,
-    nickname,
-    birthDate,
-    isKorean: userData.isKorean ?? true 
+    const newUser = await User.create({
+      loginId,
+      email,
+      passwordHash: hashedPassword,
+      nickname,
+      birthDate,
+      isKorean: userData.isKorean ?? true 
+    }, { transaction: t });
+
+    await createDefaultScrapCategory(newUser.userId, t);
+
+    return newUser;
   });
-
-  return newUser;
 };
 
 /* 중복 체크 로직 */
@@ -116,15 +125,20 @@ const socialLoginOrSignup = async (googleData) => {
       throw error;
     }
 
-    user = await User.create({
-      loginId: `google_${sub}`,
-      email: email,
-      nickname: name,
-      passwordHash: 'SOCIAL_AUTH_USER', 
-      socialId: sub,
-      provider: 'google',
-      profileImageUrl: picture,
-      isKorean: true 
+    user = await sequelize.transaction(async (t) => {
+      const createdUser = await User.create({
+        loginId: `google_${sub}`,
+        email: email,
+        nickname: name,
+        passwordHash: 'SOCIAL_AUTH_USER', 
+        socialId: sub,
+        provider: 'google',
+        profileImageUrl: picture,
+        isKorean: true 
+      }, { transaction: t });
+
+      await createDefaultScrapCategory(createdUser.userId, t);
+      return createdUser;
     });
   }
 
