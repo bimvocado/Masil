@@ -60,8 +60,6 @@ const toBrandStuffListDTO = ({
   return {
     brandId: brand.brandId,
     brandName: brand.brandName,
-    logoUrl: brand.logoUrl,
-    category: brand.category,
 
     totalStuffCount: Number(
       brand.totalStuffCount || 0
