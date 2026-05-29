@@ -4,8 +4,8 @@ const getCategories = async (userId) => {
   return await categoryRepository.findCategoriesByUserId(userId);
 };
 
-const createCategory = async (userId, categoryName) => {
-  return await categoryRepository.createCategory(userId, categoryName);
+const createCategory = async (userId, categoryName, options = {}) => {
+  return await categoryRepository.createCategory(userId, categoryName, options);
 };
 
 const updateCategory = async (categoryId, categoryName) => {

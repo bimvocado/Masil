@@ -4,8 +4,8 @@ const findCategoriesByUserId = async (userId) => {
   return await Category.findAll({ where: { userId } });
 };
 
-const createCategory = async (userId, categoryName) => {
-  return await Category.create({ userId, categoryName });
+const createCategory = async (userId, categoryName, options = {}) => {
+  return await Category.create({ userId, categoryName }, options);
 };
 
 const updateCategory = async (categoryId, categoryName) => {
