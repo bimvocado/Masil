@@ -101,6 +101,7 @@ export default function ProfileEditScreen() {
           
           setProfileImageUrl(finalUrl); 
         }
+        router.replace('/user');
       }
     } catch (error: any) {
       console.error(" 저장 에러:", error.response?.data || error.message);
