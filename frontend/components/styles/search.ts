@@ -1,7 +1,7 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { Colors } from '@/constants/colors';
 
-const { width } = Dimensions.get('window');
+// const { width } = Dimensions.get('window');
 
 // 기존 코드 : width가 전체 기기 화면 너비 기준이라 실제 설정 값보다 크게 계산될 수 있음.
 // export const CARD_SIZE = (width - 48) / 3;
