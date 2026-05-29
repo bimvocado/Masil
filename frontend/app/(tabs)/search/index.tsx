@@ -17,75 +17,49 @@ import { searchService } from '@/api/search-service';
 import { useSearchStore } from '@/store/search-store';
 
 export default function SearchScreen() {
-
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  // zustand store
   const {
     brands,
     setBrands,
-    loading,
     setLoading,
     setError,
   } = useSearchStore();
 
-  // 음식 / 물건
   const [activeTab, setActiveTab] =
     useState<'FOOD' | 'HOUSEHOLD'>('FOOD');
 
-  // 검색어
   const [searchQuery, setSearchQuery] =
     useState('');
 
-
-
-  /**
-   * 브랜드 목록 조회
-   */
+  // 검색창 - 브랜드 리스트 3열
   const fetchBrands = async () => {
-
     try {
-
       setLoading(true);
 
-      const response =
-        await searchService.getBrands(
-          searchQuery,
-          activeTab
-        );
+      const keyword = searchQuery.trim();
 
-      setBrands(response.data);
+      const response = keyword
+        ? await searchService.searchBrands(keyword, activeTab)
+        : await searchService.getBrands(activeTab);
 
+      setBrands(response.data.result.brands);
     } catch (error: any) {
-
-      console.error(error);
-
+      console.error('브랜드 조회 실패:', error);
       setError(error.message);
-
     } finally {
-
       setLoading(false);
     }
   };
 
-
-
-  /**
-   * 검색어 / 탭 변경 시 자동 조회
-   */
   useEffect(() => {
-
     fetchBrands();
-
   }, [searchQuery, activeTab]);
-
-
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       
-      {/* 상단 검색바 영역 */}
       <View style={styles.searchBarContainer}>
         <View style={styles.searchBar}>
 
@@ -109,9 +83,6 @@ export default function SearchScreen() {
         </View>
       </View>
 
-
-
-      {/* 음식 / 물건 탭 버튼 영역 */}
       <View style={styles.tabContainer}>
 
         <TouchableOpacity 
@@ -133,7 +104,6 @@ export default function SearchScreen() {
           </Text>
         </TouchableOpacity>
         
-
         <TouchableOpacity 
           style={[
             styles.tabButton,
@@ -155,30 +125,22 @@ export default function SearchScreen() {
 
       </View>
 
-
-
-      {/* 3열 그리드 브랜드 리스트 영역 */}
       <ScrollView contentContainerStyle={styles.gridContainer}>
 
         {brands.map((brand) => (
-
           <TouchableOpacity 
             key={brand.brandId} 
             style={styles.brandCard}
-
-            // 브랜드 클릭 시 상세 페이지 이동
             onPress={() =>
               router.push({
                 pathname: "/search/[id]",
                 params: {
-                  id: brand.brandId,
-                  name: brand.brandName
+                  id: String(brand.brandId),
+                  name: brand.brandName,
                 }
               })
             }
           >
-
-            {/* 브랜드 로고 */}
             {brand.logoUrl ? (
               <Image
                 source={{ uri: brand.logoUrl }}
@@ -188,7 +150,6 @@ export default function SearchScreen() {
               <View style={styles.logoCircle} />
             )}
 
-            {/* 브랜드 이름 */}
             <Text
               style={styles.brandNameText}
               numberOfLines={1}

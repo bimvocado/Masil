@@ -1,18 +1,16 @@
 import { Stack } from 'expo-router';
 
-export default function UserLayout() {
+export default function SearchLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false, 
-        animation: 'slide_from_right', 
+        headerShown: false,
+        animation: 'slide_from_right',
       }}
     >
-      {/* 가장바닥 */}
       <Stack.Screen name="index" />
-      
-      {/* 아래 파일들이 차곡차곡 쌓일 화면들입니다. */}
       <Stack.Screen name="[id]" />
+      <Stack.Screen name="product/[id]" />
     </Stack>
   );
 }
