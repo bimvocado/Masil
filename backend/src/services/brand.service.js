@@ -7,9 +7,9 @@ const {
 } = require('../dtos/brand.dto');
 
 // 검색창 - 브랜드 리스트 3열
-const getBrandList = async ({ keyword, category }) => {
+const getBrandList = async ({ category }) => {
   const brands = await brandRepository.findBrands({
-    keyword,
+    keyword: null,
     category,
   });
 

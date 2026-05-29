@@ -7,30 +7,12 @@ const {
 
 // 검색창 - 상품으로 검색
 const searchStuffs = async ({ keyword, category }) => {
-  const where = {};
-  const brandWhere = {};
-
-  if (keyword) {
-    where.stuffName = {
-      [Op.like]: `%${keyword}%`,
-    };
-  }
-
-  if (category) {
-    brandWhere.category = category;
-  }
-
-  return await Stuff.findAll({
-    where,
-    include: [
-      {
-        model: Brand,
-        where: brandWhere,
-        required: true,
-      },
-    ],
-    order: [['stuffName', 'ASC']],
+  const stuffs = await stuffRepository.searchStuffs({
+    keyword,
+    category,
   });
+
+  return toStuffSearchResultDTO(stuffs);
 };
 
 // 상품창 - 상세 페이지 전체

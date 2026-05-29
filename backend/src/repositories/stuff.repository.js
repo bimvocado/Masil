@@ -5,12 +5,10 @@ const Stuff = require('../models/stuff.model');
 const Brand = require('../models/brand.model');
 
 // 검색창 - 상품으로 검색
-const searchStuffs = async ({
-  keyword,
-  category,
-}) => {
-
+// 검색창 - 상품으로 검색
+const searchStuffs = async ({ keyword, category }) => {
   const where = {};
+  const brandWhere = {};
 
   if (keyword) {
     where.stuffName = {
@@ -18,16 +16,20 @@ const searchStuffs = async ({
     };
   }
 
+  if (category) {
+    brandWhere.category = category;
+  }
+
   return await Stuff.findAll({
     where,
     include: [
       {
         model: Brand,
-        where: category
-          ? { category }
-          : {},
+        where: brandWhere,
+        required: true,
       },
     ],
+    order: [['stuffName', 'ASC']],
   });
 };
 
