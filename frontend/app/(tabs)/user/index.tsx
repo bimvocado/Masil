@@ -37,26 +37,31 @@ const getImageUrl = (url: string | null | undefined) => {
   useFocusEffect(
     useCallback(() => {
       const fetchMyData = async () => {
-        if (!user?.userId) {
-          console.log("⚠️ 유저 정보가 아직 없습니다.");
-          setLoading(false); 
-          return;
-        }
-  
+       
         try {
           setLoading(true);
-          // 1. 프로필 최신 정보로 갱신 (Zustand 동기화)
-          const profileRes = await authService.getProfile(user.userId);
+          let targetUserId = user?.userId;
           
-          if (profileRes.success && profileRes.data) {
-            setUser({ ...profileRes.data }); // 새 객체로 업데이트하여 반응성 보장
+          if (!targetUserId) {
+            console.log("🔄 유저 정보 복구 시도...");
+            const profileRes = await authService.getProfile(); 
             
-            // 2. 게시글 리스트 갱신
-            const userPosts = await postService.getUserPosts(profileRes.data.userId);
+            if (profileRes.success && profileRes.data) {
+              targetUserId = profileRes.data.userId;
+              setUser(profileRes.data); 
+            } else {
+              setLoading(false);
+              return;
+            }
+          }
+          const profileRes = await authService.getProfile(targetUserId);
+          if (profileRes.success && profileRes.data) {
+            setUser({ ...profileRes.data });
+            const userPosts = await postService.getUserPosts(targetUserId!);
             setPosts(userPosts || []);
           }
         } catch (error: any) {
-          console.error("❌ 데이터 로딩 중 에러:", error.message);
+          console.error("데이터 로딩 중 에러:", error.message);
         } finally {
           setLoading(false);
         }

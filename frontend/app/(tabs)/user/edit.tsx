@@ -94,7 +94,7 @@ export default function ProfileEditScreen() {
           ? `${res.data.profileImageUrl}?t=${new Date().getTime()}` 
           : null
       };  
-        // ✅ [수정] Zustand 업데이트 시 새 객체로 전달하여 감지 보장
+        
         setUser(updatedData);
 
         Alert.alert('성공', '프로필이 변경되었습니다.', [

@@ -4,7 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AuthSession from 'expo-auth-session'; // 리다이렉트 주소 생성을 위해 필요
 import { authStyles as styles } from '@/components/styles/auth';
-import { authService } from '@/services/auth-service';
+import { authService } from '@/api/auth-service';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useRouter } from 'expo-router';
 import { saveToken } from '@/utils/storage';

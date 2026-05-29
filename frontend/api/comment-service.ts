@@ -1,14 +1,10 @@
 import apiClient from './client';
 
 export const commentService = {
+
   getComments: async (postId: number) => {
-    try {
-      const response = await apiClient.get(`/api/posts/${postId}/comments`);
-      return response.data;
-    } catch (error) {
-      console.error('댓글 목록 조회 에러:', error);
-      throw error;
-    }
+    const response = await apiClient.get(`/api/posts/${postId}/comments`);
+    return response.data;
   },
 
   createComment: async (postId: number, data: { text: string; userId: number }) => {
@@ -21,7 +17,7 @@ export const commentService = {
     }
   },
 
-  updateComment: async (commentId: number, data: { text: string }) => {
+   updateComment: async (commentId: number, data: { text: string }) => {
     try {
       const response = await apiClient.put(`/api/comments/${commentId}`, data);
       return response.data;
@@ -31,13 +27,16 @@ export const commentService = {
     }
   },
 
+  // 4. 댓글 삭제
   deleteComment: async (commentId: number) => {
+    console.log(" 삭제 시도 ID:", commentId);
     try {
       const response = await apiClient.delete(`/api/comments/${commentId}`);
+      console.log("삭제 성공!");
       return response.data;
-    } catch (error) {
-      console.error('댓글 삭제 에러:', error);
+    } catch (error: any) {
+      console.error("삭제 에러:", error.message);
       throw error;
     }
-  },
+  }
 };

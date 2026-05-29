@@ -59,8 +59,8 @@ Scrap.belongsTo(Category, { foreignKey: 'categoryId' });
 
 User.hasMany(Interaction, { foreignKey: 'userId' });
 Interaction.belongsTo(User, { foreignKey: 'userId' });
-Post.hasMany(Interaction, { foreignKey: 'postId' });
-Interaction.belongsTo(Post, { foreignKey: 'postId' });
+Stuff.hasMany(Interaction, { foreignKey: 'stuffId' });
+Interaction.belongsTo(Stuff, { foreignKey: 'stuffId' });
 Post.hasMany(PostHashtag, { foreignKey: 'postId' });
 PostHashtag.belongsTo(Post, { foreignKey: 'postId'});
 Hashtag.hasMany(PostHashtag, { foreignKey: 'hashtagId' });
