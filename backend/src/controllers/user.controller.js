@@ -68,16 +68,18 @@ const login = async (req, res, next) => {
  */
 const getProfile = async (req, res, next) => {
   try {
-    const { userId } = req.params; 
-    console.log("📍 프로필 조회 시도 ID:", userId);
+    const userId = req.params.userId || req.user.userId; 
+    console.log("프로필 조회 시도 ID:", userId);
     
+    if (!userId) {
+      return res.status(400).json({ success: false, message: '유저 ID가 필요합니다.' });
+    }
     const user = await userService.getUserById(userId);
     
     if (!user) {
       return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
     }
 
-    // ✅ bio를 포함해서 응답을 보냅니다.
     return res.status(200).json({
       success: true,
       data: {
@@ -85,13 +87,13 @@ const getProfile = async (req, res, next) => {
         loginId: user.loginId,
         nickname: user.nickname,
         email: user.email,
-        bio: user.bio, // 👈 요거 없어서 팀장님을 괴롭힌 겁니다!
+        bio: user.bio, 
         profileImageUrl: user.profileImageUrl
       },
       message: '프로필 조회 성공'
     });
   } catch (error) {
-    console.error("🔥 [getProfile 에러 상세]:", error.message);
+    console.error(" [getProfile 에러 상세]:", error.message);
     next(error);
   }
 };
@@ -146,26 +148,22 @@ const updateProfile = async (req, res, next) => {
 const getUserPosts = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    console.log("📍 [게시글 조회] 시도 중인 ID:", userId);
+    console.log("[게시글 조회] 시도 중인 ID:", userId);
 
     if (!userId || userId === 'undefined') {
        return res.status(200).json({ success: true, data: [], message: 'ID 없음, 빈 배열 반환' });
     }
 
-    // 서비스 호출 시 에러가 나더라도 catch에서 잡히도록 함
     const posts = await postService.getUserPosts(Number(userId));
     
     return res.status(200).json({
       success: true,
-      data: posts || [], // 데이터가 null이면 빈 배열로 치환
+      data: posts || [], 
       message: '조회 성공'
     });
 
   } catch (error) {
-    // 🔥 여기가 핵심: 서버는 안 죽이고 에러 로그만 남깁니다.
     console.error("❌ [백엔드 내부 터짐]:", error.message);
-    
-    // 에러가 나도 200을 주고 빈 배열을 주면 프론트는 죽지 않습니다. (임시 방편)
     return res.status(200).json({ 
       success: true, 
       data: [], 
