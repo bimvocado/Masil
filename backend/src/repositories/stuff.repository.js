@@ -49,7 +49,7 @@ const findStuffDetail = async (stuffId) => {
       (
         SELECT p.image_url
         FROM posts p
-        LEFT JOIN scraps sc
+        LEFT JOIN post_scraps sc
           ON p.post_id = sc.post_id
           AND sc.deleted_at IS NULL
         WHERE p.stuff_id = s.stuff_id
@@ -88,7 +88,7 @@ const findStuffDetail = async (stuffId) => {
           AND u.is_korean = true
         THEN i.interaction_id
       END) AS koreanDislikeCount,
-        
+
       COUNT(DISTINCT CASE
         WHEN i.reaction_type = 'DISLIKE'
           AND u.is_korean = false
@@ -150,7 +150,7 @@ const findTopPostByStuff = async (stuffId) => {
 
     FROM posts p
 
-    LEFT JOIN scraps sc
+    LEFT JOIN post_scraps sc
       ON p.post_id = sc.post_id
       AND sc.deleted_at IS NULL
 

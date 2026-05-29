@@ -73,7 +73,7 @@ const findStuffsByBrand = async ({ brandId, sort, page, size }) => {
       (
         SELECT p.image_url
         FROM posts p
-        LEFT JOIN scraps sc
+        LEFT JOIN post_scraps sc
           ON p.post_id = sc.post_id
           AND sc.deleted_at IS NULL
         WHERE p.stuff_id = s.stuff_id
