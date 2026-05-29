@@ -7,7 +7,6 @@ import { authService } from '@/api/auth-service';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '@/store/use-auth-store'; 
 
-// 서버 주소 상수로 관리 (팀장님 환경에 맞게 수정하세요)
 const BASE_URL = 'http://localhost:3000';
 
 export default function ProfileEditScreen() {
@@ -86,23 +85,25 @@ export default function ProfileEditScreen() {
       const res = await authService.updateProfile(formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
+      console.log("🔥🔥 서버가 보내준 이미지 경로:", res.data.profileImageUrl);
       if (res.success) {
-        const updatedData = {
+        const rawPath = res.data.profileImageUrl; 
+        const timestampedPath = rawPath ? `${rawPath}?t=${new Date().getTime()}` : null;
+    
+        setUser({
           ...res.data,
-          profileImageUrl: res.data.profileImageUrl 
-          ? `${res.data.profileImageUrl}?t=${new Date().getTime()}` 
-          : null
-      };  
-        
-        setUser(updatedData);
-
-        Alert.alert('성공', '프로필이 변경되었습니다.', [
-          { text: '확인', onPress: () => router.back() }
-        ]);
+          profileImageUrl: timestampedPath
+        }); 
+        if (timestampedPath) {
+          const finalUrl = timestampedPath.startsWith('http')
+            ? timestampedPath
+            : `${BASE_URL}${timestampedPath.startsWith('/') ? '' : '/'}${timestampedPath}`;
+          
+          setProfileImageUrl(finalUrl); 
+        }
       }
     } catch (error: any) {
-      console.error("❌ 저장 에러:", error.response?.data || error.message);
+      console.error(" 저장 에러:", error.response?.data || error.message);
       Alert.alert('오류', '저장에 실패했습니다.');
     } finally {
       setIsLoading(false);

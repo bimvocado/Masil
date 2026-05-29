@@ -222,31 +222,41 @@ return (
             data={comments}
             keyExtractor={(c) => c.commentId.toString()}
             renderItem={({ item }) => {
-    
+              // 1. 내 댓글인지 체크 (Zustand 유저와 비교)
+              const isMyComment = user?.userId === item.userId;
+            
+              // 2. 이미지 경로 계산
               const getProfileUri = () => {
-                const rawUrl = item.User?.profileImageUrl;
-            
+                // 내 댓글이면 내 Zustand 정보 우선, 아니면 댓글 데이터 정보 사용
+                const rawUrl = isMyComment ? user?.profileImageUrl : item.User?.profileImageUrl;
+                
                 if (!rawUrl) return 'https://ui-avatars.com/api/?name=User&background=random';
+                if (rawUrl.startsWith('http')) return rawUrl;
             
-                if (rawUrl.startsWith('http')) {
-                  return rawUrl; 
-                }
-          
                 const fileName = rawUrl.split('/').pop();
                 return `http://localhost:3000/uploads/${fileName}`;
               };
             
               const profileUri = getProfileUri();
+            
               return (
                 <View style={styles.commentItem}>
+                  {/* ✅ 이 줄이 바로 팀장님이 말씀하신 그 뼈대! 버리면 안 돼요! */}
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                    
+                    {/* 프사 영역 */}
                     <Image 
                       source={{ uri: profileUri }} 
                       style={styles.profileImage} 
                     />
+                    
+                    {/* 닉네임 & 댓글 내용 영역 */}
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Text style={styles.nickname}>{item.User?.nickname || `유저 ${item.userId}`}</Text>
+                        <Text style={styles.nickname}>
+                          {isMyComment ? user?.nickname : (item.User?.nickname || `유저 ${item.userId}`)}
+                        </Text>
+                        
                         {user?.userId === item.userId && (
                           <View style={{ flexDirection: 'row' }}>
                             <TouchableOpacity onPress={() => handleStartEdit(item)}>
@@ -260,7 +270,8 @@ return (
                       </View>
                       <Text style={styles.commentText}>{item.text}</Text>
                     </View>
-                  </View>
+            
+                  </View> {/* 뼈대 끝 */}
                 </View>
               );
             }}
