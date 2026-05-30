@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles } from '@/components/styles/bookmark-detail';
@@ -61,7 +61,11 @@ export default function BookmarkDetailScreen() {
           keyExtractor={(item) => item.postId.toString()}
           contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => (
-            <View style={styles.postCard}>
+            <TouchableOpacity
+              style={styles.postCard}
+              onPress={() => router.push({ pathname: `/user/post-feed/${item.postId}` } as any)}
+              activeOpacity={0.8}
+            >
               <View style={styles.cardLeft}>
                 <Text style={styles.postTitle} numberOfLines={2}>
                   {item.content}
@@ -99,7 +103,7 @@ export default function BookmarkDetailScreen() {
                   <View style={styles.thumbnailPlaceholder} />
                 )}
               </View>
-            </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             <Text style={{ textAlign: 'center', marginTop: 40, color: '#999' }}>

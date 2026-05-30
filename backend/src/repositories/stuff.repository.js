@@ -134,6 +134,18 @@ const findStuffDetail = async (stuffId) => {
   return rows[0];
 };
 
+const findStuffById = async (stuffId) => {
+  return await findStuffDetail(stuffId);
+};
+
+const createStuff = async ({ brandId, stuffName, price }) => {
+  return await Stuff.create({
+    brandId,
+    stuffName,
+    price,
+  });
+};
+
 // 상품창 - 하단 스크랩 가장 많은 글
 const findTopPostByStuff = async (stuffId) => {
   const rows = await sequelize.query(
@@ -184,5 +196,7 @@ const findTopPostByStuff = async (stuffId) => {
 module.exports = {
   searchStuffs,
   findStuffDetail,
+  findStuffById,
   findTopPostByStuff,
+  createStuff,
 };

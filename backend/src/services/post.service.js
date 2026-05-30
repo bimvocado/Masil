@@ -109,8 +109,8 @@ const deletePost = async (postId, userId) => {
 
 
 // 사용자별 게시글 조회
-const getUserPosts = async (userId) => {
-  const posts = await postRepository.findPostsByUserId(userId);
+const getUserPosts = async (userId, viewerId = null) => {
+  const posts = await postRepository.findPostsByUserId(userId, viewerId);
   
   return posts.map((post) => ({
     postId: post.postId,
@@ -134,6 +134,7 @@ const getUserPosts = async (userId) => {
     likeCount: Number(post.likeCount || 0),
     dislikeCount: Number(post.dislikeCount || 0),
     scrapCount: Number(post.scrapCount || 0),
+    isScrapped: !!post.isScrapped,
   }));
 };
 

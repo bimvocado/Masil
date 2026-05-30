@@ -15,6 +15,22 @@ const searchStuffs = async ({ keyword, category }) => {
   return toStuffSearchResultDTO(stuffs);
 };
 
+// 상품 생성
+const createStuff = async ({ brandId, stuffName, price }) => {
+  const stuff = await stuffRepository.createStuff({
+    brandId,
+    stuffName,
+    price,
+  });
+
+  return {
+    stuffId: stuff.stuffId,
+    stuffName: stuff.stuffName,
+    price: stuff.price,
+    brandId: stuff.brandId,
+  };
+};
+
 // 상품창 - 상세 페이지 전체
 const getStuffDetail = async (stuffId) => {
   const stuff = await stuffRepository.findStuffDetail(stuffId);
@@ -35,5 +51,6 @@ const getStuffDetail = async (stuffId) => {
 
 module.exports = {
   searchStuffs,
+  createStuff,
   getStuffDetail,
 };

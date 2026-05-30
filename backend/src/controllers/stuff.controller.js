@@ -20,6 +20,34 @@ const searchStuffs = async (req, res, next) => {
   }
 };
 
+// 상품 생성
+const createStuff = async (req, res, next) => {
+  try {
+    const { brandId, stuffName, price } = req.body;
+
+    if (!brandId || !stuffName) {
+      return res.status(400).json({
+        success: false,
+        message: 'brandId와 stuffName은 필수입니다.',
+      });
+    }
+
+    const result = await stuffService.createStuff({
+      brandId: Number(brandId),
+      stuffName,
+      price: price ? Number(price) : 0,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: '상품 생성 성공',
+      result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // 상품창 - 상세 페이지 전체
 const getStuffDetail = async (req, res, next) => {
   try {
@@ -41,5 +69,6 @@ const getStuffDetail = async (req, res, next) => {
 
 module.exports = {
   searchStuffs,
+  createStuff,
   getStuffDetail,
 };

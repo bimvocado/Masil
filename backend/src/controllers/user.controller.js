@@ -154,7 +154,8 @@ const getUserPosts = async (req, res, next) => {
        return res.status(200).json({ success: true, data: [], message: 'ID 없음, 빈 배열 반환' });
     }
 
-    const posts = await postService.getUserPosts(Number(userId));
+    const viewerId = req.query.viewerId ? Number(req.query.viewerId) : null;
+    const posts = await postService.getUserPosts(Number(userId), viewerId);
     
     return res.status(200).json({
       success: true,
