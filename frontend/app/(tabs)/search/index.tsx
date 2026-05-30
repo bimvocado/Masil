@@ -16,6 +16,7 @@ import { styles } from '@/components/styles/search';
 
 import { searchService } from '@/api/search-service';
 import { useSearchStore } from '@/store/search-store';
+import { ProductCard } from '@/components/ui/product-card';
 
 const BASE_URL = 'http://localhost:3000';
 
@@ -23,9 +24,6 @@ const getImageUrl = (url?: string | null) => {
   if (!url) return undefined;
   return url.startsWith('http') ? url : `${BASE_URL}${url}`;
 };
-
-export default function SearchScreen() {
-import { ProductCard } from '@/components/ui/product-card';
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
