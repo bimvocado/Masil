@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "google-auth-library": "^10.6.2",
+    "zustand": "^5.0.13",
+    "@expo/metro-runtime": "~55.0.11",
+    "@types/react-native": "^0.72.8",
+    "expo": "^55.0.24",
+    "expo-auth-session": "~55.0.16",
+    "expo-crypto": "~55.0.15",
+    "expo-web-browser": "~55.0.16",
+    "mysql2": "^3.22.3",
+    "react-dom": "19.2.0",
+    "react-native-web": "^0.21.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2"
+  }
+}

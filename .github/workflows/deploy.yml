@@ -1,0 +1,24 @@
+name: Deploy to Raspberry Pi
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH로 라즈베리파이 접속 후 배포
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 2222
+          script: |
+            cd ~/projects/Masil/backend
+            git pull origin develop
+            npm install
+            pm2 restart masil-backend
