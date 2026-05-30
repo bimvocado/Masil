@@ -23,18 +23,14 @@ export const postService = {
   },
 
   // 게시글 등록
-  createPost: async (
-    postData:
-      | FormData
-      | {
-          content: string;
-          imageUrl?: string;
-          stuffId: number;
-          price?: number;
-        },
-    config?: any
-  ): Promise<Post> => {
-    const response = await apiClient.post('/api/posts', postData, config);
+  createPost: async (postData: FormData): Promise<Post> => {
+    const response = await apiClient.post('/api/posts', postData, {
+      headers: {
+        'Content-Type': undefined,
+      },
+      transformRequest: (data) => data,
+    });
+
     return response.data.data;
   },
 

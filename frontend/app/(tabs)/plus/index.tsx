@@ -21,6 +21,13 @@ import { stuffService, StuffSuggestion } from '@/services/stuff-service';
 import { searchService } from '@/api/search-service';
 import { TopBar } from '@/components/layout/top-bar';
 
+const BASE_URL = 'http://localhost:3000';
+
+const getImageUrl = (url?: string | null) => {
+  if (!url) return undefined;
+  return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+};
+
 export default function PlusScreen() {
   const router = useRouter();
 
@@ -72,9 +79,24 @@ export default function PlusScreen() {
   useEffect(() => {
     if (isBrandModalVisible) {
       // 모달 열릴 때 해당 카테고리의 모든 브랜드 로드
+      // const loadBrands = async () => {
+      //   try {
+      //     const res = await searchService.getBrands('', brandCategory);
+      //     setBrandResults(res.data || []);
+      //   } catch (e) {
+      //     console.error('브랜드 로드 실패:', e);
+      //     setBrandResults([]);
+      //   }
+      // };
+
+      // 수정!
       const loadBrands = async () => {
         try {
-          const res = await searchService.getBrands('', brandCategory);
+          const res = await searchService.getBrands(
+            brandQuery || '',
+            brandCategory
+          );
+
           setBrandResults(res.data || []);
         } catch (e) {
           console.error('브랜드 로드 실패:', e);
@@ -83,7 +105,8 @@ export default function PlusScreen() {
       };
       loadBrands();
     }
-  }, [isBrandModalVisible, brandCategory]);
+  // }, [isBrandModalVisible, brandCategory]);
+  }, [isBrandModalVisible, brandCategory, brandQuery]);
 
   const handleStuffNameChange = async (value: string) => {
     setBrandName(value);
@@ -164,6 +187,7 @@ export default function PlusScreen() {
     setBrandName('');
     setSelectedBrandId(null);
     setSelectedBrandName('');
+    setSelectedBrandLogoUrl('');
     setBrandQuery('');
     setBrandResults([]);
     setContent('');
@@ -193,7 +217,14 @@ export default function PlusScreen() {
         if (Platform.OS === 'web') {
           const response = await fetch(imageUri);
           const blob = await response.blob();
-          formData.append('image', blob, 'post-image.jpg');
+
+          const file = new File(
+            [blob],
+            'post-image.jpg',
+            { type: blob.type || 'image/jpeg' }
+          );
+
+          formData.append('image', file);
         } else {
           const filename = imageUri.split('/').pop() || 'post-image.jpg';
           const match = /\.(\w+)$/.exec(filename);
@@ -259,11 +290,13 @@ export default function PlusScreen() {
                 <TouchableOpacity onPress={() => setIsBrandModalVisible(true)}>
                   {selectedBrandLogoUrl ? (
                     <Image
-                      source={{ uri: selectedBrandLogoUrl }}
+                      source={{ uri: getImageUrl(selectedBrandLogoUrl) }}
                       style={styles.avatarPlaceholder}
                     />
                   ) : (
-                    <View style={styles.avatarPlaceholder} />
+                    <View style={styles.avatarPlaceholder}>
+                      <Text style={styles.questionMark}>?</Text>
+                    </View>
                   )}
                 </TouchableOpacity>
                 <View style={styles.nameInputWrapper}>
@@ -278,101 +311,133 @@ export default function PlusScreen() {
               </View>
 
               <Modal visible={isBrandModalVisible} animationType="slide">
-                <View style={{ flex: 1, padding: 20 }}>
-                  {/* 카테고리 토글 */}
-                  <View style={{ flexDirection: 'row', marginBottom: 12, gap: 8 }}>
+                <View style={styles.modalContainer}>
+
+                  {/* 상단 검색바 영역 */}
+                  <View style={styles.modalSearchBarContainer}>
+                    <View style={styles.modalSearchBar}>
+
+                      <Image
+                        source={require('@/assets/icons/search.png')}
+                        style={{
+                          width: 16,
+                          height: 16,
+                          tintColor: '#aaa',
+                          marginRight: 8,
+                        }}
+                      />
+
+                      <TextInput
+                        style={styles.modalSearchInput}
+                        placeholder="브랜드 or 상품"
+                        placeholderTextColor="#aaa"
+                        value={brandQuery}
+                        onChangeText={setBrandQuery}
+                      />
+
+                    </View>
+                  </View>
+
+                  {/* 음식 / 물건 탭 버튼 영역 */}
+                  <View style={styles.modalTabContainer}>
+
                     <TouchableOpacity
+                      style={[
+                        styles.modalTabButton,
+                        brandCategory === 'FOOD' &&
+                        styles.modalActiveTabButton
+                      ]}
                       onPress={() => setBrandCategory('FOOD')}
-                      style={{
-                        flex: 1,
-                        paddingVertical: 10,
-                        paddingHorizontal: 12,
-                        borderRadius: 8,
-                        backgroundColor: brandCategory === 'FOOD' ? Colors.masil.button : '#eee',
-                        alignItems: 'center',
-                      }}
                     >
-                      <Text style={{ color: brandCategory === 'FOOD' ? '#fff' : '#333', fontWeight: '600' }}>
+                      <Text
+                        style={[
+                          styles.modalTabText,
+                          brandCategory === 'FOOD' &&
+                          styles.modalActiveTabText
+                        ]}
+                      >
                         음식
                       </Text>
                     </TouchableOpacity>
+
                     <TouchableOpacity
+                      style={[
+                        styles.modalTabButton,
+                        brandCategory === 'HOUSEHOLD' &&
+                        styles.modalActiveTabButton
+                      ]}
                       onPress={() => setBrandCategory('HOUSEHOLD')}
-                      style={{
-                        flex: 1,
-                        paddingVertical: 10,
-                        paddingHorizontal: 12,
-                        borderRadius: 8,
-                        backgroundColor: brandCategory === 'HOUSEHOLD' ? Colors.masil.button : '#eee',
-                        alignItems: 'center',
-                      }}
                     >
-                      <Text style={{ color: brandCategory === 'HOUSEHOLD' ? '#fff' : '#333', fontWeight: '600' }}>
+                      <Text
+                        style={[
+                          styles.modalTabText,
+                          brandCategory === 'HOUSEHOLD' &&
+                          styles.modalActiveTabText
+                        ]}
+                      >
                         물건
                       </Text>
                     </TouchableOpacity>
+
                   </View>
 
-                  {/* 검색 입력 */}
-                  <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-                    <TextInput
-                      placeholder="브랜드 검색"
-                      value={brandQuery}
-                      onChangeText={setBrandQuery}
-                      style={{ flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 8 }}
-                    />
-                    <TouchableOpacity
-                      onPress={async () => {
-                        try {
-                          const res = await searchService.getBrands(brandQuery || '', brandCategory);
-                          setBrandResults(res.data || []);
-                        } catch (e) {
-                          console.error(e);
-                          setBrandResults([]);
-                        }
-                      }}
-                      style={{ marginLeft: 8, justifyContent: 'center', paddingHorizontal: 12, backgroundColor: Colors.masil.button, borderRadius: 8 }}
-                    >
-                      <Text style={{ color: '#fff' }}>찾기</Text>
-                    </TouchableOpacity>
-                  </View>
+                  {/* 3열 그리드 브랜드 리스트 영역 */}
+                  <ScrollView contentContainerStyle={styles.modalBrandGridContainer}>
 
-                  <ScrollView>
                     {brandResults.map((b) => (
-                      <TouchableOpacity key={b.brandId} style={{ padding: 12, borderBottomWidth: 1, borderColor: '#eee' }} onPress={() => {
-                        
-                        console.log('선택 브랜드', b);
-                        console.log('logoUrl', b.logoUrl);
-                        
-                        setSelectedBrandId(b.brandId);
-                        setSelectedBrandName(b.brandName);
-                        setSelectedBrandLogoUrl(b.logoUrl || '');
-                        setIsBrandModalVisible(false);
-                      }}>
-                        <Text>{b.brandName}</Text>
+
+                      <TouchableOpacity
+                        key={b.brandId}
+                        style={styles.modalBrandCard}
+                        onPress={() => {
+                          setSelectedBrandId(b.brandId);
+                          setSelectedBrandName(b.brandName);
+                          setSelectedBrandLogoUrl(b.logoUrl || '');
+                          setIsBrandModalVisible(false);
+                        }}
+                      >
+
+                        {/* 브랜드 로고 */}
+                        {b.logoUrl ? (
+                          <Image
+                            source={{ uri: getImageUrl(b.logoUrl) }}
+                            style={styles.modalBrandLogoCircle}
+                          />
+                        ) : (
+                          <View style={styles.modalBrandLogoCircle} />
+                        )}
+
+                        {/* 브랜드 이름 */}
+                        <Text
+                          style={styles.modalBrandNameText}
+                          numberOfLines={1}
+                        >
+                          {b.brandName}
+                        </Text>
+
                       </TouchableOpacity>
                     ))}
+
                   </ScrollView>
 
-                  <TouchableOpacity onPress={() => setIsBrandModalVisible(false)} style={{ marginTop: 12, padding: 12, alignItems: 'center' }}>
-                    <Text>닫기</Text>
-                  </TouchableOpacity>
                 </View>
               </Modal>
 
-              {suggestions.length > 0 && (
-                <View style={{ backgroundColor: '#fff', borderRadius: 12, marginTop: 8, padding: 8 }}>
-                  {suggestions.map((item) => (
-                    <TouchableOpacity
-                      key={item.stuffId}
-                      onPress={() => handleSelectSuggestion(item)}
-                      style={{ paddingVertical: 10 }}
-                    >
-                      <Text>{`@${item.stuffName}`}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+                {suggestions.length > 0 && (
+                  <View style={styles.suggestionBox}>
+                    {suggestions.map((item) => (
+                      <TouchableOpacity
+                        key={item.stuffId}
+                        onPress={() => handleSelectSuggestion(item)}
+                        style={styles.suggestionItem}
+                      >
+                        <Text style={styles.suggestionText}>
+                          @{item.stuffName}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
 
               <View style={{ marginBottom: 12 }}>
                 <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>가격 (선택, 신규 생성 시 사용)</Text>
@@ -392,7 +457,16 @@ export default function PlusScreen() {
           ) : (
             <>
               <View style={styles.userInfoCard}>
-                <View style={styles.avatarPlaceholder} />
+                {selectedBrandLogoUrl ? (
+                  <Image
+                    source={{ uri: getImageUrl(selectedBrandLogoUrl) }}
+                    style={styles.avatarPlaceholder}
+                  />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <Text style={styles.questionMark}>?</Text>
+                  </View>
+                )}
                 <View style={styles.nameInputWrapper}>
                   <TextInput
                     placeholder="@이름 작성"
