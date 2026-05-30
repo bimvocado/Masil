@@ -14,13 +14,30 @@ export interface Stuff {
   rank: number;
   stuffId: number;
   brandId: number;
+
   stuffName: string;
+  brandName: string;
+
   price: number;
+
   likeCount: number;
   dislikeCount: number;
+
   createdAt: string;
 }
 
+// 상단 대표 이미지
+export interface TopPost {
+  postId: number;
+  content: string;
+  imageUrl: string | null;
+  userId: number;
+  nickname: string;
+  scrapCount: number;
+  createdAt: string;
+}
+
+// 상품창 - 상세 페이지 전체
 export interface StuffDetail {
   stuffId: number;
   stuffName: string;
@@ -28,29 +45,21 @@ export interface StuffDetail {
 
   brandId: number;
   brandName: string;
+  logoUrl?: string | null;
 
-  bestReviewImageUrl: string | null;
+  imageUrl: string | null;
 
-  likeCount: number;
-  dislikeCount: number;
+  totalLikeCount: number;
   koreanLikeCount: number;
-  foreignLikeCount: number;
+  foreignerLikeCount: number;
 
-  recommendedStuffs: Stuff[];
+  totalDislikeCount: number;
+  koreanDislikeCount: number;
+  foreignerDislikeCount: number;
 
-  bestReview: {
-    postId: number;
-    content: string;
-    imageUrl: string | null;
-    createdAt: string;
-    likeCount: number;
-    dislikeCount: number;
-    user: {
-      userId: number;
-      nickname: string;
-      profileImageUrl: string | null;
-    };
-  } | null;
+  totalPostCount: number;
+
+  topPost: TopPost | null;
 }
 
 interface SearchState {
@@ -58,7 +67,6 @@ interface SearchState {
   stuffs: Stuff[];
   stuffDetail: StuffDetail | null;
 
-  // 브랜드별 상품 목록 페이지용
   brandName: string;
   totalElements: number;
 
@@ -69,7 +77,6 @@ interface SearchState {
   setStuffs: (stuffs: Stuff[]) => void;
   setStuffDetail: (stuffDetail: StuffDetail | null) => void;
 
-  // 브랜드 이름, 총 상품 개수 저장
   setBrandInfo: (brandName: string, totalElements: number) => void;
 
   setLoading: (loading: boolean) => void;

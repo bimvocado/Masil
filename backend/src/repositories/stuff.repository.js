@@ -1,117 +1,41 @@
-const { QueryTypes } = require('sequelize');
+const { Op, QueryTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
 const Stuff = require('../models/stuff.model');
 const Brand = require('../models/brand.model');
 
-// sequelize 연산자 (LIKE, OR, AND, >=, <=)
-const { Op } = require('sequelize');
+// 검색창 - 상품으로 검색
+// 검색창 - 상품으로 검색
+const searchStuffs = async ({ keyword, category }) => {
+  const where = {};
+  const brandWhere = {};
 
-// 상품 생성
-const createStuff = async (stuffData) => {
-  return await Stuff.create(stuffData);
-};
-
-// 상품 ID로 조회
-const findStuffById = async (stuffId) => {
-  return await Stuff.findByPk(stuffId);
-};
-
-// 브랜드 ID로 조회
-const findBrandById = async (brandId) => {
-  return await Brand.findByPk(brandId);
-};
-
-// 상품 수정
-const updateStuff = async (stuff, updateData) => {
-  return await stuff.update(updateData);
-};
-
-// 상품 삭제
-const deleteStuff = async (stuff) => {
-  return await stuff.destroy();
-};
-
-// 브랜드별 상품 목록 조회
-// 옳소/싫소는 posts -> interactions(post_id)로 합산
-const findStuffsByBrandId = async (brandId, sort, page, size) => {
-  let orderSql = 's.created_at DESC';
-
-  if (sort === 'LIKE_DESC') {
-    orderSql = 'likeCount DESC, s.created_at DESC';
+  if (keyword) {
+    where.stuffName = {
+      [Op.like]: `%${keyword}%`,
+    };
   }
 
-  if (sort === 'DISLIKE_ASC') {
-    orderSql = 'dislikeCount ASC, s.created_at DESC';
+  if (category) {
+    brandWhere.category = category;
   }
 
-  if (sort === 'LATEST') {
-    orderSql = 's.created_at DESC';
-  }
-
-  const offset = Number(page) * Number(size);
-
-  return await sequelize.query(
-    `
-    SELECT
-      s.stuff_id AS stuffId,
-      s.brand_id AS brandId,
-      s.stuff_name AS stuffName,
-      s.price AS price,
-      s.created_at AS createdAt,
-
-      COUNT(CASE WHEN i.reaction_type = 'LIKE' THEN 1 END) AS likeCount,
-      COUNT(CASE WHEN i.reaction_type = 'DISLIKE' THEN 1 END) AS dislikeCount
-
-    FROM stuffs s
-
-    LEFT JOIN interactions i
-      ON s.stuff_id = i.stuff_id
-      AND i.deleted_at IS NULL
-
-    WHERE s.brand_id = :brandId
-      AND s.deleted_at IS NULL
-      AND s.is_discontinued IS NOT TRUE
-
-    GROUP BY
-      s.stuff_id,
-      s.brand_id,
-      s.stuff_name,
-      s.price,
-      s.created_at
-
-    ORDER BY ${orderSql}
-
-    LIMIT :size OFFSET :offset
-    `,
-    {
-      replacements: {
-        brandId,
-        size: Number(size),
-        offset,
+  return await Stuff.findAll({
+    where,
+    include: [
+      {
+        model: Brand,
+        where: brandWhere,
+        required: true,
       },
-      type: QueryTypes.SELECT,
-    }
-  );
-};
-
-// 브랜드별 상품 총 개수
-const countStuffsByBrandId = async (brandId) => {
-  return await Stuff.count({
-    where: {
-      brandId,
-      [Op.or]: [
-        { isDiscontinued: false },
-        { isDiscontinued: null },
-      ],
-    },
+    ],
+    order: [['stuffName', 'ASC']],
   });
 };
 
-// 상품 상세 정보
-// 상품에 연결된 게시글들의 옳소/싫소를 합산
-const findStuffDetailById = async (stuffId) => {
-  const result = await sequelize.query(
+// 상품창 - 상세 페이지 전체
+const findStuffDetail = async (stuffId) => {
+  const rows = await sequelize.query(
     `
     SELECT
       s.stuff_id AS stuffId,
@@ -120,17 +44,64 @@ const findStuffDetailById = async (stuffId) => {
 
       b.brand_id AS brandId,
       b.brand_name AS brandName,
+      b.logo_url AS logoUrl,
 
-      COUNT(CASE WHEN i.reaction_type = 'LIKE' THEN 1 END) AS likeCount,
-      COUNT(CASE WHEN i.reaction_type = 'DISLIKE' THEN 1 END) AS dislikeCount,
+      (
+        SELECT p.image_url
+        FROM posts p
+        LEFT JOIN post_scraps sc
+          ON p.post_id = sc.post_id
+          AND sc.deleted_at IS NULL
+        WHERE p.stuff_id = s.stuff_id
+          AND p.image_url IS NOT NULL
+          AND p.image_url != ''
+          AND p.deleted_at IS NULL
+        GROUP BY p.post_id
+        ORDER BY COUNT(sc.scrap_id) DESC, p.created_at DESC
+        LIMIT 1
+      ) AS imageUrl,
 
-      COUNT(CASE WHEN i.reaction_type = 'LIKE' AND u.is_korean = true THEN 1 END) AS koreanLikeCount,
-      COUNT(CASE WHEN i.reaction_type = 'LIKE' AND u.is_korean = false THEN 1 END) AS foreignLikeCount
+      COUNT(DISTINCT CASE
+        WHEN i.reaction_type = 'LIKE'
+        THEN i.interaction_id
+      END) AS totalLikeCount,
+
+      COUNT(DISTINCT CASE
+        WHEN i.reaction_type = 'LIKE'
+          AND u.is_korean = true
+        THEN i.interaction_id
+      END) AS koreanLikeCount,
+
+      COUNT(DISTINCT CASE
+        WHEN i.reaction_type = 'LIKE'
+          AND u.is_korean = false
+        THEN i.interaction_id
+      END) AS foreignerLikeCount,
+
+      COUNT(DISTINCT CASE
+        WHEN i.reaction_type = 'DISLIKE'
+        THEN i.interaction_id
+      END) AS totalDislikeCount,
+
+      COUNT(DISTINCT CASE
+        WHEN i.reaction_type = 'DISLIKE'
+          AND u.is_korean = true
+        THEN i.interaction_id
+      END) AS koreanDislikeCount,
+
+      COUNT(DISTINCT CASE
+        WHEN i.reaction_type = 'DISLIKE'
+          AND u.is_korean = false
+        THEN i.interaction_id
+      END) AS foreignerDislikeCount,
+
+      COUNT(DISTINCT p.post_id) AS totalPostCount
 
     FROM stuffs s
 
-    JOIN brands b
+    INNER JOIN brands b
       ON s.brand_id = b.brand_id
+      AND b.deleted_at IS NULL
 
     LEFT JOIN interactions i
       ON s.stuff_id = i.stuff_id
@@ -138,6 +109,10 @@ const findStuffDetailById = async (stuffId) => {
 
     LEFT JOIN users u
       ON i.user_id = u.user_id
+
+    LEFT JOIN posts p
+      ON s.stuff_id = p.stuff_id
+      AND p.deleted_at IS NULL
 
     WHERE s.stuff_id = :stuffId
       AND s.deleted_at IS NULL
@@ -147,7 +122,8 @@ const findStuffDetailById = async (stuffId) => {
       s.stuff_name,
       s.price,
       b.brand_id,
-      b.brand_name
+      b.brand_name,
+      b.logo_url
     `,
     {
       replacements: { stuffId },
@@ -155,94 +131,44 @@ const findStuffDetailById = async (stuffId) => {
     }
   );
 
-  return result[0] || null;
+  return rows[0];
 };
 
-// 옳소가 가장 많은 사진 리뷰
-const findBestReviewImageByStuffId = async (stuffId) => {
-  const result = await sequelize.query(
-    `
-    SELECT
-      p.image_url AS imageUrl,
-      COUNT(CASE WHEN i.reaction_type = 'LIKE' THEN 1 END) AS likeCount
-
-    FROM posts p
-
-    LEFT JOIN interactions i
-      ON p.stuff_id = i.stuff_id
-      AND i.deleted_at IS NULL
-
-    WHERE p.stuff_id = :stuffId
-      AND p.deleted_at IS NULL
-      AND p.image_url IS NOT NULL
-
-    GROUP BY
-      p.post_id,
-      p.image_url,
-      p.created_at
-
-    ORDER BY
-      likeCount DESC,
-      p.created_at DESC
-
-    LIMIT 1
-    `,
-    {
-      replacements: { stuffId },
-      type: QueryTypes.SELECT,
-    }
-  );
-
-  return result[0] || null;
-};
-
-// 추천 조합 상위 2개
-// post_tags 테이블이 아직 생성되지 않아 빈 배열 반환 (추천 조합 기능 미구현)
-const findRecommendedStuffs = async (stuffId) => {
-  return [];
-};
-
-// 옳소가 가장 많은 리뷰
-const findBestReviewByStuffId = async (stuffId) => {
-  const result = await sequelize.query(
+// 상품창 - 하단 스크랩 가장 많은 글
+const findTopPostByStuff = async (stuffId) => {
+  const rows = await sequelize.query(
     `
     SELECT
       p.post_id AS postId,
       p.content AS content,
       p.image_url AS imageUrl,
+      p.user_id AS userId,
+      u.nickname AS nickname,
       p.created_at AS createdAt,
 
-      u.user_id AS userId,
-      u.nickname AS nickname,
-      u.profile_image_url AS profileImageUrl,
-
-      COUNT(CASE WHEN i.reaction_type = 'LIKE' THEN 1 END) AS likeCount,
-      COUNT(CASE WHEN i.reaction_type = 'DISLIKE' THEN 1 END) AS dislikeCount
+      COUNT(sc.scrap_id) AS scrapCount
 
     FROM posts p
 
-    JOIN users u
-      ON p.user_id = u.user_id
+    LEFT JOIN post_scraps sc
+      ON p.post_id = sc.post_id
+      AND sc.deleted_at IS NULL
 
-    LEFT JOIN interactions i
-      ON p.stuff_id = i.stuff_id
-      AND i.deleted_at IS NULL
+    LEFT JOIN users u
+      ON p.user_id = u.user_id
 
     WHERE p.stuff_id = :stuffId
       AND p.deleted_at IS NULL
 
-    GROUP BY
-      p.post_id,
-      p.content,
-      p.image_url,
-      p.created_at,
-      u.user_id,
-      u.nickname,
-      u.profile_image_url
+    GROUP BY 
+      p.post_id, 
+      p.content, 
+      p.image_url, 
+      p.user_id, 
+      u.nickname, 
+      p.created_at
 
-    ORDER BY
-      likeCount DESC,
-      p.created_at DESC
+    ORDER BY scrapCount DESC, p.created_at DESC
 
     LIMIT 1
     `,
@@ -252,50 +178,11 @@ const findBestReviewByStuffId = async (stuffId) => {
     }
   );
 
-  return result[0] || null;
+  return rows[0];
 };
-
-// 자동완성 : 상품 검색
-const searchStuffsByName = async (keyword) => {
-  return await Stuff.findAll({
-    where: {
-      stuffName: {
-        [Op.like]: `%${keyword}%`,
-      },
-      isDiscontinued:false,
-    },
-    limit: 10,
-    order: [['createdAt', 'DESC']]
-  });
-};
-
-// 자동완성 : 상품명으로 찾으며, 없으면 생성
-const findOrCreateStuffByName = async (stuffName) => {
-  const [stuff, created] = await Stuff.findOrCreate({
-    where: { stuffName },
-    defaults: {
-      stuffName,
-      brandId: 9999,
-      price: 0,
-      isDiscontinued: false,
-    },
-  });
-
-  return { stuff, created };
-}
 
 module.exports = {
-  createStuff,
-  findStuffById,
-  findBrandById,
-  updateStuff,
-  deleteStuff,
-  findStuffsByBrandId,
-  countStuffsByBrandId,
-  findStuffDetailById,
-  findBestReviewImageByStuffId,
-  findRecommendedStuffs,
-  findBestReviewByStuffId,
-  searchStuffsByName,
-  findOrCreateStuffByName,
+  searchStuffs,
+  findStuffDetail,
+  findTopPostByStuff,
 };

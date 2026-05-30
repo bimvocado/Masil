@@ -1,62 +1,83 @@
-// 브랜드 생성 요청 DTO
-class CreateBrandReqDTO {
-  constructor(brandName, logoUrl, category) {
+// 검색창 - 브랜드 카드 1개
+const toBrandCardDTO = (brand) => {
+  return {
+    brandId: brand.brandId,
+    brandName: brand.brandName,
+    logoUrl: brand.logoUrl,
+    category: brand.category,
+  };
+};
 
-    // 브랜드명 검사
-    if (!brandName) {
-      throw new Error('브랜드명을 입력해주세요.');
-    }
+// 검색창 - 브랜드 리스트 3열
+const toBrandListDTO = (brands) => {
+  return {
+    listSize: brands.length,
+    brands: brands.map(toBrandCardDTO),
+  };
+};
 
-    // 카테고리 검사
-    if (!category) {
-      throw new Error('카테고리를 선택해주세요.');
-    }
+// 검색창 - 브랜드로 검색
+const toBrandSearchDTO = (brand) => {
+  return {
+    brandId: brand.brandId,
+    brandName: brand.brandName,
+    logoUrl: brand.logoUrl,
+    category: brand.category,
+  };
+};
 
-    // ENUM 검사
-    if (category !== 'FOOD' && category !== 'HOUSEHOLD'
-    ) {
-      throw new Error('카테고리가 올바르지 않습니다.');
-    }
+// 검색창 - 브랜드 검색 결과
+const toBrandSearchResultDTO = (brands) => {
+  return {
+    brandListSize: brands.length,
+    brands: brands.map(toBrandSearchDTO),
+  };
+};
 
-    this.brandName = brandName;
-    this.logoUrl = logoUrl;
-    this.category = category;
-  }
-}
+// 브랜드창 - 상품 카드 1개
+const toBrandStuffCardDTO = (stuff) => {
+  return {
+    stuffId: stuff.stuffId,
+    stuffName: stuff.stuffName,
+    price: stuff.price,
 
-// 브랜드 수정 요청 DTO
-class UpdateBrandReqDTO {
-  constructor(brandName, logoUrl, category) {
+    imageUrl: stuff.imageUrl,
 
-    // 브랜드명 검사
-    if (!brandName) {
-      throw new Error('브랜드명을 입력해주세요.');
-    }
+    likeCount: Number(stuff.likeCount || 0),
+    dislikeCount: Number(stuff.dislikeCount || 0),
+    postCount: Number(stuff.postCount || 0),
+  };
+};
 
-    // ENUM 검사
-    if (category !== 'FOOD' && category !== 'HOUSEHOLD'
-    ) {
-      throw new Error('카테고리가 올바르지 않습니다.');
-    }
+// 브랜드창 - 상품 리스트 나열
+const toBrandStuffListDTO = ({
+  brand,
+  stuffs,
+  page,
+  size,
+  hasNext,
+}) => {
+  return {
+    brandId: brand.brandId,
+    brandName: brand.brandName,
 
-    this.brandName = brandName;
-    this.logoUrl = logoUrl;
-    this.category = category;
-  }
-}
+    totalStuffCount: Number(
+      brand.totalStuffCount || 0
+    ),
 
-// 브랜드 카드 1개 응답 DTO
-class BrandCardResDTO {
-  constructor(brand) {
-    this.brandId = brand.brandId;
-    this.brandName = brand.brandName;
-    this.logoUrl = brand.logoUrl;
-    this.category = brand.category;
-  }
-}
+    page,
+    size,
+    hasNext,
+
+    stuffs: stuffs.map(toBrandStuffCardDTO),
+  };
+};
 
 module.exports = {
-  CreateBrandReqDTO,
-  UpdateBrandReqDTO,
-  BrandCardResDTO,
+  toBrandCardDTO,
+  toBrandListDTO,
+  toBrandSearchDTO,
+  toBrandSearchResultDTO,
+  toBrandStuffCardDTO,
+  toBrandStuffListDTO,
 };
