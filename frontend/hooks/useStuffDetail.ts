@@ -11,33 +11,25 @@ export interface StuffDetail {
   stuffId: number;
   stuffName: string;
   brandId: number;
-  brandName: number;
+  brandName: string;
   price: number;
   bestReviewImageUrl: string | null;
+  imageUrl?: string | null;
+  
   likeCount: number;
-  dislikeCount: number;
+  likeRatio: number;
   koreanLikeCount: number;
-  foreignLikeCount: number;
-  recommendedStuffs: Array<{
-    stuffId: number;
-    stuffName: string;
-    price: number;
-    likeCount: number;
-    dislikeCount: number;
-  }>;
-  bestReview: {
-    postId: number;
-    content: string;
-    imageUrl: string | null;
-    createdAt: string;
-    likeCount: number;
-    dislikeCount: number;
-    user: {
-      userId: number;
-      nickname: string;
-      profileImageUrl: string | null;
-    };
-  } | null;
+  foreignerLikeCount: number;
+
+  dislikeCount: number;
+  dislikeRatio: number;
+  koreanDislikeCount: number;
+  foreignerDislikeCount: number;
+
+  recommendedStuffs: any[];
+  bestReview: any | null;
+  topPost?: any | null;
+  
   myReaction?: 'LIKE' | 'DISLIKE' | null;
 }
 
@@ -51,106 +43,60 @@ export function useStuffDetail(id: string) {
       try {
         setLoading(true);
         const response = await apiClient.get(`/api/stuffs/${id}/detail`);
-        // Support multiple backend response shapes: { data: { ... } } or { result: { ... } }
         const responseData = response.data?.data ?? response.data?.result;
 
         if (!responseData) {
-          console.warn('[useStuffDetail] unexpected response shape', response.data);
           setDetailData(null);
           return;
         }
 
-        // If API returns modern shape (data.*), it likely already matches expected fields.
-        if (response.data?.data) {
-          const detailObj: any = {
-            ...responseData,
-            bestReviewImageUrl: getAbsoluteUrl(responseData.bestReviewImageUrl),
-            bestReview: responseData.bestReview
-              ? {
-                  ...responseData.bestReview,
-                  imageUrl: getAbsoluteUrl(responseData.bestReview.imageUrl),
-                  user: {
-                    ...responseData.bestReview.user,
-                    profileImageUrl: getAbsoluteUrl(responseData.bestReview.user.profileImageUrl),
-                  },
-                }
-              : null,
-            myReaction: responseData.myReaction ?? null,
-          };
+        // 기본 매핑 객체 생성
+        let mapped: any = {
+          ...responseData,
+          brandName: String(responseData.brandName || '브랜드 미정'),
+          imageUrl: getAbsoluteUrl(responseData.imageUrl ?? null),
+          bestReviewImageUrl: getAbsoluteUrl(responseData.bestReviewImageUrl ?? responseData.imageUrl ?? null),
+          
+          // 기본값 0으로 세팅
+          likeCount: Number(responseData.totalLikeCount || responseData.likeCount || 0),
+          likeRatio: 0,
+          koreanLikeCount: Number(responseData.koreanLikeCount || 0),
+          foreignerLikeCount: Number(responseData.foreignerLikeCount || responseData.foreignLikeCount || 0),
+          
+          dislikeCount: Number(responseData.totalDislikeCount || responseData.dislikeCount || 0),
+          dislikeRatio: 0,
+          koreanDislikeCount: Number(responseData.koreanDislikeCount || 0),
+          foreignerDislikeCount: Number(responseData.foreignerDislikeCount || 0),
+          
+          topPost: responseData.topPost || responseData.bestReview || null,
+          myReaction: responseData.myReaction ?? null,
+        };
 
-          try {
-            const statsResp = await apiClient.get(`/api/interactions/${id}/interactions`);
-            const statsData = statsResp.data?.data ?? statsResp.data?.result ?? statsResp.data;
-            const myReaction = statsData?.myReaction ?? null;
-            if (myReaction !== undefined && myReaction !== null) {
-              detailObj.myReaction = myReaction;
-            }
-          } catch (err) {
-            // ignore optional auth / stats errors
+        try {
+          const statsResp = await apiClient.get(`/api/interactions/${id}/interactions`);
+          const statsData = statsResp.data?.data?.stats ?? statsResp.data?.stats;
+          const myReaction = statsResp.data?.data?.myReaction ?? statsResp.data?.myReaction ?? null;
+
+          if (statsData) {
+            mapped.likeCount = statsData.like.total;
+            mapped.likeRatio = statsData.like.ratio;
+            mapped.koreanLikeCount = statsData.like.korean;
+            mapped.foreignerLikeCount = statsData.like.foreigner;
+
+            mapped.dislikeCount = statsData.dislike.total;
+            mapped.dislikeRatio = statsData.dislike.ratio;
+            mapped.koreanDislikeCount = statsData.dislike.korean;
+            mapped.foreignerDislikeCount = statsData.dislike.foreigner;
           }
-
-          setDetailData(detailObj);
-        } else {
-          // Legacy DTO from backend: map fields to the hook's expected shape
-          const mapped = {
-            stuffId: responseData.stuffId,
-            stuffName: responseData.stuffName,
-            brandId: responseData.brandId,
-            brandName: responseData.brandName,
-            price: responseData.price,
-            // keep legacy compatibility: provide both `imageUrl` and `bestReviewImageUrl`
-            bestReviewImageUrl: getAbsoluteUrl(responseData.imageUrl ?? null),
-            imageUrl: getAbsoluteUrl(responseData.imageUrl ?? null),
-            likeCount: Number(responseData.totalLikeCount || 0),
-            dislikeCount: Number(responseData.totalDislikeCount || 0),
-            koreanLikeCount: Number(responseData.koreanLikeCount || 0),
-            foreignLikeCount: Number(responseData.foreignerLikeCount || 0),
-            koreanDislikeCount: Number(responseData.koreanDislikeCount || 0),
-            foreignerDislikeCount: Number(responseData.foreignerDislikeCount || 0),
-            recommendedStuffs: responseData.recommendedStuffs ?? [],
-            bestReview: responseData.topPost
-              ? {
-                  postId: responseData.topPost.postId,
-                  content: responseData.topPost.content,
-                  imageUrl: getAbsoluteUrl(responseData.topPost.imageUrl),
-                  createdAt: responseData.topPost.createdAt,
-                  likeCount: 0,
-                  dislikeCount: 0,
-                  user: {
-                    userId: responseData.topPost.userId,
-                    nickname: responseData.topPost.nickname,
-                    profileImageUrl: null,
-                  },
-                }
-              : null,
-            // product page expects `topPost` field
-            topPost: responseData.topPost
-              ? {
-                  postId: responseData.topPost.postId,
-                  content: responseData.topPost.content,
-                  imageUrl: getAbsoluteUrl(responseData.topPost.imageUrl),
-                  userId: responseData.topPost.userId,
-                  nickname: responseData.topPost.nickname,
-                  scrapCount: Number(responseData.topPost.scrapCount || 0),
-                  createdAt: responseData.topPost.createdAt,
-                }
-              : null,
-            myReaction: null,
-          } as any;
-
-          try {
-            const statsResp = await apiClient.get(`/api/interactions/${id}/interactions`);
-            const statsData = statsResp.data?.data ?? statsResp.data?.result ?? statsResp.data;
-            const myReaction = statsData?.myReaction ?? null;
-            if (myReaction !== undefined && myReaction !== null) {
-              mapped.myReaction = myReaction;
-            }
-          } catch (err) {
-            // ignore
+          if (myReaction !== undefined && myReaction !== null) {
+            mapped.myReaction = myReaction;
           }
-
-          setDetailData(mapped);
+        } catch (err) {
+          console.warn('통계 초기 로딩 실패 (무시됨)');
         }
+
+        setDetailData(mapped);
+
       } catch (error) {
         console.error('상품 상세 로딩 에러:', error);
       } finally {
@@ -161,45 +107,39 @@ export function useStuffDetail(id: string) {
   }, [id]);
 
   const handleToggle = async (reactionType: 'LIKE' | 'DISLIKE') => {
-    console.log('[useStuffDetail] handleToggle called', { id, reactionType, currentReaction: detailData?.myReaction });
-    if (!detailData) {
-      console.warn('[useStuffDetail] detailData is null, toggle skipped');
-      return;
-    }
+    if (!detailData) return;
+    
     const prevReaction = detailData.myReaction || null;
     const isSame = prevReaction === reactionType;
 
     try {
       setDetailData((prev) => {
         if (!prev) return prev;
-
-        let likeCount = prev.likeCount;
-        let dislikeCount = prev.dislikeCount;
-
-        if (prevReaction === 'LIKE') likeCount = Math.max(0, likeCount - 1);
-        if (prevReaction === 'DISLIKE') dislikeCount = Math.max(0, dislikeCount - 1);
-
-        if (!isSame) {
-          if (reactionType === 'LIKE') likeCount += 1;
-          if (reactionType === 'DISLIKE') dislikeCount += 1;
-        }
-
-        return {
-          ...prev,
-          myReaction: isSame ? null : reactionType,
-          likeCount,
-          dislikeCount,
-        };
+        return { ...prev, myReaction: isSame ? null : reactionType };
       });
 
-      console.log('[useStuffDetail] sending request', `/api/interactions/${id}/interactions`, reactionType);
       const response = await apiClient.post(`/api/interactions/${id}/interactions`, { reactionType });
-      console.log('[useStuffDetail] request response', response.status, response.data);
+      const statsData = response.data?.data?.stats ?? response.data?.stats;
+      
+      if (statsData) {
+        setDetailData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            likeCount: statsData.like.total,
+            likeRatio: statsData.like.ratio, 
+            koreanLikeCount: statsData.like.korean,
+            foreignerLikeCount: statsData.like.foreigner,
+            
+            dislikeCount: statsData.dislike.total,
+            dislikeRatio: statsData.dislike.ratio, 
+            koreanDislikeCount: statsData.dislike.korean,
+            foreignerDislikeCount: statsData.dislike.foreigner,
+          };
+        });
+      }
     } catch (error: any) {
       console.error('반응 업데이트 에러:', error);
-      if (error.response) {
-        console.error('API error response:', error.response.status, error.response.data);
-      }
     }
   };
 
