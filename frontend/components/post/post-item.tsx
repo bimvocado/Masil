@@ -78,56 +78,31 @@ export const PostItem = ({ item, user, onOpenComments, isScrapped, onScrapPress,
         )}
       </View>
 
-    {/* 우측 아이콘 바 */}
-<View style={styles.rightOverlay}>
-  <View style={styles.iconGroup}>
-    <TouchableOpacity 
-      onPress={() => toggleReaction('LIKE')}
-      style={{ alignItems: 'center' }} 
-    >
-      <Image 
-        source={require('@/assets/icons/like.png')} 
-        style={[{ width: 30, height: 30 }, { tintColor: liked ? '#ffffff' : '#a7a7a7' }]}
-        resizeMode="contain"
-      />
-      <Text style={styles.iconCount}>{likeCount}</Text>
-    </TouchableOpacity>
-  </View>
+      {/* 우측 아이콘 바 */}
+      <View style={styles.rightOverlay}>
+        <View style={styles.iconGroup}>
+          <TouchableOpacity onPress={() => toggleReaction('LIKE')}>
+            <Text style={[styles.icon, { color: liked ? '#FF6B6B' : '#fff' }]}>👍</Text>
+            <Text style={styles.iconCount}>{likeCount}</Text>
+          </TouchableOpacity>
+        </View>
 
-  <View style={styles.iconGroup}>
-    <TouchableOpacity 
-      onPress={() => toggleReaction('DISLIKE')}
-      style={{ alignItems: 'center' }}
-    >
-      <Image 
-        source={require('@/assets/icons/dislike.png')} 
-        style={[{ width: 30, height: 30 }, { tintColor: disliked ? '#ffffff' : '#a7a7a7' }]}
-        resizeMode="contain"
-      />
-      <Text style={styles.iconCount}>{dislikeCount}</Text>
-    </TouchableOpacity>
-  </View>
+        <View style={styles.iconGroup}>
+          <TouchableOpacity onPress={() => toggleReaction('DISLIKE')}>
+            <Text style={[styles.icon, { color: disliked ? '#6B9BD1' : '#fff' }]}>👎</Text>
+            <Text style={styles.iconCount}>{dislikeCount}</Text>
+          </TouchableOpacity>
+        </View>
 
-  <View style={styles.iconGroup}>
-    <TouchableOpacity 
-      onPress={() => onOpenComments(item.postId)}
-      style={{ alignItems: 'center' }}
-    >
-      <Text style={[styles.icon, { fontSize: 26, marginBottom: 2 }]}>💬</Text>
-      <Text style={styles.iconCount}>{item.commentCount || 0}</Text>
-    </TouchableOpacity>
-  </View>
+        <TouchableOpacity style={styles.iconGroup} onPress={() => onOpenComments(item.postId)}>
+          <Text style={styles.icon}>💬</Text>
+          <Text style={styles.iconCount}>{item.commentCount || 0}</Text>
+        </TouchableOpacity>
 
-  <View style={styles.iconGroup}>
-    <TouchableOpacity 
-      onPress={onScrapPress}
-      style={{ alignItems: 'center' }}
-    >
-      <Text style={[styles.icon, { fontSize: 26 }]}>{isScrapped ? '🔖' : '📌'}</Text>
-    </TouchableOpacity>
-  </View>
-
-</View>
+        <TouchableOpacity style={styles.iconGroup} onPress={onScrapPress}>
+          <Text style={styles.icon}>{isScrapped ? '🔖' : '📌'}</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* 하단 텍스트 정보 */}
       <View style={styles.bottomOverlay}>
