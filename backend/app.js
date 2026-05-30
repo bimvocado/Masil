@@ -66,10 +66,14 @@ PostHashtag.belongsTo(Post, { foreignKey: 'postId'});
 Hashtag.hasMany(PostHashtag, { foreignKey: 'hashtagId' });
 PostHashtag.belongsTo(Hashtag, { foreignKey: 'hashtagId' });
 
-sequelize.sync({ alter: true })
-  .then(() => console.log('MySQL 테이블 생성/수정 완료'))
-  .catch((err) => console.error('테이블 생성 실패:', err));
-
+sequelize.sync() // 기본값이 { force: false }이므로 생략 가능
+  .then(() => {
+    console.log('✅ MySQL 연결 성공 및 테이블 체크 완료');
+  })
+  .catch((err) => {
+    console.error('❌ DB 동기화 에러:', err);
+  });
+  
 const app = express();
 app.use(cors({
   origin: true,
