@@ -220,7 +220,15 @@ export default function ProductDetailScreen() {
 
         <View style={styles.reviewBox}>
           {detailData.topPost ? (
-            <>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() =>
+                router.push({
+                  pathname: '/user/post-feed/[id]',
+                  params: { id: String(detailData.topPost?.postId) },
+                })
+              }
+            >
               <Text style={{ fontWeight: 'bold' }}>
                 {detailData.topPost.nickname}
               </Text>
@@ -232,7 +240,7 @@ export default function ProductDetailScreen() {
               <Text style={{ color: '#888', marginTop: 5 }}>
                 스크랩 {detailData.topPost.scrapCount}
               </Text>
-            </>
+            </TouchableOpacity>
           ) : (
             <Text style={{ color: '#666' }}>
               아직 이 상품에 대한 리뷰가 없습니다.
