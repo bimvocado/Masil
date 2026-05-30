@@ -12,18 +12,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
   },
-  postCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.white,
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 14,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
   cardLeft: {
     flex: 1,
     justifyContent: 'space-between',

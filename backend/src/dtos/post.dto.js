@@ -23,6 +23,8 @@ class PostResDTO {
         this.stuffId = post.stuffId;
         this.createdAt = post.createdAt;
         this.updatedAt = post.updatedAt;
+        this.isLiked = post.isLiked; 
+        this.isDisliked = post.isDisliked;
     }
 }
 

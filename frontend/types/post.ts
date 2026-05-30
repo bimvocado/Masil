@@ -1,6 +1,8 @@
 
 
 export interface Post {
+    isLiked: boolean;
+    isDisliked: boolean;
     postId: number;  
     userId: number;
     stuffId: number;

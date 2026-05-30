@@ -3,6 +3,7 @@ import { View, Text, FlatList, Image, ActivityIndicator, TouchableOpacity } from
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles } from '@/components/styles/bookmark-detail';
+import { styles as cardStyles } from '@/components/styles/user';
 import { InteractionButton } from '@/constants/interaction-button';
 import { Post } from '@/types/post';
 import { TopBar } from '@/components/layout/top-bar';
@@ -62,7 +63,7 @@ export default function BookmarkDetailScreen() {
           contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.postCard}
+              style={cardStyles.postCard}
               onPress={() => router.push({ pathname: `/user/post-feed/${item.postId}` } as any)}
               activeOpacity={0.8}
             >
@@ -83,13 +84,13 @@ export default function BookmarkDetailScreen() {
                       onPress={() => handleDeleteScrap(item.postId)}
                     />
                   </View>
-                  <View style={styles.iconGroup}>
-                    <InteractionButton
-                      type="comment"
-                      count={item.commentCount || 0}
-                      textPosition="right"
-                    />
-                  </View>
+                  <View style={styles.iconGroup} pointerEvents="none">
+                <InteractionButton
+            type="comment"
+            count={item.commentCount || 0}
+            textPosition="right"
+        />
+                </View>
                 </View>
               </View>
               <View style={styles.cardRight}>

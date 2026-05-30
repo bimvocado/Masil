@@ -133,6 +133,10 @@ const getUserPosts = async (userId, viewerId = null) => {
     commentCount: Number(post.commentCount || 0),
     likeCount: Number(post.likeCount || 0),
     dislikeCount: Number(post.dislikeCount || 0),
+
+    isLiked: !!post.isLiked,    
+  isDisliked: !!post.isDisliked,
+  
     scrapCount: Number(post.scrapCount || 0),
     isScrapped: !!post.isScrapped,
   }));

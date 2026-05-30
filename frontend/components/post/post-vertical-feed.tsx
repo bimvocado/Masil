@@ -1,3 +1,4 @@
+//스크롤담당
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity,
@@ -193,6 +194,8 @@ return (
             user={user}               
             onOpenComments={handleOpenComments} 
             isScrapped={!!item.isScrapped}      
+            isLiked={!!item.isLiked}       
+            isDisliked={!!item.isDisliked}
             onScrapPress={() => handleScrapPress(item)} 
             onBack={onBack || (() => {})} 
           />
@@ -241,7 +244,6 @@ return (
             
               return (
                 <View style={styles.commentItem}>
-                  {/* ✅ 이 줄이 바로 팀장님이 말씀하신 그 뼈대! 버리면 안 돼요! */}
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                     
                     {/* 프사 영역 */}
@@ -271,7 +273,7 @@ return (
                       <Text style={styles.commentText}>{item.text}</Text>
                     </View>
             
-                  </View> {/* 뼈대 끝 */}
+                  </View> 
                 </View>
               );
             }}

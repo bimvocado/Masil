@@ -73,9 +73,7 @@ const updatePost = async (post, updateData) => {
 const deletePost = async (post) => {
     return await post.destroy();
 }
-
- const findPostsByUserId = async (userId, viewerId = null) => {
-
+const findPostsByUserId = async (userId, viewerId = null) => {
     const posts = await sequelize.query(`
         SELECT
             p.post_id AS postId,
@@ -91,8 +89,11 @@ const deletePost = async (post) => {
             st.price AS price,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
+
+            -- 💡 1. 여기에 콤마(,) 추가했고, IFNULL 처리로 더 안전하게 만들었습니다.
+            MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
+            MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
             
-            -- 카운트 (중복 방지를 위해 DISTINCT 필수)
             COUNT(DISTINCT c.comment_id) AS commentCount,
             COUNT(DISTINCT CASE WHEN i.reaction_type = 'LIKE' THEN i.interaction_id END) AS likeCount,
             COUNT(DISTINCT CASE WHEN i.reaction_type = 'DISLIKE' THEN i.interaction_id END) AS dislikeCount,
@@ -116,7 +117,7 @@ const deletePost = async (post) => {
             
         ORDER BY p.created_at DESC
     `, {
-        replacements: { userId, viewerId },
+        replacements: { userId, viewerId: viewerId || 0 }, // 💡 viewerId가 null일 경우를 대비해 0 세팅
         type: QueryTypes.SELECT
     });
     

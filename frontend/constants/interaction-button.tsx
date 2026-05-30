@@ -18,6 +18,10 @@ const IMAGE_SOURCES = {
   heart: require('@/assets/icons/heart.png'),
 };
 
+const FILLED_IMAGE_SOURCES = {
+  bookmark: require('@/assets/icons/filledbookmark.png'),
+};
+
 export function InteractionButton({
   type,
   count,
@@ -27,9 +31,13 @@ export function InteractionButton({
   textPosition = 'bottom',
 }: InteractionButtonProps) {
   
-  const imageSource = IMAGE_SOURCES[type];
+  const imageSource = (isActive && type === 'bookmark' && FILLED_IMAGE_SOURCES.bookmark)
+    ? FILLED_IMAGE_SOURCES.bookmark
+    : IMAGE_SOURCES[type];
 
-  const iconTintColor = isActive 
+  const iconTintColor = type === 'bookmark' && isActive
+    ? '#009205'
+    : isActive 
     ? (type === 'like' ? '#FF9500' : type === 'dislike' ? '#FF9500' : type === 'heart' ? '#FF3B30' : '#009205') 
     : '#dcdcdc';
 

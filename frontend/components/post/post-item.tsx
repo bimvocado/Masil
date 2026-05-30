@@ -1,3 +1,4 @@
+//게시글
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image } from 'react-native';
 import { Post } from '@/types/post';
@@ -16,17 +17,19 @@ interface PostItemProps {
   user: any;
   onOpenComments: (postId: number) => void;
   isScrapped: boolean;
+  isLiked: boolean;
+  isDisliked: boolean;
   onScrapPress: () => void;
   onBack: () => void;
 }
 
-export const PostItem = ({ item, user, onOpenComments, isScrapped, onScrapPress, onBack }: PostItemProps) => {
+export const PostItem = ({ item, user, onOpenComments,isLiked, isDisliked, isScrapped, onScrapPress, onBack }: PostItemProps) => {
   // 1. 좋아요/싫어요 상태 및 숫자 관리
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
   const [likeCount, setLikeCount] = useState(item.likeCount || 0);
   const [dislikeCount, setDislikeCount] = useState(item.dislikeCount || 0);
-
+  
   // 2. 초기 데이터 싱크 (부모로부터 받은 값 세팅)
   useEffect(() => {
     setLikeCount(item.likeCount || 0);
@@ -86,7 +89,7 @@ export const PostItem = ({ item, user, onOpenComments, isScrapped, onScrapPress,
       style={{ alignItems: 'center' }} 
     >
       <Image 
-        source={require('@/assets/icons/like.png')} 
+        source={liked ? require('@/assets/icons/filledlike.png') : require('@/assets/icons/like.png')}
         style={[{ width: 30, height: 30 }, { tintColor: liked ? '#ffffff' : '#a7a7a7' }]}
         resizeMode="contain"
       />
@@ -100,7 +103,7 @@ export const PostItem = ({ item, user, onOpenComments, isScrapped, onScrapPress,
       style={{ alignItems: 'center' }}
     >
       <Image 
-        source={require('@/assets/icons/dislike.png')} 
+        source={disliked ? require('@/assets/icons/filleddislike.png') : require('@/assets/icons/dislike.png')}
         style={[{ width: 30, height: 30 }, { tintColor: disliked ? '#ffffff' : '#a7a7a7' }]}
         resizeMode="contain"
       />
@@ -113,7 +116,11 @@ export const PostItem = ({ item, user, onOpenComments, isScrapped, onScrapPress,
       onPress={() => onOpenComments(item.postId)}
       style={{ alignItems: 'center' }}
     >
-      <Text style={[styles.icon, { fontSize: 26, marginBottom: 2 }]}>💬</Text>
+      <Image 
+        source={require('@/assets/icons/comment.png')} 
+        style={[{ width: 30, height: 30 }, { tintColor: '#ffffff' } ]}
+        resizeMode="contain"
+      />
       <Text style={styles.iconCount}>{item.commentCount || 0}</Text>
     </TouchableOpacity>
   </View>
@@ -123,7 +130,11 @@ export const PostItem = ({ item, user, onOpenComments, isScrapped, onScrapPress,
       onPress={onScrapPress}
       style={{ alignItems: 'center' }}
     >
-      <Text style={[styles.icon, { fontSize: 26 }]}>{isScrapped ? '🔖' : '📌'}</Text>
+     <Image 
+        source={isScrapped ? require('@/assets/icons/filledbookmark.png') : require('@/assets/icons/bookmark.png')} 
+        style={[{ width: 30, height: 30 }, { tintColor: '#ffffff' } ]}
+        resizeMode="contain"
+      />
     </TouchableOpacity>
   </View>
 
@@ -162,10 +173,10 @@ const styles = StyleSheet.create({
   emptyText: { color: '#ccc', fontSize: 16 },
   backButton: { position: 'absolute', top: 50, left: 20, zIndex: 10, padding: 8 },
   backButtonText: { color: '#fff', fontSize: 24, fontWeight: 'bold', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 2 },
-  rightOverlay: { position: 'absolute', right: 15, bottom: 100, alignItems: 'center' },
-  iconGroup: { alignItems: 'center', marginBottom: 20 },
+  rightOverlay: { position: 'absolute', right: 15, bottom: 100, alignItems: 'center',paddingBottom: 60 },
+  iconGroup: { alignItems: 'center', marginBottom: 30, },
   icon: { fontSize: 32, marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 3 },
-  iconCount: { color: '#fff', fontSize: 13, fontWeight: '700', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 2 },
+  iconCount: { color: '#fff', fontSize: 11, fontWeight: '500', textShadowColor: 'rgba(0, 0, 0, 0.5)', textShadowOffset: {width: 0, height: 0}, textShadowRadius: 3 , marginTop: 10},
   bottomOverlay: { position: 'absolute', left: 20, bottom: 50, right: 80 },
   userRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   userCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FF8888', justifyContent: 'center', alignItems: 'center', marginRight: 10, borderWidth: 1, borderColor: '#fff' },
