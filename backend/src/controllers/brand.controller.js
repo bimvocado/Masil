@@ -1,112 +1,83 @@
 const brandService = require('../services/brand.service');
 
-const {
-  CreateBrandReqDTO,
-  UpdateBrandReqDTO,
-} = require('../dtos/brand.dto');
-
-// 브랜드 생성
-const createBrand = async (req, res, next) => {
+// 검색창 - 브랜드 리스트 3열
+const getBrandList = async (req, res, next) => {
   try {
-    const { brandName, logoUrl, category } = req.body;
+    const { category } = req.query;
 
-    const createBrandReqDTO = new CreateBrandReqDTO(
-      brandName,
-      logoUrl,
-      category
-    );
-
-    const result = await brandService.createBrand(createBrandReqDTO);
-
-    return res.status(201).json({
-      success: true,
-      message: '브랜드 생성 성공',
-      data: result,
+    const result = await brandService.getBrandList({
+      category,
     });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// 브랜드 수정
-const updateBrand = async (req, res, next) => {
-  try {
-    const { brandId } = req.params;
-    const { brandName, logoUrl, category } = req.body;
-
-    const updateBrandReqDTO = new UpdateBrandReqDTO(
-      brandName,
-      logoUrl,
-      category
-    );
-
-    const result = await brandService.updateBrand(
-      brandId,
-      updateBrandReqDTO
-    );
-
-    return res.status(200).json({
-      success: true,
-      message: '브랜드 수정 성공',
-      data: result,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// 브랜드 삭제
-const deleteBrand = async (req, res, next) => {
-  try {
-    const { brandId } = req.params;
-
-    const result = await brandService.deleteBrand(brandId);
-
-    return res.status(200).json({
-      success: true,
-      message: '브랜드 삭제 성공',
-      data: result,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// 브랜드 탐색 페이지 조회
-const searchBrands = async (
-  req,
-  res,
-  next
-) => {
-  try {
-
-    const {
-      keyword,
-      category
-    } = req.query;
-
-
-    const result =
-      await brandService.searchBrands(
-        keyword,
-        category
-      );
-
 
     return res.status(200).json({
       success: true,
       message: '브랜드 목록 조회 성공',
-      data: result,
+      result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 검색창 - 브랜드로 검색
+const searchBrands = async (req, res, next) => {
+  try {
+    const { keyword, category } = req.query;
+
+    const result = await brandService.searchBrands({
+      keyword,
+      category,
     });
 
+    return res.status(200).json({
+      success: true,
+      message: '브랜드 검색 성공',
+      result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 브랜드창 - 상품 리스트 나열
+const getBrandStuffList = async (req, res, next) => {
+  try {
+    const { brandId } = req.params;
+
+    const {
+      sort = 'LIKE_DESC',
+      page = 0,
+      size = 10,
+    } = req.query;
+
+    const allowedSorts = ['LIKE_DESC', 'DISLIKE_ASC', 'LATEST'];
+
+    if (!allowedSorts.includes(sort)) {
+      return res.status(400).json({
+        success: false,
+        message: 'sort는 LIKE_DESC, DISLIKE_ASC, LATEST 중 하나여야 합니다.',
+      });
+    }
+
+    const result = await brandService.getBrandStuffList({
+      brandId: Number(brandId),
+      sort,
+      page: Number(page),
+      size: Number(size),
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '브랜드 상품 목록 조회 성공',
+      result,
+    });
   } catch (error) {
     next(error);
   }
 };
 
 module.exports = {
-  createBrand,
-  updateBrand,
-  deleteBrand,
+  getBrandList,
   searchBrands,
+  getBrandStuffList,
 };
