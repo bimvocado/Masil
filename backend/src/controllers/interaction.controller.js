@@ -22,7 +22,9 @@ const getInteractionStats = async (req, res, next) => {
   try {
     const { stuffId } = req.params;
 
-    const statsResult = await interactionService.getInteractionStats(Number(stuffId));
+    const userId = req.user?.userId ?? null;
+
+    const statsResult = await interactionService.getInteractionStats(Number(stuffId), userId);
 
     return res.status(200).json(ApiResponse.success(200, '통계 데이터를 성공적으로 불러왔습니다.', statsResult));
   } catch (error) {

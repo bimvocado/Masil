@@ -56,9 +56,17 @@ const toggleInteraction = async (reqDTO) => {
   return await processInteraction(reqDTO);
 };
 
-const getInteractionStats = async (stuffId) => {
-  const rawStats = await interactionRepository.getInteractionStats(stuffId);
-  return toStatsResDTO(rawStats);
+const getInteractionStats = async (stuffId, userId = null) => {
+    const rawStats = await interactionRepository.getInteractionStats(stuffId);
+    const stats = toStatsResDTO(rawStats);
+
+    let myReaction = null;
+    if (userId) {
+        const existing = await interactionRepository.findByUserAndStuff(userId, stuffId);
+        if (existing) myReaction = existing.reactionType;
+    }
+
+    return { stats, myReaction };
 };
 
 module.exports = {
