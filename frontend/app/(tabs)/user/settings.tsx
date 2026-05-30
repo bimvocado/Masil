@@ -5,9 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { SettingMenuItem } from '@/components/ui/setting-menu-item';
 import { useLogout } from '@/hooks/use-logout'; 
 import { router } from 'expo-router';
+import { CommonModal } from '@/components/ui/common-modal';
 
 export default function SettingsScreen() {
-  const { handleLogout } = useLogout(); 
+  const { 
+  modalVisible, 
+  handleLogoutPress, 
+  closeLogoutModal, 
+  confirmLogout 
+} = useLogout();
 
   return (
     <View style={styles.container}>
@@ -31,13 +37,21 @@ export default function SettingsScreen() {
             onPress={() => router.push('/user/language')}
         />
 
-        <TouchableOpacity style={styles.logoutWrapper} onPress={handleLogout}>
+        <TouchableOpacity style={styles.logoutWrapper} onPress={handleLogoutPress}>
           <View style={styles.logoutItem}>
             <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
             <Text style={styles.logoutLabel}>로그아웃</Text>
           </View>
         </TouchableOpacity>
       </View>
+      <CommonModal
+        visible={modalVisible}
+        title="로그아웃"
+        message="정말 로그아웃 하시겠습니까?"
+        confirmText="로그아웃"
+        onConfirm={confirmLogout}      // 훅에서 가져온 진짜 로그아웃 로직
+        onCancel={closeLogoutModal}    // 훅에서 가져온 닫기 로직
+      />
     </View>
   );
 }

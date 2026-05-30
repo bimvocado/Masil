@@ -1,7 +1,8 @@
-import {View,Text,TextInput,TouchableOpacity,ScrollView, KeyboardAvoidingView,Platform, ImageBackground,} from 'react-native';
+import { View,Text,TextInput,TouchableOpacity,ScrollView, KeyboardAvoidingView,Platform, ImageBackground,} from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
 import { useState, useRef } from 'react';
 import { authStyles as styles } from '@/components/styles/auth';
+import { SoftWaveBackground } from '@/components/ui/soft-wave-background';
 import { useAuthStore } from '@/store/use-auth-store';
 import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
 import { authService } from '@/api/auth-service';
@@ -221,6 +222,7 @@ export default function EntryScreen() {
         style={styles.backgroundImage}
         imageStyle={styles.backgroundImage}
       >
+          <SoftWaveBackground />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.container}
@@ -319,7 +321,7 @@ export default function EntryScreen() {
                 {isLoginView ? (
                   <View style={styles.buttonRow}>
                     <TouchableOpacity style={styles.emailSignupButton} onPress={() => { clearValidationState(); setIsLoginView(false); }}>
-                      <Text style={styles.buttonText}>Sign up</Text>
+                      <Text style={styles.buttonText}>회원가입</Text>
                     </TouchableOpacity>
                     <GoogleLoginButton />
                   </View>

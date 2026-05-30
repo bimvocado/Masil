@@ -8,6 +8,8 @@ interface InteractionButtonProps {
   onPress?: () => void;
   hitSlop?: { top: number; bottom: number; left: number; right: number };
   textPosition?: 'bottom' | 'right';
+  tintColor?: string;
+  withShadow?: boolean;
 }
 
 const IMAGE_SOURCES = {
@@ -29,19 +31,32 @@ export function InteractionButton({
   onPress,
   hitSlop,
   textPosition = 'bottom',
+  tintColor,
+  withShadow = false,
 }: InteractionButtonProps) {
   
   const imageSource = (isActive && type === 'bookmark' && FILLED_IMAGE_SOURCES.bookmark)
     ? FILLED_IMAGE_SOURCES.bookmark
     : IMAGE_SOURCES[type];
 
-  const iconTintColor = type === 'bookmark' && isActive
+  const defaultTint = type === 'bookmark' && isActive
     ? '#009205'
     : isActive 
     ? (type === 'like' ? '#FF9500' : type === 'dislike' ? '#FF9500' : type === 'heart' ? '#FF3B30' : '#009205') 
     : '#dcdcdc';
 
+  const iconTint = tintColor ?? defaultTint;
   const isRight = textPosition === 'right';
+  const iconStyles = [
+    styles.actionIconImage,
+    withShadow ? {
+      shadowColor: iconTint,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.9,
+      shadowRadius: 8,
+      elevation: 4,
+    } : undefined,
+  ];
 
   return (
     <TouchableOpacity 
@@ -51,8 +66,8 @@ export function InteractionButton({
     >
       <Image 
         source={imageSource}
-        style={styles.actionIconImage} 
-        tintColor={iconTintColor}
+        style={iconStyles} 
+        tintColor={iconTint}
         resizeMode="contain"
       />
       {count !== undefined && count !== '' && (

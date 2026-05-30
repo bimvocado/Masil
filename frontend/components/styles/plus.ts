@@ -174,7 +174,7 @@ export const styles = StyleSheet.create({
   modalActiveTabButton: {
     borderColor: Colors.masil.point,
   },
-  modalTabText: {
+  TabText: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.gray.medium,
