@@ -2,6 +2,7 @@ const express = require('express');
 
 const interactionController = require('../controllers/interaction.controller');
 const {authMiddleware} = require('../middlewares/auth.middleware');
+const { optionalAuthMiddleware } = require('../middlewares/optionalAuth.middleware');
 const interactionValidator = require('../validators/interaction.validator');
 const { validateToggleInteraction, validateGetStats } = require('../validators/interaction.validator');
 const router = express.Router();
@@ -21,6 +22,7 @@ router.post(
 
 router.get(
     '/:stuffId/interactions',
+    optionalAuthMiddleware,
     validateGetStats,
     interactionController.getInteractionStats
 );

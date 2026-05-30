@@ -51,22 +51,106 @@ export function useStuffDetail(id: string) {
       try {
         setLoading(true);
         const response = await apiClient.get(`/api/stuffs/${id}/detail`);
-        const responseData = response.data.data;
-        setDetailData({
-          ...responseData,
-          bestReviewImageUrl: getAbsoluteUrl(responseData.bestReviewImageUrl),
-          bestReview: responseData.bestReview
-            ? {
-                ...responseData.bestReview,
-                imageUrl: getAbsoluteUrl(responseData.bestReview.imageUrl),
-                user: {
-                  ...responseData.bestReview.user,
-                  profileImageUrl: getAbsoluteUrl(responseData.bestReview.user.profileImageUrl),
-                },
-              }
-            : null,
-          myReaction: responseData.myReaction ?? null,
-        });
+        // Support multiple backend response shapes: { data: { ... } } or { result: { ... } }
+        const responseData = response.data?.data ?? response.data?.result;
+
+        if (!responseData) {
+          console.warn('[useStuffDetail] unexpected response shape', response.data);
+          setDetailData(null);
+          return;
+        }
+
+        // If API returns modern shape (data.*), it likely already matches expected fields.
+        if (response.data?.data) {
+          const detailObj: any = {
+            ...responseData,
+            bestReviewImageUrl: getAbsoluteUrl(responseData.bestReviewImageUrl),
+            bestReview: responseData.bestReview
+              ? {
+                  ...responseData.bestReview,
+                  imageUrl: getAbsoluteUrl(responseData.bestReview.imageUrl),
+                  user: {
+                    ...responseData.bestReview.user,
+                    profileImageUrl: getAbsoluteUrl(responseData.bestReview.user.profileImageUrl),
+                  },
+                }
+              : null,
+            myReaction: responseData.myReaction ?? null,
+          };
+
+          try {
+            const statsResp = await apiClient.get(`/api/interactions/${id}/interactions`);
+            const statsData = statsResp.data?.data ?? statsResp.data?.result ?? statsResp.data;
+            const myReaction = statsData?.myReaction ?? null;
+            if (myReaction !== undefined && myReaction !== null) {
+              detailObj.myReaction = myReaction;
+            }
+          } catch (err) {
+            // ignore optional auth / stats errors
+          }
+
+          setDetailData(detailObj);
+        } else {
+          // Legacy DTO from backend: map fields to the hook's expected shape
+          const mapped = {
+            stuffId: responseData.stuffId,
+            stuffName: responseData.stuffName,
+            brandId: responseData.brandId,
+            brandName: responseData.brandName,
+            price: responseData.price,
+            // keep legacy compatibility: provide both `imageUrl` and `bestReviewImageUrl`
+            bestReviewImageUrl: getAbsoluteUrl(responseData.imageUrl ?? null),
+            imageUrl: getAbsoluteUrl(responseData.imageUrl ?? null),
+            likeCount: Number(responseData.totalLikeCount || 0),
+            dislikeCount: Number(responseData.totalDislikeCount || 0),
+            koreanLikeCount: Number(responseData.koreanLikeCount || 0),
+            foreignLikeCount: Number(responseData.foreignerLikeCount || 0),
+            koreanDislikeCount: Number(responseData.koreanDislikeCount || 0),
+            foreignerDislikeCount: Number(responseData.foreignerDislikeCount || 0),
+            recommendedStuffs: responseData.recommendedStuffs ?? [],
+            bestReview: responseData.topPost
+              ? {
+                  postId: responseData.topPost.postId,
+                  content: responseData.topPost.content,
+                  imageUrl: getAbsoluteUrl(responseData.topPost.imageUrl),
+                  createdAt: responseData.topPost.createdAt,
+                  likeCount: 0,
+                  dislikeCount: 0,
+                  user: {
+                    userId: responseData.topPost.userId,
+                    nickname: responseData.topPost.nickname,
+                    profileImageUrl: null,
+                  },
+                }
+              : null,
+            // product page expects `topPost` field
+            topPost: responseData.topPost
+              ? {
+                  postId: responseData.topPost.postId,
+                  content: responseData.topPost.content,
+                  imageUrl: getAbsoluteUrl(responseData.topPost.imageUrl),
+                  userId: responseData.topPost.userId,
+                  nickname: responseData.topPost.nickname,
+                  scrapCount: Number(responseData.topPost.scrapCount || 0),
+                  createdAt: responseData.topPost.createdAt,
+                }
+              : null,
+            myReaction: null,
+          } as any;
+
+          try {
+            const statsResp = await apiClient.get(`/api/interactions/${id}/interactions`);
+            const statsData = statsResp.data?.data ?? statsResp.data?.result ?? statsResp.data;
+            const myReaction = statsData?.myReaction ?? null;
+            if (myReaction !== undefined && myReaction !== null) {
+              mapped.myReaction = myReaction;
+            }
+          } catch (err) {
+            // ignore
+          }
+
+          setDetailData(mapped);
+        }
       } catch (error) {
         console.error('상품 상세 로딩 에러:', error);
       } finally {

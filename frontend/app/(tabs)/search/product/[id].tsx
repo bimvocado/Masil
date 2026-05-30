@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { InteractionButton } from '@/constants/interaction-button';
 import { InteractionStatsBar } from '@/components/ui/interaction-stats-bar';
 
 import { searchService } from '@/api/search-service';
+import { useStuffDetail } from '@/hooks/useStuffDetail';
 
 type TopPost = {
   postId: number;
@@ -60,29 +61,7 @@ export default function ProductDetailScreen() {
   }>();
 
   const router = useRouter();
-
-  const [loading, setLoading] = useState(true);
-  const [detailData, setDetailData] = useState<StuffDetail | null>(null);
-
-  // 상품창 - 상세 페이지 전체
-  const fetchStuffDetail = async () => {
-    try {
-      setLoading(true);
-
-      const response = await searchService.getStuffDetail(Number(id));
-      setDetailData(response.data.result);
-    } catch (error) {
-      console.error('상품 상세 조회 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (id) {
-      fetchStuffDetail();
-    }
-  }, [id]);
+  const { loading, detailData, handleToggle } = useStuffDetail(String(id));
 
   if (loading || !detailData) {
     return (
@@ -161,38 +140,34 @@ export default function ProductDetailScreen() {
         {/* 좋아요 / 싫어요 통계 */}
         <InteractionStatsBar
           likeStats={{
-            total: detailData.totalLikeCount,
-            korean: detailData.koreanLikeCount,
-            foreign: detailData.foreignerLikeCount,
+            total: detailData.likeCount,
+            korean: (detailData as any).koreanLikeCount,
+            foreign: (detailData as any).foreignLikeCount,
           } as any}
           dislikeStats={{
-            total: detailData.totalDislikeCount,
-            korean: detailData.koreanDislikeCount,
-            foreign: detailData.foreignerDislikeCount,
+            total: detailData.dislikeCount,
+            korean: (detailData as any).koreanDislikeCount,
+            foreign: (detailData as any).foreignerDislikeCount,
           } as any}
         />
 
         {/* 좋아요 / 싫어요 버튼 */}
         <View style={styles.statsContainer}>
-          <InteractionButton
-            type="like"
-            count={detailData.totalLikeCount}
-            isActive={false}
-            onPress={() => {
-              console.log('좋아요 버튼 클릭');
-            }}
-            textPosition="right"
-          />
+            <InteractionButton
+              type="like"
+              count={detailData.likeCount}
+              isActive={detailData.myReaction === 'LIKE'}
+              onPress={() => handleToggle('LIKE')}
+              textPosition="right"
+            />
 
-          <InteractionButton
-            type="dislike"
-            count={detailData.totalDislikeCount}
-            isActive={false}
-            onPress={() => {
-              console.log('싫어요 버튼 클릭');
-            }}
-            textPosition="right"
-          />
+            <InteractionButton
+              type="dislike"
+              count={detailData.dislikeCount}
+              isActive={detailData.myReaction === 'DISLIKE'}
+              onPress={() => handleToggle('DISLIKE')}
+              textPosition="right"
+            />
         </View>
 
         <View style={styles.divider} />
@@ -220,7 +195,15 @@ export default function ProductDetailScreen() {
 
         <View style={styles.reviewBox}>
           {detailData.topPost ? (
-            <>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() =>
+                router.push({
+                  pathname: '/user/post-feed/[id]',
+                  params: { id: String(detailData.topPost?.postId) },
+                })
+              }
+            >
               <Text style={{ fontWeight: 'bold' }}>
                 {detailData.topPost.nickname}
               </Text>
@@ -232,7 +215,7 @@ export default function ProductDetailScreen() {
               <Text style={{ color: '#888', marginTop: 5 }}>
                 스크랩 {detailData.topPost.scrapCount}
               </Text>
-            </>
+            </TouchableOpacity>
           ) : (
             <Text style={{ color: '#666' }}>
               아직 이 상품에 대한 리뷰가 없습니다.
