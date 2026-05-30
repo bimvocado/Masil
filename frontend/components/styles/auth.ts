@@ -1,55 +1,127 @@
 import { StyleSheet } from 'react-native';
 
 export const authStyles = StyleSheet.create({
-  
   container: {
     flex: 1,
-    paddingHorizontal: 40,
-    justifyContent: 'center',
-    backgroundColor: '#F0F9E8', 
   },
-  
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  mainContainer: {
+    width: 227,
+    alignSelf: 'center',
+    marginTop: 30,
+    alignItems: 'center',
+    gap: 42,
+  },
+  titleWrapper: {
+    alignSelf: 'stretch',
+    alignItems: 'flex-start',
+    paddingHorizontal: 10,
+  },
+  inputGroup: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: 25,
+  },
+  sectionWrapper: {
+    width: '70%',
+    minWidth: 200,
+    alignItems: 'center',
+    gap: 8,
+  },
   title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#006400',
-    marginBottom: 8,
+    color: '#076E00',
+    fontSize: 42,
+    fontWeight: '900',
   },
   subtitle: {
-    fontSize: 16,
-    color: '#8DBA7D',
-    marginBottom: 40,
+    color: '#A3BF5B',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 5,
   },
-  
   input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)', 
-    borderRadius: 25, 
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    alignSelf: 'stretch',
+    height: 33,
+    paddingHorizontal: 15,
+    backgroundColor: '#CBE1B5',
+    borderRadius: 15,
+    fontSize: 12,
+    color: '#333',
     textAlign: 'center',
-    fontSize: 16,
   },
-  
-  button: {
-    width: '100%',
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  whiteButton: {
-    backgroundColor: '#FFFFFF',
+  inputError: {
     borderWidth: 1,
-    borderColor: '#DDD',
+    borderColor: '#E03E3E',
   },
-  kakaoButton: {
-    backgroundColor: '#FEE500',
+  inputSuccess: {
+    borderWidth: 1,
+    borderColor: '#1F8A59',
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  errorText: {
+    alignSelf: 'stretch',
+    color: '#E03E3E',
+    fontSize: 10,
+    marginTop: 4,
+    textAlign: 'left',
   },
   buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  }
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#333',
+  },
+  button: {
+    width: '100%',
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+  },
+  loginButtonFrame: {
+    width: '100%',
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+    backgroundColor: '#ECF3D1',
+    marginTop: 10,
+  },
+  emailSignupButton: {
+    width: '88%',
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+ 
+  buttonRow: {
+    width: '100%',
+    gap: 5,
+      alignItems: 'center',
+  },
+  googleButtonText: {
+    color: '#333',
+  },
+  linkButton: {
+    marginTop: 10,
+  },
+  linkText: {
+    color: '#8DBA7D',
+    fontSize: 12,
+    fontWeight: '400',
+    textDecorationLine: 'underline',
+  },
 });

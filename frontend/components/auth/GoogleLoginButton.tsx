@@ -31,10 +31,10 @@ export function GoogleLoginButton() {
       console.log("구글 응답 상태:", response.type);
     }
 
-    // ✅ 변경: response뿐만 아니라 request에 들어있는 codeVerifier가 필요합니다.
+    
     if (response?.type === 'success' && response.params.code) {
       const { code } = response.params;
-      const verifier = request?.codeVerifier; // 🔑 Expo가 만든 PKCE 열쇠 추출
+      const verifier = request?.codeVerifier; 
       
       console.log("✅ 인가 코드:", code);
       console.log("🔑 검증기(Verifier):", verifier);
@@ -73,7 +73,7 @@ export function GoogleLoginButton() {
     <TouchableOpacity 
       style={[
         styles.button, 
-        { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', marginTop: 10 }
+        { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', marginTop: 10, width: '88%', alignSelf: 'center' }
       ]} 
       onPress={() => promptAsync()}
       disabled={!request}

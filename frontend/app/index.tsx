@@ -1,13 +1,9 @@
-import { 
-  View, Text, TextInput, TouchableOpacity, ScrollView,
-  KeyboardAvoidingView, Platform, Alert 
-} from 'react-native';
+import {View,Text,TextInput,TouchableOpacity,ScrollView, KeyboardAvoidingView,Platform, ImageBackground,} from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
-import { useState,useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { authStyles as styles } from '@/components/styles/auth';
 import { useAuthStore } from '@/store/use-auth-store';
 import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
-import { getToken,removeToken } from '@/utils/storage';
 import { authService } from '@/api/auth-service';
 
 export default function EntryScreen() {
@@ -15,204 +11,340 @@ export default function EntryScreen() {
   const { setUser, isLoggedIn } = useAuthStore();
   const [isLoginView, setIsLoginView] = useState(true);
   const [isIdChecked, setIsIdChecked] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     loginId: '',
     password: '',
     email: '',
     nickname: '',
-    birthDate: '', 
+    birthDate: '',
   });
+  const [errors, setErrors] = useState({
+    loginId: '',
+    password: '',
+    email: '',
+    nickname: '',
+    birthDate: '',
+    general: '',
+  });
+  const [validatedLoginId, setValidatedLoginId] = useState('');
+  const [idCheckMessage, setIdCheckMessage] = useState('');
+  const [idCheckSuccess, setIdCheckSuccess] = useState(false);
+  const loginIdRef = useRef<TextInput | null>(null);
+  const passwordRef = useRef<TextInput | null>(null);
+  const emailRef = useRef<TextInput | null>(null);
+  const nicknameRef = useRef<TextInput | null>(null);
+  const birthDateRef = useRef<TextInput | null>(null);
 
   if (isLoggedIn) {
     return <Redirect href="/(tabs)/home" />;
   }
 
+  const clearValidationState = () => {
+    setErrors({
+      loginId: '',
+      password: '',
+      email: '',
+      nickname: '',
+      birthDate: '',
+      general: '',
+    });
+    setIdCheckMessage('');
+    setIdCheckSuccess(false);
+    setIsIdChecked(false);
+    setValidatedLoginId('');
+  };
+
   const handleChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (name === 'loginId') setIsIdChecked(false);
+    setErrors(prev => ({ ...prev, [name]: '', general: '' }));
+    if (name === 'loginId') {
+      setIsIdChecked(false);
+      setValidatedLoginId('');
+      setIdCheckMessage('');
+      setIdCheckSuccess(false);
+    }
   };
 
   const handleCheckId = async () => {
+    setErrors(prev => ({ ...prev, general: '' }));
+    setIdCheckMessage('');
+    setIdCheckSuccess(false);
     if (!formData.loginId) {
-      alert('아이디를 입력해주세요.'); // Alert.alert 대신 일반 alert 사용 테스트
+      setErrors(prev => ({ ...prev, loginId: '아이디를 입력해주세요.' }));
+      loginIdRef.current?.focus();
       return;
-    }  try {
+    }
+    try {
       const result = await authService.checkDuplicate('loginId', formData.loginId);
-      console.log('서버에서 온 진짜 결과물:', result);
-      
-      if (result.isDuplicate) {
-        alert('이미 사용 중인 아이디입니다. ❌');
+      const isDuplicate = result?.isDuplicate ?? true;
+      if (isDuplicate) {
+        setErrors(prev => ({ ...prev, loginId: '이미 사용 중인 아이디입니다.' }));
         setIsIdChecked(false);
+        setValidatedLoginId('');
+        loginIdRef.current?.focus();
       } else {
-        alert('사용 가능한 아이디입니다! ✅');
-        setIsIdChecked(true); // 
+        setErrors(prev => ({ ...prev, loginId: '' }));
+        setIsIdChecked(true);
+        setValidatedLoginId(formData.loginId);
+        setIdCheckMessage('사용 가능한 아이디입니다!');
+        setIdCheckSuccess(true);
       }
     } catch (error) {
-      alert('중복 확인 중 에러가 발생했습니다.');
-      console.error(error);
+      console.error('중복 확인 에러:', error);
+      setErrors(prev => ({ ...prev, loginId: '중복 확인 중 에러가 발생했습니다.' }));
+      setIsIdChecked(false);
+      setValidatedLoginId('');
     }
   };
-
 
   const handleSubmit = async () => {
-    try {
-      if (isLoginView) {
-        // --- [로그인 로직] ---
-        console.log('로그인 시도 중...', formData.loginId);
-        if (!formData.loginId || !formData.password) {
-          return Alert.alert('알림', '아이디와 비번을 입력해주세요.');
+    const nextErrors = {
+      loginId: '',
+      password: '',
+      email: '',
+      nickname: '',
+      birthDate: '',
+      general: '',
+    };
+    let firstFocusHandled = false;
+
+    if (isLoginView) {
+      if (!formData.loginId) {
+        nextErrors.loginId = '아이디를 입력해주세요.';
+        if (!firstFocusHandled) {
+          loginIdRef.current?.focus();
+          firstFocusHandled = true;
         }
-        
-        // 1. 서버에 로그인 요청
-        const result = await authService.login(formData.loginId, formData.password);
-        
-        // 2. 서버 응답 구조 확인 (result.success가 true인 경우)
-        if (result.success) {
-          const userData = result.data?.user; // 실제 유저 정보는 data.user 안에 있음
-          
-          console.log('로그인 성공 유저 정보:', userData);
-          
-          if (!userData?.userId) {
-            throw new Error('로그인 후 사용자 정보가 올바르게 설정되지 않았습니다.');
-          }
-
-          setUser(userData); // Zustand 창고에 저장
-          Alert.alert('환영합니다!', `${userData.nickname}님, 마실에 오신 걸 환영해요!`);
-          
-          // 3. 페이지 이동
-          router.replace('/(tabs)/home'); 
-        } else {
-          Alert.alert('로그인 실패', result.message || '정보를 확인해주세요.');
-        }
-
-      } else {
-        // --- [회원가입 로직] ---
-        console.log('회원가입 요청 데이터:', formData); 
-        if (!isIdChecked) return Alert.alert('알림', '아이디 중복 확인을 해주세요.');
-
-        const newUserResponse = await authService.register({
-          loginId: formData.loginId,
-          password: formData.password,
-          email: formData.email,
-          nickname: formData.nickname,
-          birthDate: formData.birthDate ? new Date(formData.birthDate) : new Date(),
-          isKorean: false
-        });
-        
-        Alert.alert('가입 완료', '성공적으로 가입되었습니다. 로그인해주세요!');
-        setIsLoginView(true); // 로그인 화면으로 전환
       }
-    } catch (error: any) {
-      console.error('Submit 에러 상세:', error);
-      // 에러 메시지가 있다면 보여주고, 없으면 기본 메시지
-      const errorMsg = error.response?.data?.message || '처리에 실패했습니다.';
-      Alert.alert('오류', errorMsg);
+      if (!formData.password) {
+        nextErrors.password = '비밀번호를 입력해주세요.';
+        if (!firstFocusHandled) {
+          passwordRef.current?.focus();
+          firstFocusHandled = true;
+        }
+      }
+      if (nextErrors.loginId || nextErrors.password) {
+        setErrors(nextErrors);
+        return;
+      }
+
+      const result = await authService.login(formData.loginId, formData.password);
+      if (result.success) {
+        const userData = result.data?.user;
+        setUser(userData);
+        router.replace('/(tabs)/home');
+      } else {
+        setErrors({ ...nextErrors, general: result.message || '정보를 확인해주세요.' });
+      }
+    } else {
+      if (!formData.loginId) {
+        nextErrors.loginId = '아이디를 입력해주세요.';
+        loginIdRef.current?.focus();
+        firstFocusHandled = true;
+      } else if (!isIdChecked || validatedLoginId !== formData.loginId) {
+        nextErrors.loginId = '아이디 중복 확인을 해주세요.';
+        if (!firstFocusHandled) {
+          loginIdRef.current?.focus();
+          firstFocusHandled = true;
+        }
+      }
+      if (!formData.email) {
+        nextErrors.email = '이메일을 입력해주세요.';
+        if (!firstFocusHandled) {
+          emailRef.current?.focus();
+          firstFocusHandled = true;
+        }
+      }
+      if (!formData.password) {
+        nextErrors.password = '비밀번호를 입력해주세요.';
+        if (!firstFocusHandled) {
+          passwordRef.current?.focus();
+          firstFocusHandled = true;
+        }
+      }
+      if (!formData.nickname) {
+        nextErrors.nickname = '이름을 입력해주세요.';
+        if (!firstFocusHandled) {
+          nicknameRef.current?.focus();
+          firstFocusHandled = true;
+        }
+      }
+      if (!formData.birthDate) {
+        nextErrors.birthDate = '생년월일을 입력해주세요.';
+        if (!firstFocusHandled) {
+          birthDateRef.current?.focus();
+          firstFocusHandled = true;
+        }
+      } else {
+        const formattedDate = new Date(formData.birthDate);
+        if (isNaN(formattedDate.getTime())) {
+          nextErrors.birthDate = '생년월일 형식이 잘못되었습니다 (YYYY-MM-DD)';
+          if (!firstFocusHandled) {
+            birthDateRef.current?.focus();
+            firstFocusHandled = true;
+          }
+        }
+      }
+      if (nextErrors.loginId || nextErrors.email || nextErrors.password || nextErrors.nickname || nextErrors.birthDate) {
+        setErrors(nextErrors);
+        return;
+      }
+
+      try {
+        await authService.register({
+          ...formData,
+          birthDate: new Date(formData.birthDate),
+          isKorean: false,
+        });
+        setIsLoginView(true);
+        setErrors({
+          loginId: '',
+          password: '',
+          email: '',
+          nickname: '',
+          birthDate: '',
+          general: '',
+        });
+      } catch (error: any) {
+        console.error('서버 에러 상세:', error.response?.data);
+        const errorMsg = error.response?.data?.message || '처리에 실패했습니다.';
+        setErrors({ ...nextErrors, general: errorMsg });
+      }
     }
   };
 
- 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
-    >
-      <ScrollView contentContainerStyle={styles.container} bounces={false}>
-        <Text style={styles.title}>{isLoginView ? 'Hello!' : 'Welcome!'}</Text>
-        <Text style={styles.subtitle}>
-          {isLoginView ? '마실에 오신 것을 환영합니다!' : '마실이 처음이신가요?'}
-        </Text>
-
-        <View style={{ width: '100%', marginBottom: 20 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
-            <TextInput 
-              style={[styles.input, { flex: 1, marginBottom: 0 }]} 
-              placeholder="아이디" 
-              placeholderTextColor="#8DBA7D"
-              value={formData.loginId}
-              onChangeText={(v) => handleChange('loginId', v)}
-            />
-            {!isLoginView && (
-              <TouchableOpacity 
-                style={{ 
-                  backgroundColor: isIdChecked ? '#E0E0E0' : '#8DBA7D', 
-                  paddingHorizontal: 15, height: 50, justifyContent: 'center', borderRadius: 10, marginLeft: 10 
-                }}
-                onPress={handleCheckId}
-                disabled={isIdChecked}
-              >
-                <Text style={{ color: isIdChecked ? '#888' : '#fff', fontWeight: 'bold' }}>
-                  {isIdChecked ? '확인됨' : '중복확인'}
+    <View style={styles.container}>
+      <ImageBackground
+        source={require('../assets/images/main_bg.png')}
+        style={styles.backgroundImage}
+        imageStyle={styles.backgroundImage}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.container}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            bounces={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.mainContainer}>
+              <View style={styles.titleWrapper}>
+                <Text style={styles.title}>{isLoginView ? 'Hello!' : 'Welcome!'}</Text>
+                <Text style={styles.subtitle}>
+                  {isLoginView ? '마실에 오신 것을 환영합니다!' : '마실이 처음이신가요?'}
                 </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          
-          {!isLoginView && (
-            <TextInput 
-              style={styles.input} 
-              placeholder="이메일" 
-              placeholderTextColor="#8DBA7D"
-              value={formData.email}
-              onChangeText={(v) => handleChange('email', v)}
-            />
-          )}
-
-          <TextInput 
-            style={styles.input} 
-            placeholder="비밀번호" 
-            secureTextEntry 
-            placeholderTextColor="#8DBA7D"
-            value={formData.password}
-            onChangeText={(v) => handleChange('password', v)}
-          />
-
-          {!isLoginView && (
-            <>
-              <TextInput 
-                style={styles.input} 
-                placeholder="닉네임" 
-                placeholderTextColor="#8DBA7D" 
-                value={formData.nickname}
-                onChangeText={(v) => handleChange('nickname', v)}
-              />
-              <TextInput 
-                style={styles.input} 
-                placeholder="생년월일(YYYY-MM-DD)" 
-                placeholderTextColor="#8DBA7D" 
-                value={formData.birthDate}
-                onChangeText={(v) => handleChange('birthDate', v)}
-              />
-            </>
-          )}
-        </View>
-
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: '#8DBA7D' }, (!isLoginView && !isIdChecked) && { opacity: 0.4 }]} 
-          onPress={handleSubmit}
-          disabled={!isLoginView && !isIdChecked}
-        >
-          <Text style={[styles.buttonText, { color: '#fff' }]}>
-            {isLoginView ? '로그인하기' : '가입 완료하기'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.button, styles.whiteButton, { marginTop: 10 }]}
-          onPress={() => {
-            setIsLoginView(!isLoginView);
-            setIsIdChecked(false);
-          }}
-        >
-          <Text style={styles.buttonText}>
-            {isLoginView ? '이메일로 회원가입' : '이미 계정이 있으신가요?'}
-          </Text>
-        </TouchableOpacity>
-
-        {/* 구글 로그인 버튼 컴포넌트 */}
-        {isLoginView && <GoogleLoginButton />}
-
-      </ScrollView>
-    </KeyboardAvoidingView>
+              </View>
+              <View style={styles.inputGroup}>
+                <View style={styles.sectionWrapper}>
+                  <TextInput
+                    ref={loginIdRef}
+                    style={[
+                      styles.input,
+                      errors.loginId ? styles.inputError : null,
+                      idCheckSuccess && validatedLoginId === formData.loginId ? styles.inputSuccess : null,
+                    ]}
+                    value={formData.loginId}
+                    onChangeText={(value) => handleChange('loginId', value)}
+                    placeholder={isLoginView ? '아이디 or email' : '아이디'}
+                    placeholderTextColor="#8DBA7D"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  {errors.loginId ? <Text style={styles.errorText}>{errors.loginId}</Text> : null}
+                  {idCheckSuccess && idCheckMessage ? <Text style={styles.errorText}>{idCheckMessage}</Text> : null}
+                  {isLoginView ? (
+                    <>
+                      <TextInput
+                        ref={passwordRef}
+                        style={[styles.input, errors.password ? styles.inputError : null]}
+                        value={formData.password}
+                        onChangeText={(value) => handleChange('password', value)}
+                        placeholder="비밀번호"
+                        placeholderTextColor="#8DBA7D"
+                        secureTextEntry
+                      />
+                      {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
+                    </>
+                  ) : (
+                    <>
+                      <TextInput
+                        ref={emailRef}
+                        style={[styles.input, errors.email ? styles.inputError : null]}
+                        value={formData.email}
+                        onChangeText={(value) => handleChange('email', value)}
+                        placeholder="email"
+                        placeholderTextColor="#8DBA7D"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                      {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
+                      <TextInput
+                        ref={passwordRef}
+                        style={[styles.input, errors.password ? styles.inputError : null]}
+                        value={formData.password}
+                        onChangeText={(value) => handleChange('password', value)}
+                        placeholder="password"
+                        placeholderTextColor="#8DBA7D"
+                        secureTextEntry
+                      />
+                      {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
+                      <TextInput
+                        ref={nicknameRef}
+                        style={[styles.input, errors.nickname ? styles.inputError : null]}
+                        value={formData.nickname}
+                        onChangeText={(value) => handleChange('nickname', value)}
+                        placeholder="name"
+                        placeholderTextColor="#8DBA7D"
+                      />
+                      {errors.nickname ? <Text style={styles.errorText}>{errors.nickname}</Text> : null}
+                      <TextInput
+                        ref={birthDateRef}
+                        style={[styles.input, errors.birthDate ? styles.inputError : null]}
+                        value={formData.birthDate}
+                        onChangeText={(value) => handleChange('birthDate', value)}
+                        placeholder="birthDats(0000-00-00)"
+                        placeholderTextColor="#8DBA7D"
+                      />
+                      {errors.birthDate ? <Text style={styles.errorText}>{errors.birthDate}</Text> : null}
+                    </>
+                  )}
+                  {errors.general ? <Text style={styles.errorText}>{errors.general}</Text> : null}
+                  <TouchableOpacity style={styles.loginButtonFrame} onPress={handleSubmit}>
+                    <Text style={styles.buttonText}>{isLoginView ? '로그인' : '회원가입'}</Text>
+                  </TouchableOpacity>
+                </View>
+                {isLoginView ? (
+                  <View style={styles.buttonRow}>
+                    <TouchableOpacity style={styles.emailSignupButton} onPress={() => { clearValidationState(); setIsLoginView(false); }}>
+                      <Text style={styles.buttonText}>Sign up</Text>
+                    </TouchableOpacity>
+                    <GoogleLoginButton />
+                  </View>
+                ) : (
+                  <>
+                      <TouchableOpacity
+                      style={[
+                        styles.emailSignupButton,
+                        isIdChecked && validatedLoginId === formData.loginId ? styles.disabledButton : null,
+                      ]}
+                      onPress={handleCheckId}
+                      disabled={isIdChecked && validatedLoginId === formData.loginId}
+                    >
+                      <Text style={styles.buttonText}>{isIdChecked && validatedLoginId === formData.loginId ? '아이디 확인 완료' : '아이디 중복 확인'}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.linkButton} onPress={() => { clearValidationState(); setIsLoginView(true); }}>
+                      <Text style={[styles.buttonText, styles.linkText]}> 로그인으로 돌아가기</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </ImageBackground>
+    </View>
   );
 }
