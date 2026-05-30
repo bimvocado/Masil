@@ -92,12 +92,11 @@ export default function PlusScreen() {
       // 수정!
       const loadBrands = async () => {
         try {
-          const res = await searchService.getBrands(
-            brandQuery || '',
-            brandCategory
-          );
+          const res = brandQuery.trim()
+            ? await searchService.searchBrands(brandQuery, brandCategory)
+            : await searchService.getBrands(brandCategory);
 
-          setBrandResults(res.data || []);
+          setBrandResults(res.data?.result?.brands ?? []);
         } catch (e) {
           console.error('브랜드 로드 실패:', e);
           setBrandResults([]);
@@ -122,7 +121,7 @@ export default function PlusScreen() {
 
     try {
       const result = await stuffService.searchStuffs(keyword);
-      setSuggestions(result);
+      setSuggestions(result ?? []);
     } catch (error) {
       console.error('상품 자동완성 검색 실패:', error);
       setSuggestions([]);
@@ -423,7 +422,7 @@ export default function PlusScreen() {
                 </View>
               </Modal>
 
-                {suggestions.length > 0 && (
+                {Array.isArray(suggestions) && suggestions.length > 0 && (
                   <View style={styles.suggestionBox}>
                     {suggestions.map((item) => (
                       <TouchableOpacity

@@ -15,12 +15,12 @@ export const stuffService = {
       params: { keyword },
     });
 
-    return response.data.data;
+    return response.data.result?.stuffs ?? [];
   },
 
   createStuff: async (data: { brandId: number; stuffName: string; price?: number }) => {
     const response = await axios.post(`${BASE_URL}/api/stuffs`, data);
-    return response.data.data;
+    return response.data.result;
   },
 
   findOrCreateStuff: async (stuffName: string): Promise<StuffSuggestion> => {

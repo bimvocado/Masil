@@ -9,7 +9,7 @@ const createPost = async (postData) => {
 }
 
 // 게시글 전체 조회
-const findAllPosts = async () => {
+const findAllPosts = async (viewerId = null) => {
     // 홈 화면은 보통 전체를 보여주므로 인자가 없거나, 
     // 나중에 페이징 처리를 위해 offset, limit 정도만 받을 수 있습니다.
     
@@ -32,7 +32,8 @@ const findAllPosts = async () => {
             COUNT(DISTINCT c.comment_id) AS commentCount,
             COUNT(DISTINCT CASE WHEN i.reaction_type = 'LIKE' THEN i.interaction_id END) AS likeCount,
             COUNT(DISTINCT CASE WHEN i.reaction_type = 'DISLIKE' THEN i.interaction_id END) AS dislikeCount,
-            COUNT(DISTINCT s.scrap_id) AS scrapCount
+            COUNT(DISTINCT s.scrap_id) AS scrapCount,
+            CASE WHEN su.scrap_id IS NOT NULL THEN TRUE ELSE FALSE END AS isScrapped
             
         FROM posts p
         LEFT JOIN users u ON p.user_id = u.user_id
@@ -42,14 +43,16 @@ const findAllPosts = async () => {
         LEFT JOIN comments c ON p.post_id = c.post_id AND c.deleted_at IS NULL
         LEFT JOIN interactions i ON p.stuff_id = i.stuff_id AND i.deleted_at IS NULL
         LEFT JOIN post_scraps s ON p.post_id = s.post_id AND s.deleted_at IS NULL
+        LEFT JOIN post_scraps su ON p.post_id = su.post_id AND su.user_id = :viewerId AND su.deleted_at IS NULL
         
         WHERE p.deleted_at IS NULL
         
         GROUP BY 
-            p.post_id, u.user_id, st.stuff_id, b.brand_id
+            p.post_id, u.user_id, st.stuff_id, b.brand_id, su.scrap_id
             
         ORDER BY p.created_at DESC
     `, {
+        replacements: { viewerId },
         type: QueryTypes.SELECT
     });
     
@@ -71,7 +74,7 @@ const deletePost = async (post) => {
     return await post.destroy();
 }
 
- const findPostsByUserId = async (userId) => {
+ const findPostsByUserId = async (userId, viewerId = null) => {
 
     const posts = await sequelize.query(`
         SELECT
@@ -93,7 +96,8 @@ const deletePost = async (post) => {
             COUNT(DISTINCT c.comment_id) AS commentCount,
             COUNT(DISTINCT CASE WHEN i.reaction_type = 'LIKE' THEN i.interaction_id END) AS likeCount,
             COUNT(DISTINCT CASE WHEN i.reaction_type = 'DISLIKE' THEN i.interaction_id END) AS dislikeCount,
-            COUNT(DISTINCT s.scrap_id) AS scrapCount
+            COUNT(DISTINCT s.scrap_id) AS scrapCount,
+            CASE WHEN su.scrap_id IS NOT NULL THEN TRUE ELSE FALSE END AS isScrapped
             
         FROM posts p
         LEFT JOIN users u ON p.user_id = u.user_id
@@ -103,15 +107,16 @@ const deletePost = async (post) => {
         LEFT JOIN comments c ON p.post_id = c.post_id AND c.deleted_at IS NULL
         LEFT JOIN interactions i ON p.stuff_id = i.stuff_id AND i.deleted_at IS NULL
         LEFT JOIN post_scraps s ON p.post_id = s.post_id AND s.deleted_at IS NULL
+        LEFT JOIN post_scraps su ON p.post_id = su.post_id AND su.user_id = :viewerId AND su.deleted_at IS NULL
         
         WHERE p.user_id = :userId AND p.deleted_at IS NULL
         
         GROUP BY 
-            p.post_id, u.user_id, st.stuff_id, b.brand_id
+            p.post_id, u.user_id, st.stuff_id, b.brand_id, su.scrap_id
             
         ORDER BY p.created_at DESC
     `, {
-        replacements: { userId },
+        replacements: { userId, viewerId },
         type: QueryTypes.SELECT
     });
     

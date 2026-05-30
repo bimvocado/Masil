@@ -59,7 +59,7 @@ export default function UserScreen() {
           const profileRes = await authService.getProfile(targetUserId);
           if (profileRes.success && profileRes.data) {
             setUser({ ...profileRes.data });
-            const userPosts = await postService.getUserPosts(targetUserId!);
+            const userPosts = await postService.getUserPosts(targetUserId!, targetUserId);
             setPosts(userPosts || []);
           }
         } catch (error: any) {

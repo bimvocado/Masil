@@ -11,8 +11,9 @@ export const postService = {
   },
 
   // 사용자별 게시글 조회
-  getUserPosts: async (userId: number): Promise<Post[]> => {
-    const response = await apiClient.get(`/api/users/${userId}/posts`);
+  getUserPosts: async (userId: number, viewerId?: number): Promise<Post[]> => {
+    const query = viewerId ? `?viewerId=${viewerId}` : '';
+    const response = await apiClient.get(`/api/users/${userId}/posts${query}`);
     return response.data.data;
   },
 
