@@ -124,7 +124,7 @@ export default function ProductDetailScreen() {
               activeOpacity={0.8}
               onPress={() =>
                 router.push({
-                  pathname: '/search/post/[id]' as any,
+                  pathname: '/search/post/[id]',
                   params: { 
                     id: String(detailData.topPost?.postId),
                     fetchType: 'single'

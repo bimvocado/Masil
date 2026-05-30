@@ -1,7 +1,5 @@
 import { Post } from '@/types/post';
 import apiClient from '@/api/client';
-import { BASE_URL } from '@/api/auth-service';
-import axios from 'axios';
 
 export const postService = {
   // 게시글 전체 조회
