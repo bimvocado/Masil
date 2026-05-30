@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View,ImageBackground, } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Post } from '@/types/post';
 import { useAuthStore } from '@/store/use-auth-store';

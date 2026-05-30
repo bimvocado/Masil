@@ -68,7 +68,7 @@ export const authService = {
       const response = await apiClient.get('/api/users/check-duplicate', {
         params: { type, value } 
       });
-      return response.data;
+      return response.data?.data || response.data;
     } catch (error) {
       console.error(`${type} 중복 체크 에러:`, error);
       throw error;
@@ -128,6 +128,6 @@ export const authService = {
   logout: async () => {
     await removeToken();
     if (typeof window !== 'undefined') localStorage.removeItem('userToken');
-    console.log("✅로그아웃 완료");
+    console.log("로그아웃 완료");
   },
 };
