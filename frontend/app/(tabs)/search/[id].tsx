@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
 import { TopBar } from '@/components/layout/top-bar';
@@ -51,11 +51,14 @@ export default function BrandDetailScreen() {
     }
   };
 
-  useEffect(() => {
-    if (id) {
-      fetchStuffs();
-    }
-  }, [id, sort]);
+  useFocusEffect(
+    useCallback(() => {
+      if (id) {
+        fetchStuffs();
+      }
+      return () => {};
+    }, [id, sort])
+  );
 
   return (
     <View style={detailStyles.container}>

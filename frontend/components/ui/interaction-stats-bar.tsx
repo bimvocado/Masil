@@ -1,4 +1,3 @@
-// 📍 경로: components/InteractionStatsBar.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
@@ -14,10 +13,11 @@ interface InteractionStatsBarProps {
   dislikeStats?: InteractionStatDetail;
 }
 
-const COLOR_LIKE_KOR = '#45a350';
-const COLOR_LIKE_FOR = '#2a4732';
-const COLOR_DISLIKE_KOR = '#4A4A4A';
-const COLOR_DISLIKE_FOR = '#D3D3D3';
+// 색상 정의
+const COLOR_LIKE_KOR = '#015b0c';
+const COLOR_LIKE_FOR = '#5ead74';
+const COLOR_DISLIKE_KOR = '#ff6a6a';
+const COLOR_DISLIKE_FOR = '#ffb6b6';
 const COLOR_BG = '#F5F5F5';
 
 export function InteractionStatsBar({ likeStats, dislikeStats }: InteractionStatsBarProps) {
@@ -32,6 +32,7 @@ export function InteractionStatsBar({ likeStats, dislikeStats }: InteractionStat
   const like = getStats(likeStats);
   const dislike = getStats(dislikeStats);
 
+  // 내/외국인 세부 퍼센트 계산
   const calcDetailPercent = (count: number, total: number) => {
     return total > 0 ? Math.round((count / total) * 100) : 0;
   };
@@ -45,7 +46,9 @@ export function InteractionStatsBar({ likeStats, dislikeStats }: InteractionStat
     <View style={styles.container}>
       <Text style={styles.title}>통계</Text>
 
-      {/* 옳소 통계 */}
+      {/* ======================= */}
+      {/* 👍 옳소 통계 블록 */}
+      {/* ======================= */}
       <View style={styles.statBlock}>
         {/* 헤더 */}
         <View style={styles.headerRow}>
@@ -54,12 +57,13 @@ export function InteractionStatsBar({ likeStats, dislikeStats }: InteractionStat
           <Text style={styles.mainPercent}>{like.ratio}%</Text>
         </View>
 
+        {/* 📊 메인 바 */}
         <View style={styles.barBackground}>
           {like.total > 0 && (
-            <>
+            <View style={{ width: `${like.ratio}%`, height: '100%', flexDirection: 'row' }}>
               <View style={[styles.progressBar, { width: `${likeKoreanPercent}%`, backgroundColor: COLOR_LIKE_KOR }]} />
               <View style={[styles.progressBar, { width: `${likeForeignerPercent}%`, backgroundColor: COLOR_LIKE_FOR }]} />
-            </>
+            </View>
           )}
         </View>
 
@@ -69,7 +73,9 @@ export function InteractionStatsBar({ likeStats, dislikeStats }: InteractionStat
         </View>
       </View>
 
-      {/* 싫소 통계 */}
+      {/* ======================= */}
+      {/* 👎 싫소 통계 블록 */}
+      {/* ======================= */}
       <View style={styles.statBlock}>
         {/* 헤더 */}
         <View style={styles.headerRow}>
@@ -78,12 +84,13 @@ export function InteractionStatsBar({ likeStats, dislikeStats }: InteractionStat
           <Text style={styles.mainPercent}>{dislike.ratio}%</Text>
         </View>
 
+        {/* 📊 메인 바 */}
         <View style={styles.barBackground}>
           {dislike.total > 0 && (
-            <>
+            <View style={{ width: `${dislike.ratio}%`, height: '100%', flexDirection: 'row' }}>
               <View style={[styles.progressBar, { width: `${dislikeKoreanPercent}%`, backgroundColor: COLOR_DISLIKE_KOR }]} />
               <View style={[styles.progressBar, { width: `${dislikeForeignerPercent}%`, backgroundColor: COLOR_DISLIKE_FOR }]} />
-            </>
+            </View>
           )}
         </View>
 
@@ -130,7 +137,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
   },
-
   barBackground: {
     height: 10,
     backgroundColor: COLOR_BG,
