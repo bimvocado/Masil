@@ -175,10 +175,10 @@ const styles = StyleSheet.create({profileImage: {width: 34,height: 34,borderRadi
   editBtn: { color: '#888', fontSize: 11, marginRight: 10 },
   deleteBtn: { color: '#FF6B6B', fontSize: 11 },
   commentText: { fontSize: 14, color: '#333', marginTop: 2 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#eee' },
-  input: { flex: 1, backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 15, height: 40 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#eee', },
+  input: { flex: 1, backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 15, height: 40, fontSize: 14, color: '#333' },
   submitButton: { marginLeft: 10 },
-  submitText: { color: '#FF8888', fontWeight: 'bold' },
+  submitText: { color: '#35a150', fontWeight: 'bold' },
   categoryItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
   categoryItemText: { fontSize: 16, color: '#333' }
 });
