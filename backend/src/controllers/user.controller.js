@@ -62,20 +62,17 @@ const login = async (req, res, next) => {
     next(error);
   }
 };
-
 /**
- * 4. 프로필 조회
+ * 4. 프로필 조회 (로그인 유지의 핵심!)
  */
 const getProfile = async (req, res, next) => {
+  console.log("📍 [백엔드] 프로필 API 진입 성공!");
   try {
-    const userId = req.params.userId || req.user.userId; 
-    console.log("프로필 조회 시도 ID:", userId);
-    
+    const userId = req.params.userId || (req.user ? req.user.userId : null); 
     if (!userId) {
-      return res.status(400).json({ success: false, message: '유저 ID가 필요합니다.' });
+      return res.status(401).json({ success: false, message: '인증되지 않은 사용자입니다.' });
     }
     const user = await userService.getUserById(userId);
-    
     if (!user) {
       return res.status(404).json({ success: false, message: '유저를 찾을 수 없습니다.' });
     }
@@ -88,12 +85,13 @@ const getProfile = async (req, res, next) => {
         nickname: user.nickname,
         email: user.email,
         bio: user.bio, 
-        profileImageUrl: user.profileImageUrl
+        profileImageUrl: user.profileImageUrl,
+        country: user.country,
+        isKorean: user.isKorean 
       },
       message: '프로필 조회 성공'
     });
   } catch (error) {
-    console.error(" [getProfile 에러 상세]:", error.message);
     next(error);
   }
 };
@@ -111,26 +109,22 @@ const changePassword = async (req, res, next) => {
     next(error); 
   }
 };
-
 /**
- * 6. 프로필 수정 (핵심 로직)
+ * 6. 프로필 수정 (국가 설정 로직 추가 버전)
  */
 const updateProfile = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    
-    const updateData = {
-      nickname: req.body.nickname,
-      bio: req.body.bio,
-    };
-
+    const updateData = {};
+    if (req.body.nickname) updateData.nickname = req.body.nickname;
+    if (req.body.bio) updateData.bio = req.body.bio;
+    if (req.body.country) updateData.country = req.body.country;
     if (req.file) {
       updateData.profileImageUrl = `/uploads/${req.file.filename}`; 
     }
 
     const updatedUser = await userService.updateUserProfile(userId, updateData);
 
-    // 이미지 풀 경로 처리
     if (updatedUser.profileImageUrl?.startsWith('/uploads')) {
         const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
         updatedUser.profileImageUrl = `${SERVER_URL}${updatedUser.profileImageUrl}`;

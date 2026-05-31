@@ -13,7 +13,6 @@ class UpdatePostReqDTO {
         this.imageUrl = imageUrl;
     }
 }
-
 class PostResDTO {
     constructor(post) {
         this.postId = post.postId;
@@ -23,6 +22,15 @@ class PostResDTO {
         this.stuffId = post.stuffId;
         this.createdAt = post.createdAt;
         this.updatedAt = post.updatedAt;
+        this.nickname = post.nickname;
+        this.stuffName = post.stuffName;
+        this.brandName = post.brandName;
+       this.isLiked = !!post.isLiked; 
+        this.isDisliked = !!post.isDisliked;
+        this.isScrapped = !!post.isScrapped;
+        this.likeCount = Number(post.likeCount || 0);
+        this.dislikeCount = Number(post.dislikeCount || 0);
+        this.commentCount = Number(post.commentCount || 0);
     }
 }
 

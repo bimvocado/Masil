@@ -1,4 +1,6 @@
 const Category = require('../models/category.model');
+const Scrap = require('../models/scrap.model');
+const sequelize = require('../config/db');
 
 const findCategoriesByUserId = async (userId) => {
   return await Category.findAll({ where: { userId } });
@@ -18,7 +20,17 @@ const updateCategory = async (categoryId, categoryName) => {
 const deleteCategory = async (categoryId) => {
   const category = await Category.findOne({ where: { categoryId } });
   if (!category) return null;
-  return await category.destroy();
+
+  const transaction = await sequelize.transaction();
+  try {
+    await Scrap.destroy({ where: { categoryId }, transaction });
+    const result = await category.destroy({ transaction });
+    await transaction.commit();
+    return result;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 };
 
 module.exports = { findCategoriesByUserId, createCategory, updateCategory, deleteCategory };

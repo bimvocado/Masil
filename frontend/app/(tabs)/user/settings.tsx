@@ -5,9 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { SettingMenuItem } from '@/components/ui/setting-menu-item';
 import { useLogout } from '@/hooks/use-logout'; 
 import { router } from 'expo-router';
+import { CommonModal } from '@/components/ui/common-modal';
 
 export default function SettingsScreen() {
-  const { handleLogout } = useLogout(); 
+  const { 
+  modalVisible, 
+  handleLogoutPress, 
+  closeLogoutModal, 
+  confirmLogout 
+} = useLogout();
 
   return (
     <View style={styles.container}>
@@ -16,7 +22,7 @@ export default function SettingsScreen() {
       <View style={styles.content}>
         {/* 검색창 */}
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color="#aaa" />
+          <Ionicons name="search" size={18}  color="#aaa" />
           <TextInput placeholder="설정 검색" style={styles.searchInput} placeholderTextColor="#aaa" />
         </View>
 
@@ -31,34 +37,44 @@ export default function SettingsScreen() {
             onPress={() => router.push('/user/language')}
         />
 
-        <TouchableOpacity style={styles.logoutWrapper} onPress={handleLogout}>
+        <TouchableOpacity style={styles.logoutWrapper} onPress={handleLogoutPress}>
           <View style={styles.logoutItem}>
             <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
             <Text style={styles.logoutLabel}>로그아웃</Text>
           </View>
         </TouchableOpacity>
       </View>
+      <CommonModal
+        visible={modalVisible}
+        title="로그아웃"
+        message="정말 로그아웃 하시겠습니까?"
+        confirmText="로그아웃"
+        onConfirm={confirmLogout}      
+        onCancel={closeLogoutModal}   
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 20 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F0F0', borderRadius: 10, paddingHorizontal: 15, height: 40, marginBottom: 30 },
-  searchInput: { flex: 1, marginLeft: 10 },
-  logoutWrapper: { marginTop: 20 },
+  content: { padding: 20, alignItems: 'center' },
+  searchBar: { paddingLeft: 20, width:'90%',flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F0F0', borderRadius: 20, paddingHorizontal: 15, height: 40, marginBottom: 30 },
+  searchInput: { flex: 1, marginLeft: 8 },
+  logoutWrapper: { marginTop: 20, width: '90%', },
   logoutItem: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     padding: 15, 
     backgroundColor: '#FFF5F5', 
-    borderRadius: 15 
+    borderRadius: 25, 
+    paddingLeft:32,
   },
   logoutLabel: { 
-    marginLeft: 10, 
+    marginLeft: 15, 
     fontSize: 16, 
     color: '#FF6B6B', 
-    fontWeight: '600' 
+    fontWeight: '600' ,
+    
   },
 });

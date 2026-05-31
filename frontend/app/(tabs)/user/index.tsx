@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/use-auth-store';
 import { InteractionButton } from '@/constants/interaction-button';
 import { postService } from '@/services/post-service';
 import { authService } from '@/api/auth-service'; 
+import { formatDate } from '@/utils/date';
 
 import React, { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
@@ -80,6 +81,8 @@ export default function UserScreen() {
         : p
     ));
   };
+  
+  
 
   const filteredPosts = posts.filter((post) => 
     post.content.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -183,21 +186,25 @@ export default function UserScreen() {
                   <Text style={styles.postDate}>{post.createdAt}</Text>  
                   <View style={styles.interactionRow}>
                     <View style={styles.iconGroup}>
-                      <InteractionButton 
-                        type="comment"
-                        count={post.commentCount?.toLocaleString() || '0'}
-                        textPosition="right"
+                      <Image
+                        source={require('@/assets/icons/comment.png')}
+                        style={{ width: 22, height: 22, tintColor: '#dcdcdc' }}
+                        resizeMode="contain"
                       />
+                      <Text style={{ marginLeft: 4, color: '#666666', fontSize: 13, fontWeight: '600' }}>
+                        {post.commentCount?.toLocaleString() || '0'}
+                      </Text>
                     </View>
                     
                     <View style={styles.iconGroup}>
-                      <InteractionButton 
-                        type="heart"
-                        count={post.scrapCount?.toLocaleString() || '0'}
-                        textPosition="right"
-                        isActive={post.isScrapped}
-                        onPress={() => toggleHeart(post.postId)}
+                      <Image
+                        source={post.isScrapped ? require('@/assets/icons/filledbookmark.png') : require('@/assets/icons/bookmark.png')}
+                        style={{ width: 22, height: 22, tintColor: post.isScrapped ? '#009205' : '#dcdcdc' }}
+                        resizeMode="contain"
                       />
+                      <Text style={{ marginLeft: 4, color: '#666666', fontSize: 13, fontWeight: '600' }}>
+                        {post.scrapCount?.toLocaleString() || '0'}
+                      </Text>
                     </View>
                   </View>
                 </View>

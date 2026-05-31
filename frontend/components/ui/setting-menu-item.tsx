@@ -19,7 +19,7 @@ export function SettingMenuItem({ icon, label, onPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  item: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#EEE', borderRadius: 25, padding: 18, marginBottom: 15 },
+  item: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#EEE', borderRadius: 25, padding: 18, marginBottom: 15, width: '90%' },
   iconBox: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F9F9F9', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-  label: { fontSize: 16, fontWeight: '500' }
+  label: { fontSize: 16, fontWeight: '500',  }
 });
