@@ -48,7 +48,7 @@ const createStuff = async (req, res, next) => {
   }
 };
 
-// 상품창 - 상세 페이지 전체
+// 상품창 - 상세 페이지 전체 - user 정보까지 전달 드가야지
 const getStuffDetail = async (req, res, next) => {
   try {
     const { stuffId } = req.params;
@@ -56,11 +56,15 @@ const getStuffDetail = async (req, res, next) => {
     const result = await stuffService.getStuffDetail(
       Number(stuffId)
     );
+    const finalResult = {
+      ...result,
+      isKorean: req.user ? req.user.is_korean : true 
+    };
 
     return res.status(200).json({
       success: true,
       message: '상품 상세 조회 성공',
-      result,
+      data: finalResult, 
     });
   } catch (error) {
     next(error);
