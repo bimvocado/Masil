@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Image, PanResponder, Animated, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles, DRAWER_WIDTH } from '@/components/styles/home';
 import { PostVerticalFeed } from '@/components/post/post-vertical-feed';
 import { postService } from '@/services/post-service';
 import { useAuthStore } from '@/store/use-auth-store';
+import { useFocusEffect } from 'expo-router';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -29,21 +30,35 @@ export default function HomeScreen() {
     return copy;
   };
 
-  const loadPosts = async () => {
-    setIsLoading(true);
-    try {
-      const allPosts = await postService.getPosts();
-      setPosts(shufflePosts(allPosts));
-    } catch (error) {
-      console.error('홈 게시글 로드 실패:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    loadPosts();
-  }, []);
+useFocusEffect(
+  useCallback(() => {
+    const loadPosts = async () => {
+      try {
+        setIsLoading(true);
+        // 💡 마이페이지처럼 현재 유저 ID를 꼭 전달!
+        const allPosts = await postService.getPosts(user?.userId); 
+        
+        // 💡 이미지 주소 & 좋아요 상태 싱크 (마이페이지에서 했던 것처럼)
+        const normalized = allPosts.map((post: any) => ({
+          ...post,
+          imageUrl: post.imageUrl ?? post.image_url ?? null,
+          isLiked: post.isLiked ?? post.liked ?? false,
+        }));
+
+        setPosts(shufflePosts(normalized));
+      } catch (error) {
+        console.error('홈 로드 실패:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user?.userId) loadPosts(); // 로그인 유저가 있을 때만 호출
+  }, [user?.userId])
+);
+
+ 
 
   const openDrawer = () => {
     Animated.timing(drawerX, {

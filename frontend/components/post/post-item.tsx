@@ -24,10 +24,9 @@ interface PostItemProps {
   onBack: () => void;
 }
 
-export const PostItem = ({ item, user, onOpenComments,isLiked, isDisliked, isScrapped, onScrapPress, onBack }: PostItemProps) => {
+export const PostItem = ({ item, user, onOpenComments, isLiked: initialLiked, isDisliked: initialDisliked, isScrapped, onScrapPress, onBack }: PostItemProps) => {
   const insets = useSafeAreaInsets();
 
-  // 1. 좋아요/싫어요 상태 및 숫자 관리
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
   const [likeCount, setLikeCount] = useState(item.likeCount || 0);
@@ -38,32 +37,34 @@ export const PostItem = ({ item, user, onOpenComments,isLiked, isDisliked, isScr
     setLikeCount(item.likeCount || 0);
     setDislikeCount(item.dislikeCount || 0);
     
-    if ((item as any).isLiked) setLiked(true);
-    if ((item as any).isDisliked) setDisliked(true);
-  }, [item]);
+    // props로 들어온 isLiked나 item 내부에 숨어있는 isLiked 모두 체크
+    const checkLiked = initialLiked || (item as any).isLiked || (item as any).liked;
+    const checkDisliked = initialDisliked || (item as any).isDisliked || (item as any).disliked;
+    
+    setLiked(!!checkLiked);
+    setDisliked(!!checkDisliked);
+  }, [item, initialLiked, initialDisliked]); // 💡 의존성에 initialLiked 추가!
 
   // 3. 좋아요/싫어요 로직 (실시간 숫자 반영)
   const toggleReaction = async (reactionType: 'LIKE' | 'DISLIKE') => {
     if (!user) return;
+    const isLikeAction = reactionType === 'LIKE';
     try {
       const response = await apiClient.post(`/api/interactions/${item.stuffId}/interactions`, { reactionType });
-      
       const { action, stats } = response.data?.data || {};
 
-      // 아이콘 상태 업데이트
       if (action === 'DELETED') {
         setLiked(false);
         setDisliked(false);
-      } else if (action === 'CREATED' || action === 'UPDATED') {
-        setLiked(reactionType === 'LIKE');
-        setDisliked(reactionType === 'DISLIKE');
+      } else {
+        setLiked(isLikeAction);
+        setDisliked(!isLikeAction);
       }
 
       if (stats) {
         setLikeCount(stats.like?.total || 0);
         setDislikeCount(stats.dislike?.total || 0);
       }
-      
     } catch (error) { 
       console.error("인터랙션 오류:", error); 
     }
