@@ -131,6 +131,7 @@ export default function PlusScreen() {
   const handleSelectSuggestion = (item: StuffSuggestion) => {
     setBrandName(`@${item.stuffName}`);
     setStuffId(item.stuffId);
+    setPrice(item.price !== undefined && item.price !== null ? String(item.price) : '');
     setSuggestions([]);
   };
 
