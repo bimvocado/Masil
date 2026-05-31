@@ -7,7 +7,7 @@ import { authService } from '@/api/auth-service';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '@/store/use-auth-store'; 
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 export default function ProfileEditScreen() {
   const router = useRouter();

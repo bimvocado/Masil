@@ -16,8 +16,7 @@ import { formatDate } from '@/utils/date';
 import React, { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 
-// 💡 서버 주소 설정 (환경에 맞게 수정하세요)
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 export default function UserScreen() {
   const insets = useSafeAreaInsets();

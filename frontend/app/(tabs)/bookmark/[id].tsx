@@ -12,7 +12,7 @@ import { scrapService } from '@/api/scrap-service';
 import { useAuthStore } from '@/store/use-auth-store';
 import { CommonModal } from '@/components/ui/common-modal';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 const getImageUrl = (url?: string) => {
   if (!url) return undefined;

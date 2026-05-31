@@ -21,7 +21,7 @@ import { stuffService, StuffSuggestion } from '@/services/stuff-service';
 import { searchService } from '@/api/search-service';
 import { TopBar } from '@/components/layout/top-bar';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 const getImageUrl = (url?: string | null) => {
   if (!url) return undefined;
