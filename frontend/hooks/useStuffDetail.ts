@@ -31,6 +31,7 @@ export interface StuffDetail {
   topPost?: any | null;
   
   myReaction?: 'LIKE' | 'DISLIKE' | null;
+  isKorean?: boolean | null;
 }
 
 export function useStuffDetail(id: string) {
@@ -76,6 +77,7 @@ export function useStuffDetail(id: string) {
           const statsResp = await apiClient.get(`/api/interactions/${id}/interactions`);
           const statsData = statsResp.data?.data?.stats ?? statsResp.data?.stats;
           const myReaction = statsResp.data?.data?.myReaction ?? statsResp.data?.myReaction ?? null;
+const isKor = statsResp.data?.data?.isKorean ?? statsResp.data?.isKorean;
 
           if (statsData) {
             mapped.likeCount = statsData.like.total;
@@ -87,6 +89,7 @@ export function useStuffDetail(id: string) {
             mapped.dislikeRatio = statsData.dislike.ratio;
             mapped.koreanDislikeCount = statsData.dislike.korean;
             mapped.foreignerDislikeCount = statsData.dislike.foreigner;
+            mapped.isKorean = isKor;
           }
           if (myReaction !== undefined && myReaction !== null) {
             mapped.myReaction = myReaction;
@@ -120,7 +123,7 @@ export function useStuffDetail(id: string) {
 
       const response = await apiClient.post(`/api/interactions/${id}/interactions`, { reactionType });
       const statsData = response.data?.data?.stats ?? response.data?.stats;
-      
+      const isKor = response.data?.data?.isKorean ?? response.data?.isKorean;
       if (statsData) {
         setDetailData((prev) => {
           if (!prev) return prev;
@@ -135,6 +138,7 @@ export function useStuffDetail(id: string) {
             dislikeRatio: statsData.dislike.ratio, 
             koreanDislikeCount: statsData.dislike.korean,
             foreignerDislikeCount: statsData.dislike.foreigner,
+            isKorean: isKor,
           };
         });
       }

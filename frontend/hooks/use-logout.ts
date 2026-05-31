@@ -1,39 +1,29 @@
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/use-auth-store';
-import { Alert, Platform } from 'react-native';
+import { useState } from 'react';
 
 export const useLogout = () => {
   const router = useRouter();
   const { logout } = useAuthStore();
+  const [modalVisible, setModalVisible] = useState(false); 
 
-  const handleLogout = () => {
-    const startLogout = async () => {
-      try {
-        await logout(); 
-        router.replace('/');
-      } catch (error) {
-        console.error('로그아웃 에러:', error);
-      }
-    };
-  
-    // 웹(맥) 테스트용
-    if (Platform.OS === 'web') {
-      if (window.confirm("정말 로그아웃 하시겠습니까?")) {
-        console.log("2. 웹 확인 누름");
-        startLogout();
-      }
-    } else {
-      // 앱용
-      Alert.alert(
-        '로그아웃',
-        '정말 로그아웃 하시겠습니까?',
-        [
-          { text: '취소', style: 'cancel' },
-          { text: '확인', style: 'destructive', onPress: startLogout }
-        ]
-      );
+  const confirmLogout = async () => {
+    try {
+      setModalVisible(false); // 일단 모달 닫기
+      await logout(); 
+      router.replace('/');    // 메인으로 이동
+    } catch (error) {
+      console.error('로그아웃 에러:', error);
     }
   };
 
-  return { handleLogout };
+  const handleLogoutPress = () => setModalVisible(true);  // 모달 켜기
+  const closeLogoutModal = () => setModalVisible(false); // 모달 끄기
+
+  return { 
+    modalVisible,      // 모달 visible 속성에 전달
+    handleLogoutPress, // 버튼 onPress에 전달
+    closeLogoutModal,  // 모달 onCancel에 전달
+    confirmLogout      // 모달 onConfirm에 전달
+  };
 };

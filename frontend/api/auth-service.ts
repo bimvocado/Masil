@@ -31,7 +31,7 @@ export const authService = {
   },
 
   /**
-   * 프로필 로드: 새로고침 시 404 방지를 위해 /me 주소를 활용하도록 설계
+   * 프로필 로드: 
    */
   getProfile: async (userId?: number) => { 
     try {

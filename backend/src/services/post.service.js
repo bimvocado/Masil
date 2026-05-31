@@ -12,6 +12,7 @@ const createPost = async (createPostReqDTO) => {
         imageUrl,
         userId,
         stuffId,
+        price
     } = createPostReqDTO;
 
     // 기본 검증
@@ -31,19 +32,39 @@ const createPost = async (createPostReqDTO) => {
         content,
         imageUrl,
         userId,
-        stuffId
+        stuffId,
+        price
     });
 
     // 응답 dto 반환
     return new PostResDTO(newPost);
 };
 
-
-// 게시글 전체 조회
-const getPosts = async () => {
-  const posts = await postRepository.findAllPosts();
-
-  return posts.map((post) => new PostResDTO(post));
+// 게시글 전체 조회 
+const getPosts = async (viewerId = null) => { 
+  const posts = await postRepository.findAllPosts(viewerId);
+  return posts.map((post) => ({
+    postId: post.postId,
+    userId: post.userId,
+    stuffId: post.stuffId,
+    content: post.content,
+    imageUrl: post.imageUrl,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    nickname: post.nickname,
+    profileImageUrl: post.profileImageUrl,
+    stuffName: post.stuffName,
+    price: Number(post.price || 0),
+    brandId: post.brandId,
+    brandName: post.brandName,
+    commentCount: Number(post.commentCount || 0),
+    likeCount: Number(post.likeCount || 0),
+    dislikeCount: Number(post.dislikeCount || 0),
+    isLiked: !!post.isLiked,    
+    isDisliked: !!post.isDisliked,
+    scrapCount: Number(post.scrapCount || 0),
+    isScrapped: !!post.isScrapped,
+  }));
 };
 
 // 게시글 개별 조회
@@ -133,6 +154,10 @@ const getUserPosts = async (userId, viewerId = null) => {
     commentCount: Number(post.commentCount || 0),
     likeCount: Number(post.likeCount || 0),
     dislikeCount: Number(post.dislikeCount || 0),
+
+    isLiked: !!post.isLiked,    
+  isDisliked: !!post.isDisliked,
+  
     scrapCount: Number(post.scrapCount || 0),
     isScrapped: !!post.isScrapped,
   }));

@@ -9,7 +9,7 @@ const {
 // 게시글 등록
 const createPost = async (req, res, next) => {
   try {
-    const { content, stuffId } = req.body;
+    const { content, stuffId, price } = req.body;
     
     console.log('req.body:', req.body);
     console.log('req.file:', req.file);
@@ -23,7 +23,8 @@ const createPost = async (req, res, next) => {
       content,
       imageUrl,
       userId,
-      stuffId
+      stuffId,
+      price ? Number(price) : null
     );
 
     const postResult = await postService.createPost(reqDTO);
@@ -39,7 +40,9 @@ const createPost = async (req, res, next) => {
 // 게시글 전체 조회
 const getPosts = async (req, res, next) => {
   try {
-    const posts = await postService.getPosts();
+    const viewerId = req.user ? req.user.userId : null;
+
+    const posts = await postService.getPosts(viewerId); 
 
     return res.status(200).json(
       ApiResponse.success(200, '게시글 전체 조회 성공', posts)
@@ -53,8 +56,9 @@ const getPosts = async (req, res, next) => {
 const getPost = async (req, res, next) => {
   try {
     const { postId } = req.params;
+    const viewerId = req.user ? req.user.userId : null; 
 
-    const post = await postService.getPost(Number(postId));
+    const post = await postService.getPost(Number(postId), viewerId); 
 
     return res.status(200).json(
       ApiResponse.success(200, '게시글 조회 성공', post)

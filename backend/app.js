@@ -66,7 +66,7 @@ PostHashtag.belongsTo(Post, { foreignKey: 'postId'});
 Hashtag.hasMany(PostHashtag, { foreignKey: 'hashtagId' });
 PostHashtag.belongsTo(Hashtag, { foreignKey: 'hashtagId' });
 
-sequelize.sync() // 기본값이 { force: false }이므로 생략 가능
+sequelize.sync() // 여기안에 {alter:true} 넣으면 개발중에 모델변경사항 바로반영됨근데 계속켜두면 64개떠서 한번하고꺼줘
   .then(() => {
     console.log('✅ MySQL 연결 성공 및 테이블 체크 완료');
   })

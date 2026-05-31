@@ -5,7 +5,7 @@ import axios from 'axios';
 
 export const postService = {
   // 게시글 전체 조회
-  getPosts: async (): Promise<Post[]> => {
+  getPosts: async (userId: number | undefined): Promise<Post[]> => {
     const response = await apiClient.get('/api/posts');
     return response.data.data;
   },

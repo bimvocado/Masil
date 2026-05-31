@@ -9,8 +9,8 @@ import {
   StyleSheet,
 } from 'react-native';
 
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { TopBar } from '@/components/layout/top-bar';
 
 import { styles } from '@/components/styles/search';
 
@@ -26,7 +26,6 @@ const getImageUrl = (url?: string | null) => {
 };
 
 export default function SearchScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   const {
@@ -102,8 +101,9 @@ export default function SearchScreen() {
   }, [searchQuery, activeTab]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      
+    <View style={styles.container}>
+      <TopBar title="검색" showBackButton={false} />
+
       <View style={styles.searchBarContainer}>
         <View style={styles.searchBar}>
 

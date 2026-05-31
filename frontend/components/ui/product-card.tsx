@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
 
 export const ProductCard = ({ rank, name, price, likes, comments, onPress }: any) => (
-  // ⭐️ 여기가 반드시 TouchableOpacity여야 클릭이 됩니다!
   <TouchableOpacity style={cardStyles.container} onPress={onPress} activeOpacity={0.7}>
     <Text style={cardStyles.rankText}>{rank}</Text>
     <View style={cardStyles.imageCircle} />

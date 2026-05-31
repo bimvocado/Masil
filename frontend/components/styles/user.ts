@@ -98,7 +98,7 @@ export const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 14,
     shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 2,

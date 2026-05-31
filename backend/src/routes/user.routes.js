@@ -9,10 +9,10 @@ const { validateSignup } = require('../middlewares/validator.middleware');
 router.post('/signup', validateSignup, userController.signup);
 router.get('/check-duplicate', userController.checkDuplicate);
 
-router.get('/me', authMiddleware, userController.getProfile);
-
+router.get('/profile', authMiddleware, userController.getProfile);
 router.get('/profile/:userId', userController.getProfile);
 router.get('/:userId/posts', userController.getUserPosts);
+router.get('/me', authMiddleware, userController.getProfile);
 
 router.patch('/profile', authMiddleware, upload.single('image'), userController.updateProfile);
 router.patch('/change-password', authMiddleware, userController.changePassword);
