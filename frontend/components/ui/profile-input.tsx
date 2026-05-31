@@ -22,34 +22,10 @@ export function ProfileInput({ label, value, onChangeText, multiline, placeholde
     </View>
   );
 }
+
 const styles = StyleSheet.create({
-  group: { 
-    width: '90%', 
-    marginBottom: 20 
-  },
-  label: { 
-    fontSize: 14, 
-    fontWeight: 'bold', 
-    marginBottom: 8, 
-    color: '#333' 
-  },
-  input: { 
-  
-    flexDirection: 'row',      
-    alignItems: 'center',
-    height: 48,              
-    paddingLeft: 20,        
-    alignSelf: 'stretch',      
-    gap: 10,                   
-    borderRadius: 20,          
-    backgroundColor: '#F3F3F3', 
-    fontSize: 16,
-  },
-  textArea: { 
-    height: 100, 
-    textAlignVertical: 'top',
-    paddingTop: 20, 
-    paddingLeft: 20,   
-    borderRadius: 25,       
-  },
+  group: { width: '100%', marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: 'bold', marginBottom: 8, color: '#333' },
+  input: { backgroundColor: '#F5F5F5', borderRadius: 10, padding: 15, fontSize: 16 },
+  textArea: { height: 100, textAlignVertical: 'top' }
 });

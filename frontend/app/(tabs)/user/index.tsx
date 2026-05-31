@@ -73,10 +73,17 @@ export default function UserScreen() {
     }, [user?.userId]) 
   );
   
+  const toggleHeart = (postId: number) => {
+    setPosts(posts.map(p => 
+      p.postId === postId 
+        ? { ...p, isScrapped: !p.isScrapped, scrapCount: p.isScrapped ? (p.scrapCount || 0) - 1 : (p.scrapCount || 0) + 1 } 
+        : p
+    ));
+  };
   
   
 
-const filteredPosts = posts.filter((post) => 
+  const filteredPosts = posts.filter((post) => 
     post.content.toLowerCase().includes(searchQuery.toLowerCase()) || 
     post.createdAt.includes(searchQuery)
   );
@@ -143,7 +150,7 @@ const filteredPosts = posts.filter((post) =>
             />
             <TextInput
               style={styles.filterInput}
-              placeholder="올렸던 상품 / 작성일자"
+              placeholder="게시글 내용 / 작성일자"
               placeholderTextColor="#aaa"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -175,7 +182,7 @@ const filteredPosts = posts.filter((post) =>
                       : post.content}
                   </Text>
                   
-                 <Text style={styles.postDate}>{formatDate(post.createdAt)}</Text>
+                  <Text style={styles.postDate}>{post.createdAt}</Text>  
                   <View style={styles.interactionRow}>
                     <View style={styles.iconGroup}>
                       <Image

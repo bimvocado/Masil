@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TopBar } from '@/components/layout/top-bar';
 import { ProfileInput } from '@/components/ui/profile-input';
@@ -17,7 +17,6 @@ export default function ProfileEditScreen() {
   const [profileImageUrl, setProfileImageUrl] = useState('');
   const [newImage, setNewImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({ nickname: '', general: '' });
 
   useEffect(() => {
     if (user) {
@@ -34,7 +33,7 @@ export default function ProfileEditScreen() {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      setErrors(prev => ({ ...prev, general: '사진 권한이 필요합니다.' }));
+      Alert.alert('알림', '사진 권한이 필요합니다.');
       return;
     }
 
@@ -53,11 +52,10 @@ export default function ProfileEditScreen() {
 
   const handleSave = async () => {
     if (!nickname.trim()) {
-      setErrors(prev => ({ ...prev, nickname: '닉네임은 필수입니다.' }));
+      Alert.alert('알림', '닉네임은 필수입니다.');
       return;
     }
 
-    setErrors({ nickname: '', general: '' });
     setIsLoading(true);
 
     try {
@@ -107,7 +105,7 @@ export default function ProfileEditScreen() {
       }
     } catch (error: any) {
       console.error(" 저장 에러:", error.response?.data || error.message);
-      setErrors(prev => ({ ...prev, general: '저장에 실패했습니다.' }));
+      Alert.alert('오류', '저장에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -127,10 +125,8 @@ export default function ProfileEditScreen() {
             <Text style={styles.changePhotoText}>사진 변경</Text>
           </TouchableOpacity>
         </View>
-        <ProfileInput label="닉네임" value={nickname} onChangeText={(text) => { setNickname(text); setErrors(prev => ({ ...prev, nickname: '', general: '' })); }} placeholder="닉네임을 입력하세요" />
-        {errors.nickname ? <Text style={styles.errorText}>{errors.nickname}</Text> : null}
+        <ProfileInput label="닉네임" value={nickname} onChangeText={setNickname} placeholder="닉네임을 입력하세요" />
         <ProfileInput label="계정 설명" value={bio} onChangeText={setBio} multiline placeholder="나를 소개해 보세요" />
-        {errors.general ? <Text style={styles.errorText}>{errors.general}</Text> : null}
         <TouchableOpacity 
           style={[styles.saveButton, isLoading && { opacity: 0.5 }]} 
           onPress={handleSave} 
@@ -145,12 +141,11 @@ export default function ProfileEditScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 40, alignItems: 'center' },
+  content: { padding: 20, alignItems: 'center' },
   avatarSection: { alignItems: 'center', marginBottom: 30 },
   avatarPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#E0E0E0' },
   avatarImage: { width: 120, height: 120, borderRadius: 60 },
   changePhotoText: { marginTop: 10, color: '#aaa', textAlign: 'center' },
-  saveButton: { backgroundColor: '#E8F5E9', width: '90%', padding: 15, borderRadius: 25, alignItems: 'center', marginTop: 20 },
-  saveButtonText: { color: '#8DBA7D', fontWeight: 'bold' },
-  errorText: { width: '100%', color: '#E03E3E', fontSize: 12, marginTop: 6, marginBottom: 10 },
+  saveButton: { backgroundColor: '#E8F5E9', width: '100%', padding: 15, borderRadius: 25, alignItems: 'center', marginTop: 20 },
+  saveButtonText: { color: '#8DBA7D', fontWeight: 'bold' }
 });

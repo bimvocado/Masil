@@ -131,8 +131,11 @@ console.log("==========================================");
               activeOpacity={0.8}
               onPress={() =>
                 router.push({
-                  pathname: '/user/post-feed/[id]',
-                  params: { id: String(detailData.topPost?.postId) },
+                  pathname: '/search/post/[id]',
+                  params: { 
+                    id: String(detailData.topPost?.postId),
+                    fetchType: 'single'
+                  },
                 })
               }
             >

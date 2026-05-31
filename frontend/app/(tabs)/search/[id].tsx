@@ -27,8 +27,7 @@ export default function BrandDetailScreen() {
     setError,
   } = useSearchStore();
 
-  // 브랜드창 - 상품 리스트 나열
-  const fetchStuffs = async () => {
+  const fetchStuffs = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -49,7 +48,7 @@ export default function BrandDetailScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, sort, setStuffs, setBrandInfo, setLoading, setError]);
 
   useFocusEffect(
     useCallback(() => {
@@ -57,7 +56,7 @@ export default function BrandDetailScreen() {
         fetchStuffs();
       }
       return () => {};
-    }, [id, sort])
+    }, [id, fetchStuffs])
   );
 
   return (
