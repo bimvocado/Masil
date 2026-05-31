@@ -6,6 +6,8 @@ export interface StuffSuggestion {
   stuffId: number;
   stuffName: string;
   brandId: number;
+  brandName: string;
+  logoUrl?: string
   price?: number;
   averagePrice?: number;
 }

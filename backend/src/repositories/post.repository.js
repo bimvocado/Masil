@@ -27,6 +27,12 @@ const findAllPosts = async (viewerId = null) => {
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
+
+            -- 추천 조합 상품 정보
+            p.recommended_stuff_id AS recommendedStuffId,
+            rst.stuff_name AS recommendedStuffName,
+            rb.brand_id AS recommendedBrandId,
+            rb.brand_name AS recommendedBrandName,
             
             -- 💡 [옳소/싫소] 로직: stuffId 기준으로 '나(viewerId)'의 상태를 확인!
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
@@ -45,6 +51,10 @@ const findAllPosts = async (viewerId = null) => {
         LEFT JOIN users u ON p.user_id = u.user_id
         LEFT JOIN stuffs st ON p.stuff_id = st.stuff_id
         LEFT JOIN brands b ON st.brand_id = b.brand_id
+
+        -- 추천 조합 상품 정보
+        LEFT JOIN stuffs rst ON p.recommended_stuff_id = rst.stuff_id
+        LEFT JOIN brands rb ON rst.brand_id = rb.brand_id
         
         LEFT JOIN comments c ON p.post_id = c.post_id AND c.deleted_at IS NULL
         -- 💡 핵심: i.stuff_id = p.stuff_id (옳소/싫소 공유의 심장)
@@ -56,7 +66,7 @@ const findAllPosts = async (viewerId = null) => {
         WHERE p.deleted_at IS NULL
         
         GROUP BY 
-            p.post_id, u.user_id, st.stuff_id, b.brand_id, su.scrap_id
+            p.post_id, u.user_id, st.stuff_id, b.brand_id, rst.stuff_id, rb.brand_id, su.scrap_id
             
         ORDER BY p.created_at DESC
     `, {
@@ -82,6 +92,7 @@ const updatePost = async (post, updateData) => {
 const deletePost = async (post) => {
     return await post.destroy();
 }
+
 const findPostsByUserId = async (userId, viewerId = null) => {
     const posts = await sequelize.query(`
         SELECT
@@ -92,12 +103,21 @@ const findPostsByUserId = async (userId, viewerId = null) => {
             p.image_url AS imageUrl,
             p.created_at AS createdAt,
             p.updated_at AS updatedAt,
+
+            -- 게시글에 저장된 가격 가져와야 됨.
+            p.price AS price,
+
             u.nickname AS nickname,
             u.profile_image_url AS profileImageUrl,
             st.stuff_name AS stuffName,
-            st.price AS price,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
+
+            -- 추천 조합 상품 정보
+            p.recommended_stuff_id AS recommendedStuffId,
+            rst.stuff_name AS recommendedStuffName,
+            rb.brand_id AS recommendedBrandId,
+            rb.brand_name AS recommendedBrandName,
 
             -- 💡 1. 여기에 콤마(,) 추가했고, IFNULL 처리로 더 안전하게 만들었습니다.
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
@@ -113,6 +133,10 @@ const findPostsByUserId = async (userId, viewerId = null) => {
         LEFT JOIN users u ON p.user_id = u.user_id
         LEFT JOIN stuffs st ON p.stuff_id = st.stuff_id
         LEFT JOIN brands b ON st.brand_id = b.brand_id
+
+        -- 추천 조합 상품 정보
+        LEFT JOIN stuffs rst ON p.recommended_stuff_id = rst.stuff_id
+        LEFT JOIN brands rb ON rst.brand_id = rb.brand_id
         
         LEFT JOIN comments c ON p.post_id = c.post_id AND c.deleted_at IS NULL
         LEFT JOIN interactions i ON p.stuff_id = i.stuff_id AND i.deleted_at IS NULL
@@ -122,7 +146,7 @@ const findPostsByUserId = async (userId, viewerId = null) => {
         WHERE p.user_id = :userId AND p.deleted_at IS NULL
         
         GROUP BY 
-            p.post_id, u.user_id, st.stuff_id, b.brand_id, su.scrap_id
+            p.post_id, u.user_id, st.stuff_id, b.brand_id, rst.stuff_id, rb.brand_id, su.scrap_id
             
         ORDER BY p.created_at DESC
     `, {

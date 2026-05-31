@@ -26,6 +26,10 @@ const Post = sequelize.define('Post', {
     price: {
         type: DataTypes.INTEGER,
         allowNull: true // 이전 데이터들 때문에 일단 null 해둘게요
+    },
+    recommendedStuffId: {
+        type: DataTypes.BIGINT,
+        allowNull: true, // 이전 데이터들 때문에 일단 null !
     }
 }, {
     tableName: 'posts',   

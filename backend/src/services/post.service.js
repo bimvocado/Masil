@@ -12,7 +12,8 @@ const createPost = async (createPostReqDTO) => {
         imageUrl,
         userId,
         stuffId,
-        price
+        price,
+        recommendedStuffId
     } = createPostReqDTO;
 
     // 기본 검증
@@ -27,13 +28,23 @@ const createPost = async (createPostReqDTO) => {
         throw new Error('존재하지 않는 상품입니다.');
     }
 
+    // 추천 조합 상품 검증
+    if (recommendedStuffId) {
+        const recommendedStuff = await Stuff.findByPk(recommendedStuffId);
+
+        if (!recommendedStuff) {
+            throw new Error('존재하지 않는 추천 조합 상품입니다.');
+        }
+    }
+
     // 게시글 생성
     const newPost = await postRepository.createPost({
         content,
         imageUrl,
         userId,
         stuffId,
-        price
+        price,
+        recommendedStuffId
     });
 
     // 응답 dto 반환
@@ -49,6 +60,11 @@ const getPosts = async (viewerId = null) => {
     stuffId: post.stuffId,
     content: post.content,
     imageUrl: post.imageUrl,
+    price: post.price,
+    recommendedStuffId: post.recommendedStuffId,
+    recommendedStuffName: post.recommendedStuffName,
+    recommendedBrandId: post.recommendedBrandId,
+    recommendedBrandName: post.recommendedBrandName,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     nickname: post.nickname,
