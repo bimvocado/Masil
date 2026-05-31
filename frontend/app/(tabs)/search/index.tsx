@@ -18,7 +18,7 @@ import { searchService } from '@/api/search-service';
 import { useSearchStore } from '@/store/search-store';
 import { ProductCard } from '@/components/ui/product-card';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 const getImageUrl = (url?: string | null) => {
   if (!url) return undefined;

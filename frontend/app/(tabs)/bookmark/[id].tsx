@@ -9,7 +9,7 @@ import { TopBar } from '@/components/layout/top-bar';
 import { scrapService } from '@/api/scrap-service';
 import { useAuthStore } from '@/store/use-auth-store';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 const getImageUrl = (url?: string) => {
   if (!url) return undefined;

@@ -234,7 +234,7 @@ return (
                 if (rawUrl.startsWith('http')) return rawUrl;
             
                 const fileName = rawUrl.split('/').pop();
-                return `http://localhost:3000/uploads/${fileName}`;
+                return `${process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'}/uploads/${fileName}`;
               };
             
               const profileUri = getProfileUri();

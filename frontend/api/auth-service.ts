@@ -2,8 +2,8 @@ import apiClient from './client';
 import { saveToken, removeToken } from '@/utils/storage';
 import { User } from '@/types/user';
 
-export const BASE_URL = 'http://localhost:3000'; 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+export const API_URL = BASE_URL;
 
 export const authService = {
  
