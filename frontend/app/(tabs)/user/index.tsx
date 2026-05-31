@@ -151,7 +151,7 @@ export default function UserScreen() {
             />
             <TextInput
               style={styles.filterInput}
-              placeholder="올렸던 상품 / 작성일자"
+              placeholder="게시글 내용 / 작성일자"
               placeholderTextColor="#aaa"
               value={searchQuery}
               onChangeText={setSearchQuery}
