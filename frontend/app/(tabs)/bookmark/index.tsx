@@ -110,55 +110,61 @@ export default function BookmarkScreen() {
           <View style={styles.gridContainer}>
             {categories.map((item) => (
               <TouchableOpacity
-                key={item.categoryId}
-                style={styles.categoryCard}
-                activeOpacity={isEditing ? 1 : 0.7}
-                onPress={() => {
-                  if (!isEditing) {
-                    router.push(`/(tabs)/bookmark/${item.categoryId}?name=${item.categoryName}` as Href);
-                  }
-                }}
-              >
-                <View style={styles.labelContainer}>
-                  {/* 편집 모드 + 이 카테고리가 수정 중이면 TextInput 표시 */}
-                  {isEditing && editingId === item.categoryId ? (
-                    <TextInput
-                      style={localStyles.renameInput}
-                      value={editingName}
-                      onChangeText={setEditingName}
-                      onSubmitEditing={() => handleConfirmRename(item.categoryId)}
-                      autoFocus
-                      returnKeyType="done"
-                      maxLength={20}
-                    />
-                  ) : (
-                    <TouchableOpacity
-                      onPress={() => isEditing && handleStartRename(item)}
-                      disabled={!isEditing}
-                    >
-                      <Text style={[styles.categoryName, isEditing && localStyles.editableName]} numberOfLines={1}>
-                        {item.categoryName}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
+  key={item.categoryId}
+  style={[styles.categoryCard, { flexDirection: 'row', alignItems: 'center' }]} // 💡 row로 정렬
+  activeOpacity={isEditing ? 1 : 0.7}
+  onPress={() => {
+    if (!isEditing) {
+      router.push(`/(tabs)/bookmark/${item.categoryId}?name=${item.categoryName}` as Href);
+    }
+  }}
+>
+  {/* 1️⃣ 왼쪽: 이름 영역 (여기가 핵심!) */}
+  <View style={{ flex: 1, paddingRight: 10 }}> 
+    {/* 💡 flex: 1을 줘야 이름이 길어져도 오른쪽 버튼을 안 밀어냅니다. */}
+    
+    {isEditing && editingId === item.categoryId ? (
+      <TextInput
+        style={localStyles.renameInput}
+        value={editingName}
+        onChangeText={setEditingName}
+        onSubmitEditing={() => handleConfirmRename(item.categoryId)}
+        autoFocus
+        returnKeyType="done"
+        maxLength={20}
+      />
+    ) : (
+      <TouchableOpacity
+        onPress={() => isEditing && handleStartRename(item)}
+        disabled={!isEditing}
+      >
+        <Text 
+          style={[styles.categoryName, isEditing && localStyles.editableName]} 
+          numberOfLines={1} // 💡 이름이 아무리 길어도 한 줄로 제한!
+        >
+          {item.categoryName}
+        </Text>
+      </TouchableOpacity>
+    )}
+  </View>
 
-                {isEditing ? (
-                  editingId === item.categoryId ? (
-                    // 수정 중: 확인 버튼
-                    <TouchableOpacity onPress={() => handleConfirmRename(item.categoryId)}>
-                      <Text style={localStyles.confirmText}>확인</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    // 수정 중 아닌 것: 삭제 버튼
-                    <TouchableOpacity onPress={() => handleDelete(item.categoryId)}>
-                      <Text style={styles.deleteText}>삭제</Text>
-                    </TouchableOpacity>
-                  )
-                ) : (
-                  <Text style={styles.countText}>{item.postInCategoryCount}</Text>
-                )}
-              </TouchableOpacity>
+  {/* 2️⃣ 오른쪽: 상태 표시 영역 (고정 폭 느낌으로) */}
+  <View style={{ alignItems: 'flex-end', minWidth: 40 }}>
+    {isEditing ? (
+      editingId === item.categoryId ? (
+        <TouchableOpacity onPress={() => handleConfirmRename(item.categoryId)}>
+          <Text style={localStyles.confirmText}>확인</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity onPress={() => handleDelete(item.categoryId)}>
+          <Text style={styles.deleteText}>삭제</Text>
+        </TouchableOpacity>
+      )
+    ) : (
+      <Text style={styles.countText}>{item.postInCategoryCount}</Text>
+    )}
+  </View>
+</TouchableOpacity>
             ))}
 
             <TouchableOpacity style={styles.addCategoryButton} onPress={handleAdd}>

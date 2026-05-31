@@ -12,6 +12,8 @@ import { InteractionStatsBar } from '@/components/ui/interaction-stats-bar';
 import { useStuffDetail } from '@/hooks/useStuffDetail';
 
 export default function ProductDetailScreen() {
+  
+  
   const { id, stuffName, brandName } = useLocalSearchParams<{
     id: string;
     stuffName: string;
@@ -29,7 +31,12 @@ export default function ProductDetailScreen() {
       </View>
     );
   }
-
+console.log("==========================================");
+  console.log("📍 [상품 상세 데이터 로드 성공]");
+  console.log(`- 전체 좋아요: ${detailData.likeCount}`);
+  console.log(`- 내국인(K): ${detailData.koreanLikeCount}`);
+  console.log(`- 외국인(F): ${detailData.foreignerLikeCount}`);
+  console.log(`- 내 국적 상태(isKorean): ${(detailData as any).isKorean}`);console.log("==========================================");
   return (
     <View style={styles.container}>
       <TopBar title={detailData.stuffName || stuffName || '상품 상세'} showBackButton={true} />

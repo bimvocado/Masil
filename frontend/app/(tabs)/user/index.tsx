@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/use-auth-store';
 import { InteractionButton } from '@/constants/interaction-button';
 import { postService } from '@/services/post-service';
 import { authService } from '@/api/auth-service'; 
+import { formatDate } from '@/utils/date';
 
 import React, { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
@@ -73,28 +74,7 @@ export default function UserScreen() {
     }, [user?.userId]) 
   );
   
-  const toggleHeart = (postId: number) => {
-    setPosts(posts.map(p => 
-      p.postId === postId 
-        ? { ...p, isScrapped: !p.isScrapped, scrapCount: p.isScrapped ? (p.scrapCount || 0) - 1 : (p.scrapCount || 0) + 1 } 
-        : p
-    ));
-  };
   
-const formatDate = (dateString: string) => {
-  if (!dateString) return '';
-  
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  if (diffInSeconds < 60) {
-    return '방금 전';
-  }
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}.${month}.${day}`;
-};
   
 
 const filteredPosts = posts.filter((post) => 
@@ -199,21 +179,25 @@ const filteredPosts = posts.filter((post) =>
                  <Text style={styles.postDate}>{formatDate(post.createdAt)}</Text>
                   <View style={styles.interactionRow}>
                     <View style={styles.iconGroup}>
-                      <InteractionButton 
-                        type="comment"
-                        count={post.commentCount?.toLocaleString() || '0'}
-                        textPosition="right"
+                      <Image
+                        source={require('@/assets/icons/comment.png')}
+                        style={{ width: 22, height: 22, tintColor: '#dcdcdc' }}
+                        resizeMode="contain"
                       />
+                      <Text style={{ marginLeft: 4, color: '#666666', fontSize: 13, fontWeight: '600' }}>
+                        {post.commentCount?.toLocaleString() || '0'}
+                      </Text>
                     </View>
                     
                     <View style={styles.iconGroup}>
-                      <InteractionButton 
-                        type="heart"
-                        count={post.scrapCount?.toLocaleString() || '0'}
-                        textPosition="right"
-                        isActive={post.isScrapped}
-                        onPress={() => toggleHeart(post.postId)}
+                      <Image
+                        source={post.isScrapped ? require('@/assets/icons/filledbookmark.png') : require('@/assets/icons/bookmark.png')}
+                        style={{ width: 22, height: 22, tintColor: post.isScrapped ? '#009205' : '#dcdcdc' }}
+                        resizeMode="contain"
                       />
+                      <Text style={{ marginLeft: 4, color: '#666666', fontSize: 13, fontWeight: '600' }}>
+                        {post.scrapCount?.toLocaleString() || '0'}
+                      </Text>
                     </View>
                   </View>
                 </View>

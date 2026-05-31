@@ -22,7 +22,11 @@ const Interaction = sequelize.define('Interaction', {
         type: DataTypes.ENUM('LIKE', 'DISLIKE'),
         allowNull: false,
         field: 'reaction_type' 
-    }
+    },
+    isKorean: {
+    type: DataTypes.BOOLEAN,
+    field: 'is_korean'
+}
 }, {
     tableName: 'interactions',
     timestamps: true,
