@@ -1,4 +1,5 @@
 const stuffRepository = require('../repositories/stuff.repository');
+const postRepository = require('../repositories/post.repository');
 
 const {
   toStuffSearchResultDTO,
@@ -12,7 +13,25 @@ const searchStuffs = async ({ keyword, category }) => {
     category,
   });
 
-  return toStuffSearchResultDTO(stuffs);
+  // return toStuffSearchResultDTO(stuffs);
+
+  const result = toStuffSearchResultDTO(stuffs);
+
+  const stuffsWithAveragePrice = await Promise.all(
+    result.stuffs.map(async (stuff) => {
+      const averagePrice = await postRepository.getAveragePriceByStuffId(
+        stuff.stuffId
+      );
+      return {
+        ...stuff,
+        averagePrice,
+      };
+    })
+  );
+  return {
+    ...result,
+    stuffs: stuffsWithAveragePrice,
+  };
 };
 
 // 상품 생성

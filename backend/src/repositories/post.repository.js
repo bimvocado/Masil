@@ -18,10 +18,13 @@ const findAllPosts = async (viewerId = null) => {
             p.image_url AS imageUrl,
             p.created_at AS createdAt,
             p.updated_at AS updatedAt,
+
+            -- 게시글에 저장된 가격 가져와야 됨.
+            p.price AS price,
+
             u.nickname AS nickname,
             u.profile_image_url AS profileImageUrl,
             st.stuff_name AS stuffName,
-            st.price AS price,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
             
@@ -130,11 +133,28 @@ const findPostsByUserId = async (userId, viewerId = null) => {
     return posts;
 };
 
+const getAveragePriceByStuffId = async (stuffId) => {
+  const result = await sequelize.query(`
+    SELECT ROUND(AVG(price)) AS averagePrice
+    FROM posts
+    WHERE stuff_id = :stuffId
+      AND price IS NOT NULL
+      AND deleted_at IS NULL
+  `, {
+    replacements: { stuffId },
+    type: QueryTypes.SELECT
+  });
+
+  return result[0]?.averagePrice || null;
+};
+
+
 module.exports = {
     createPost,
     findPostById,
     updatePost,
     deletePost,
     findAllPosts,
-    findPostsByUserId
+    findPostsByUserId,
+    getAveragePriceByStuffId,
 }

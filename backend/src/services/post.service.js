@@ -12,6 +12,7 @@ const createPost = async (createPostReqDTO) => {
         imageUrl,
         userId,
         stuffId,
+        price
     } = createPostReqDTO;
 
     // 기본 검증
@@ -31,7 +32,8 @@ const createPost = async (createPostReqDTO) => {
         content,
         imageUrl,
         userId,
-        stuffId
+        stuffId,
+        price
     });
 
     // 응답 dto 반환
