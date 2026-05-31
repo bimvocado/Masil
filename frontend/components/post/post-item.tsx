@@ -1,6 +1,7 @@
 //게시글
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Post } from '@/types/post';
 import apiClient from '@/api/client';
 
@@ -24,6 +25,8 @@ interface PostItemProps {
 }
 
 export const PostItem = ({ item, user, onOpenComments,isLiked, isDisliked, isScrapped, onScrapPress, onBack }: PostItemProps) => {
+  const insets = useSafeAreaInsets();
+
   // 1. 좋아요/싫어요 상태 및 숫자 관리
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
@@ -67,7 +70,7 @@ export const PostItem = ({ item, user, onOpenComments,isLiked, isDisliked, isScr
   };
 
   return (
-    <View style={styles.page}>
+    <View style={[styles.page, { paddingTop: insets.top, paddingBottom: insets.bottom }]}> 
       {/* 배경 이미지 */}
       <View style={styles.backgroundContainer}>
         {item.imageUrl ? (
@@ -82,7 +85,7 @@ export const PostItem = ({ item, user, onOpenComments,isLiked, isDisliked, isScr
       </View>
 
     {/* 우측 아이콘 바 */}
-<View style={styles.rightOverlay}>
+<View style={[styles.rightOverlay, { bottom: insets.bottom + 120 }]}> 
   <View style={styles.iconGroup}>
     <TouchableOpacity 
       onPress={() => toggleReaction('LIKE')}
@@ -141,7 +144,7 @@ export const PostItem = ({ item, user, onOpenComments,isLiked, isDisliked, isScr
 </View>
 
       {/* 하단 텍스트 정보 */}
-      <View style={styles.bottomOverlay}>
+      <View style={[styles.bottomOverlay, { bottom: insets.bottom + 80 }]}> 
         <View style={styles.userRow}>
           <View style={styles.userCircle}>
             {/* 프로필 이미지가 있다면 Image로 교체 가능 */}
@@ -154,10 +157,7 @@ export const PostItem = ({ item, user, onOpenComments,isLiked, isDisliked, isScr
         <Text style={styles.content} numberOfLines={3}>{item.content}</Text>
       </View>
 
-      {/* 뒤로가기 버튼 */}
-      <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Text style={styles.backButtonText}>✕</Text>
-      </TouchableOpacity>
+
     </View>
   );
 };
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     alignItems: 'center' 
   },
   emptyText: { color: '#ccc', fontSize: 16 },
-  backButton: { position: 'absolute', top: 50, left: 20, zIndex: 10, padding: 8 },
+  backButton: { position: 'absolute', top: 54, left: 20, zIndex: 10, padding: 8 },
   backButtonText: { color: '#fff', fontSize: 24, fontWeight: 'bold', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 2 },
   rightOverlay: { position: 'absolute', right: 15, bottom: 100, alignItems: 'center',paddingBottom: 60 },
   iconGroup: { alignItems: 'center', marginBottom: 30, },

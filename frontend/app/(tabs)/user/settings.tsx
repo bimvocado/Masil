@@ -22,7 +22,7 @@ export default function SettingsScreen() {
       <View style={styles.content}>
         {/* 검색창 */}
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color="#aaa" />
+          <Ionicons name="search" size={18}  color="#aaa" />
           <TextInput placeholder="설정 검색" style={styles.searchInput} placeholderTextColor="#aaa" />
         </View>
 
@@ -49,8 +49,8 @@ export default function SettingsScreen() {
         title="로그아웃"
         message="정말 로그아웃 하시겠습니까?"
         confirmText="로그아웃"
-        onConfirm={confirmLogout}      // 훅에서 가져온 진짜 로그아웃 로직
-        onCancel={closeLogoutModal}    // 훅에서 가져온 닫기 로직
+        onConfirm={confirmLogout}      
+        onCancel={closeLogoutModal}   
       />
     </View>
   );
@@ -58,21 +58,23 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 20 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F0F0', borderRadius: 10, paddingHorizontal: 15, height: 40, marginBottom: 30 },
-  searchInput: { flex: 1, marginLeft: 10 },
-  logoutWrapper: { marginTop: 20 },
+  content: { padding: 20, alignItems: 'center' },
+  searchBar: { paddingLeft: 20, width:'90%',flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F0F0', borderRadius: 20, paddingHorizontal: 15, height: 40, marginBottom: 30 },
+  searchInput: { flex: 1, marginLeft: 8 },
+  logoutWrapper: { marginTop: 20, width: '90%', },
   logoutItem: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     padding: 15, 
     backgroundColor: '#FFF5F5', 
-    borderRadius: 15 
+    borderRadius: 25, 
+    paddingLeft:32,
   },
   logoutLabel: { 
-    marginLeft: 10, 
+    marginLeft: 15, 
     fontSize: 16, 
     color: '#FF6B6B', 
-    fontWeight: '600' 
+    fontWeight: '600' ,
+    
   },
 });

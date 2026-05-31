@@ -241,22 +241,54 @@ export default function EntryScreen() {
               </View>
               <View style={styles.inputGroup}>
                 <View style={styles.sectionWrapper}>
-                  <TextInput
-                    ref={loginIdRef}
-                    style={[
-                      styles.input,
-                      errors.loginId ? styles.inputError : null,
-                      idCheckSuccess && validatedLoginId === formData.loginId ? styles.inputSuccess : null,
-                    ]}
-                    value={formData.loginId}
-                    onChangeText={(value) => handleChange('loginId', value)}
-                    placeholder={isLoginView ? '아이디 or email' : '아이디'}
-                    placeholderTextColor="#8DBA7D"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
+                  {isLoginView ? (
+                    <TextInput
+                      ref={loginIdRef}
+                      style={[
+                        styles.input,
+                        errors.loginId ? styles.inputError : null,
+                        idCheckSuccess && validatedLoginId === formData.loginId ? styles.inputSuccess : null,
+                      ]}
+                      value={formData.loginId}
+                      onChangeText={(value) => handleChange('loginId', value)}
+                      placeholder="ID or Email"
+                      placeholderTextColor="#8DBA7D"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  ) : (
+                    <View style={styles.idRow}>
+                      <TextInput
+                        ref={loginIdRef}
+                        style={[
+                          styles.input,
+                          styles.idInput,
+                          errors.loginId ? styles.inputError : null,
+                          idCheckSuccess && validatedLoginId === formData.loginId ? styles.inputSuccess : null,
+                        ]}
+                        value={formData.loginId}
+                        onChangeText={(value) => handleChange('loginId', value)}
+                        placeholder="ID"
+                        placeholderTextColor="#8DBA7D"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                      <TouchableOpacity
+                        style={[
+                          styles.idCheckButton,
+                          isIdChecked && validatedLoginId === formData.loginId ? styles.disabledButton : null,
+                        ]}
+                        onPress={handleCheckId}
+                        disabled={isIdChecked && validatedLoginId === formData.loginId}
+                      >
+                        <Text style={styles.idCheckText}>
+                          {isIdChecked && validatedLoginId === formData.loginId ? '확인 완료' : '중복 확인'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                   {errors.loginId ? <Text style={styles.errorText}>{errors.loginId}</Text> : null}
-                  {idCheckSuccess && idCheckMessage ? <Text style={styles.errorText}>{idCheckMessage}</Text> : null}
+                  {idCheckSuccess && idCheckMessage ? <Text style={styles.successText}>{idCheckMessage}</Text> : null}
                   {isLoginView ? (
                     <>
                       <TextInput
@@ -264,7 +296,7 @@ export default function EntryScreen() {
                         style={[styles.input, errors.password ? styles.inputError : null]}
                         value={formData.password}
                         onChangeText={(value) => handleChange('password', value)}
-                        placeholder="비밀번호"
+                        placeholder="Password"
                         placeholderTextColor="#8DBA7D"
                         secureTextEntry
                       />
@@ -277,7 +309,7 @@ export default function EntryScreen() {
                         style={[styles.input, errors.email ? styles.inputError : null]}
                         value={formData.email}
                         onChangeText={(value) => handleChange('email', value)}
-                        placeholder="email"
+                        placeholder="Email"
                         placeholderTextColor="#8DBA7D"
                         autoCapitalize="none"
                         autoCorrect={false}
@@ -288,7 +320,7 @@ export default function EntryScreen() {
                         style={[styles.input, errors.password ? styles.inputError : null]}
                         value={formData.password}
                         onChangeText={(value) => handleChange('password', value)}
-                        placeholder="password"
+                        placeholder="Password"
                         placeholderTextColor="#8DBA7D"
                         secureTextEntry
                       />
@@ -298,7 +330,7 @@ export default function EntryScreen() {
                         style={[styles.input, errors.nickname ? styles.inputError : null]}
                         value={formData.nickname}
                         onChangeText={(value) => handleChange('nickname', value)}
-                        placeholder="name"
+                        placeholder="Name"
                         placeholderTextColor="#8DBA7D"
                       />
                       {errors.nickname ? <Text style={styles.errorText}>{errors.nickname}</Text> : null}
@@ -307,7 +339,7 @@ export default function EntryScreen() {
                         style={[styles.input, errors.birthDate ? styles.inputError : null]}
                         value={formData.birthDate}
                         onChangeText={(value) => handleChange('birthDate', value)}
-                        placeholder="birthDats(0000-00-00)"
+                        placeholder="Birth Date (YYYY-MM-DD)"
                         placeholderTextColor="#8DBA7D"
                       />
                       {errors.birthDate ? <Text style={styles.errorText}>{errors.birthDate}</Text> : null}
@@ -315,32 +347,20 @@ export default function EntryScreen() {
                   )}
                   {errors.general ? <Text style={styles.errorText}>{errors.general}</Text> : null}
                   <TouchableOpacity style={styles.loginButtonFrame} onPress={handleSubmit}>
-                    <Text style={styles.buttonText}>{isLoginView ? '로그인' : '회원가입'}</Text>
+                    <Text style={styles.buttonText}>{isLoginView ? 'Logina' : 'Sign Upa'}</Text>
                   </TouchableOpacity>
                 </View>
                 {isLoginView ? (
                   <View style={styles.buttonRow}>
                     <TouchableOpacity style={styles.emailSignupButton} onPress={() => { clearValidationState(); setIsLoginView(false); }}>
-                      <Text style={styles.buttonText}>회원가입</Text>
+                      <Text style={styles.buttonText}>Sign in with Email</Text>
                     </TouchableOpacity>
                     <GoogleLoginButton />
                   </View>
                 ) : (
-                  <>
-                      <TouchableOpacity
-                      style={[
-                        styles.emailSignupButton,
-                        isIdChecked && validatedLoginId === formData.loginId ? styles.disabledButton : null,
-                      ]}
-                      onPress={handleCheckId}
-                      disabled={isIdChecked && validatedLoginId === formData.loginId}
-                    >
-                      <Text style={styles.buttonText}>{isIdChecked && validatedLoginId === formData.loginId ? '아이디 확인 완료' : '아이디 중복 확인'}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.linkButton} onPress={() => { clearValidationState(); setIsLoginView(true); }}>
-                      <Text style={[styles.buttonText, styles.linkText]}> 로그인으로 돌아가기</Text>
-                    </TouchableOpacity>
-                  </>
+                  <TouchableOpacity style={styles.linkButton} onPress={() => { clearValidationState(); setIsLoginView(true); }}>
+                    <Text style={[styles.buttonText, styles.linkText]}> 로그인으로 돌아가기</Text>
+                  </TouchableOpacity>
                 )}
               </View>
             </View>

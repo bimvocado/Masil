@@ -142,13 +142,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 상단 유저 정보 */}
-        <View style={[styles.topProfileContainer, { top: insets.top + 64 }]}>
-          <View style={styles.miniAvatar} />
-          <Text style={styles.miniUsername}>abcd</Text>
-          <Text style={styles.starIcon}>⭐</Text>
-        </View>
-
         
 
       </View>
