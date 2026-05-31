@@ -7,6 +7,7 @@ export interface StuffSuggestion {
   stuffName: string;
   brandId: number;
   price?: number;
+  averagePrice?: number;
 }
 
 export const stuffService = {

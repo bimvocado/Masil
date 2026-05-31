@@ -9,7 +9,7 @@ const {
 // 게시글 등록
 const createPost = async (req, res, next) => {
   try {
-    const { content, stuffId } = req.body;
+    const { content, stuffId, price } = req.body;
     
     console.log('req.body:', req.body);
     console.log('req.file:', req.file);
@@ -23,7 +23,8 @@ const createPost = async (req, res, next) => {
       content,
       imageUrl,
       userId,
-      stuffId
+      stuffId,
+      price ? Number(price) : null
     );
 
     const postResult = await postService.createPost(reqDTO);

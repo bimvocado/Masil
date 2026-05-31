@@ -131,7 +131,15 @@ export default function PlusScreen() {
   const handleSelectSuggestion = (item: StuffSuggestion) => {
     setBrandName(`@${item.stuffName}`);
     setStuffId(item.stuffId);
-    setPrice(item.price !== undefined && item.price !== null ? String(item.price) : '');
+
+    setPrice(
+      item.averagePrice !== undefined && item.averagePrice !== null
+      ? String(Math.round(item.averagePrice))
+      : item.price !== undefined && item.price !== null
+        ? String(item.price)
+        : ''
+  );
+  
     setSuggestions([]);
   };
 
@@ -212,6 +220,7 @@ export default function PlusScreen() {
       const formData = new FormData();
       formData.append('content', content);
       formData.append('stuffId', String(stuffId));
+      formData.append('price', price);
 
       if (imageUri) {
         if (Platform.OS === 'web') {

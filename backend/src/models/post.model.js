@@ -22,6 +22,10 @@ const Post = sequelize.define('Post', {
     imageUrl: {
         type: DataTypes.STRING(255),
         allowNull: true
+    },
+    price: {
+        type: DataTypes.INTEGER,
+        allowNull: true // 이전 데이터들 때문에 일단 null 해둘게요
     }
 }, {
     tableName: 'posts',   
