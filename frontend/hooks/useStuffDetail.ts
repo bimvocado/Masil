@@ -15,6 +15,12 @@ export interface StuffDetail {
   price: number;
   bestReviewImageUrl: string | null;
   imageUrl?: string | null;
+
+  // recommendedStuffId?: number | null;
+  // recommendedStuffName?: string | null;
+  // recommendedBrandId?: number | null;
+  // recommendedBrandName?: string | null;
+  // recommendedImageUrl?: string | null;
   
   likeCount: number;
   likeRatio: number;
@@ -28,7 +34,23 @@ export interface StuffDetail {
 
   recommendedStuffs: any[];
   bestReview: any | null;
-  topPost?: any | null;
+  // topPost?: any | null;
+
+  topPost?: {
+    postId: number;
+    userId: number;
+    nickname: string;
+    content: string;
+    imageUrl: string | null;
+    scrapCount: number;
+    createdAt: string;
+
+    recommendedStuffId?: number | null;
+    recommendedStuffName?: string | null;
+    recommendedBrandId?: number | null;
+    recommendedBrandName?: string | null;
+    recommendedImageUrl?: string | null;
+  } | null;
   
   myReaction?: 'LIKE' | 'DISLIKE' | null;
   isKorean?: boolean | null;

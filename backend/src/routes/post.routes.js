@@ -5,7 +5,11 @@ const { authMiddleware } = require('../middlewares/auth.middleware');
 const upload = require('../middlewares/upload');
 
 // 게시글 등록
-router.post('/', authMiddleware, upload.single('image'), postController.createPost);
+router.post('/', authMiddleware, 
+    upload.fields([
+        { name: 'image', maxCount: 1 },
+        { name: 'recommendedImage', maxCount: 1 }
+    ]), postController.createPost);
 
 // 게시글 전체 조회
 router.get('/', authMiddleware, postController.getPosts);

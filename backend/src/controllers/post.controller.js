@@ -9,22 +9,31 @@ const {
 // 게시글 등록
 const createPost = async (req, res, next) => {
   try {
-    const { content, stuffId, price } = req.body;
+    const { content, stuffId, price, recommendedStuffId } = req.body;
     
     console.log('req.body:', req.body);
-    console.log('req.file:', req.file);
+    console.log('req.files:', req.files);
 
     const userId = req.user.userId;
 
     // 백엔드에서 imageUrl 만듦
-    const imageUrl = req.file ? `/uploads/${req.file.filename}`: null;
+    const imageUrl = req.files?.image
+      ? `/uploads/${req.files.image[0].filename}`
+      : null;
+
+    // 백엔드에서 추천 조합 imageUrl 만듦
+    const recommendedImageUrl = req.files?.recommendedImage
+      ? `/uploads/${req.files.recommendedImage[0].filename}`
+      : null;
 
     const reqDTO = new CreatePostReqDTO(
       content,
       imageUrl,
       userId,
       stuffId,
-      price ? Number(price) : null
+      price ? Number(price) : null,
+      recommendedStuffId ? Number(recommendedStuffId) : null,
+      recommendedImageUrl,
     );
 
     const postResult = await postService.createPost(reqDTO);

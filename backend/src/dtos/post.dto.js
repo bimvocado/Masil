@@ -1,18 +1,21 @@
 class CreatePostReqDTO {
-    constructor(content, imageUrl, userId, stuffId, price) {
+    constructor(content, imageUrl, userId, stuffId, price, recommendedStuffId) {
         this.content = content;
         this.imageUrl = imageUrl;
         this.userId = userId;
         this.stuffId = Number(stuffId);
         this.price = Number(price);
+        this.recommendedStuffId = Number(recommendedStuffId);
+        this.recommendedImageUrl = recommendedImageUrl;;
     }
 }
 
 class UpdatePostReqDTO {
-    constructor(content, imageUrl, price) {
+    constructor(content, imageUrl, price, recommendedStuffId) {
         this.content = content,
         this.imageUrl = imageUrl;
         this.price = price;
+        this.recommendedStuffId = recommendedStuffId;
     }
 }
 class PostResDTO {
@@ -23,6 +26,11 @@ class PostResDTO {
         this.userId = post.userId;
         this.stuffId = post.stuffId;
         this.price = post.price;
+        this.recommendedStuffId = post.recommendedStuffId;
+        this.recommendedStuffName = post.recommendedStuffName;
+        this.recommendedBrandId = post.recommendedBrandId;
+        this.recommendedBrandName = post.recommendedBrandName;
+        this.recommendedImageUrl = post.recommendedImageUrl;
         this.createdAt = post.createdAt;
         this.updatedAt = post.updatedAt;
         this.nickname = post.nickname;

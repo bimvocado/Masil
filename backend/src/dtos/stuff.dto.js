@@ -6,6 +6,8 @@ const toStuffSearchDTO = (stuff) => {
     price: stuff.price,
     isDiscontinued: stuff.isDiscontinued,
 
+    imageUrl: stuff.imageUrl,
+
     brandId: stuff.Brand?.brandId,
     brandName: stuff.Brand?.brandName,
     logoUrl: stuff.Brand?.logoUrl,
@@ -31,6 +33,12 @@ const toTopPostDTO = (post) => {
     nickname: post.nickname,
 
     scrapCount: Number(post.scrapCount || 0),
+
+    recommendedStuffId: post.recommendedStuffId,
+    recommendedImageUrl: post.recommendedImageUrl,
+    recommendedStuffName: post.recommendedStuffName,
+    recommendedBrandId: post.recommendedBrandId,
+    recommendedBrandName: post.recommendedBrandName,
 
     createdAt: post.createdAt,
   };
