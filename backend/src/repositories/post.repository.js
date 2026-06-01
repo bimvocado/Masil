@@ -115,6 +115,7 @@ const findPostsByUserId = async (userId, viewerId = null) => {
 
             -- 추천 조합 상품 정보
             p.recommended_stuff_id AS recommendedStuffId,
+            p.recommended_image_url AS recommendedImageUrl,
             rst.stuff_name AS recommendedStuffName,
             rb.brand_id AS recommendedBrandId,
             rb.brand_name AS recommendedBrandName,

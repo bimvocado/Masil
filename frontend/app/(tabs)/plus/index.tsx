@@ -57,6 +57,7 @@ export default function PlusScreen() {
   const [recommendedStuffId, setRecommendedStuffId] = useState<number | null>(null);
   const [recommendedSuggestions, setRecommendedSuggestions] = useState<StuffSuggestion[]>([]);
   const [recommendedPrice, setRecommendedPrice] = useState<string>('');
+  const [recommendedImageUri, setRecommendedImageUri] = useState<string | null>(null);
 
   // 추천 조합 브랜드
   const [recommendedBrandId, setRecommendedBrandId] = useState<number | null>(null);
@@ -86,6 +87,24 @@ export default function PlusScreen() {
 
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
+    }
+  };
+
+  const handlePickRecommendedImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert('알림', '이미지 접근 권한이 필요합니다.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setRecommendedImageUri(result.assets[0].uri);
     }
   };
 
@@ -302,6 +321,7 @@ export default function PlusScreen() {
     setRecommendedStuffId(null);
     setRecommendedSuggestions([]);
     setRecommendedPrice('');
+    setRecommendedImageUri(null);
     setRecommendedBrandId(null);
     setRecommendedBrandName('');
     setRecommendedBrandLogoUrl('');
@@ -348,6 +368,31 @@ export default function PlusScreen() {
 
           formData.append('image', {
             uri: imageUri,
+            name: filename,
+            type,
+          } as any);
+        }
+      }
+
+      if (recommendedImageUri) {
+        if (Platform.OS === 'web') {
+          const response = await fetch(recommendedImageUri);
+          const blob = await response.blob();
+
+          const file = new File(
+            [blob],
+            'recommended-image.jpg',
+            { type: blob.type || 'image/jpeg' }
+          );
+
+          formData.append('recommendedImage', file);
+        } else {
+          const filename = recommendedImageUri.split('/').pop() || 'recommended-image.jpg';
+          const match = /\.(\w+)$/.exec(filename);
+          const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+          formData.append('recommendedImage', {
+            uri: recommendedImageUri,
             name: filename,
             type,
           } as any);
@@ -578,6 +623,26 @@ export default function PlusScreen() {
                   style={{ borderWidth: 1, borderColor: '#eee', padding: 8, borderRadius: 8 }}
                 />
               </View>
+
+              <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>
+                추천 조합 이미지
+              </Text>
+
+              <TouchableOpacity style={styles.imageUploadCard} onPress={handlePickRecommendedImage}>
+                {recommendedImageUri ? (
+                  <Image
+                    source={{ uri: recommendedImageUri }}
+                    style={styles.previewImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Image
+                    source={require('@/assets/icons/search.png')}
+                    style={styles.imageIconPlaceHolder}
+                    resizeMode="contain"
+                  />
+                )}
+              </TouchableOpacity>
 
               <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>
                 추천 조합

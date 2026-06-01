@@ -30,7 +30,11 @@ const Post = sequelize.define('Post', {
     recommendedStuffId: {
         type: DataTypes.BIGINT,
         allowNull: true, // 이전 데이터들 때문에 일단 null !
-    }
+    },
+    recommendedImageUrl: {
+        type: DataTypes.STRING(255),
+        allowNull: true
+    },
 }, {
     tableName: 'posts',   
     timestamps: true,  // createdAt, updatedAt 자동 관리      

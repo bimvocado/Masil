@@ -13,7 +13,8 @@ const createPost = async (createPostReqDTO) => {
         userId,
         stuffId,
         price,
-        recommendedStuffId
+        recommendedStuffId,
+        recommendedImageUrl
     } = createPostReqDTO;
 
     // 기본 검증
@@ -44,7 +45,8 @@ const createPost = async (createPostReqDTO) => {
         userId,
         stuffId,
         price,
-        recommendedStuffId
+        recommendedStuffId,
+        recommendedImageUrl,
     });
 
     // 응답 dto 반환
@@ -65,6 +67,7 @@ const getPosts = async (viewerId = null) => {
     recommendedStuffName: post.recommendedStuffName,
     recommendedBrandId: post.recommendedBrandId,
     recommendedBrandName: post.recommendedBrandName,
+    recommendedImageUrl: post.recommendedImageUrl,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     nickname: post.nickname,

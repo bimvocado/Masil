@@ -6,6 +6,7 @@ class CreatePostReqDTO {
         this.stuffId = Number(stuffId);
         this.price = Number(price);
         this.recommendedStuffId = Number(recommendedStuffId);
+        this.recommendedImageUrl = recommendedImageUrl;;
     }
 }
 
