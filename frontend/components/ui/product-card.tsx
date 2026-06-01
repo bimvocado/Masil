@@ -2,10 +2,19 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
 
-export const ProductCard = ({ rank, name, price, likes, comments, onPress }: any) => (
+export const ProductCard = ({ rank, name, price, likes, comments, imageUrl, onPress }: any) => (
   <TouchableOpacity style={cardStyles.container} onPress={onPress} activeOpacity={0.7}>
     <Text style={cardStyles.rankText}>{rank}</Text>
-    <View style={cardStyles.imageCircle} />
+
+    {imageUrl ? (
+      <Image
+        source={{ uri: imageUrl }}
+        style={cardStyles.imageCircle}
+      />
+    ) : (
+      <View style={cardStyles.imageCircle} />
+    )}
+
     <View style={cardStyles.infoContainer}>
       <Text style={cardStyles.nameText}>{name}</Text>
       <Text style={cardStyles.priceText}>{price}원</Text>
