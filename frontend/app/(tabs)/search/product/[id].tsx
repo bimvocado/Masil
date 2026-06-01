@@ -11,6 +11,13 @@ import { InteractionStatsBar } from '@/components/ui/interaction-stats-bar';
 
 import { useStuffDetail } from '@/hooks/useStuffDetail';
 
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+
+const getImageUrl = (url?: string | null) => {
+  if (!url) return undefined;
+  return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+};
+
 export default function ProductDetailScreen() {
   
   
@@ -22,6 +29,8 @@ export default function ProductDetailScreen() {
 
   const router = useRouter();
   const { loading, detailData, handleToggle } = useStuffDetail(String(id));
+
+  console.log('상세 detailData:', detailData);
 
   if (loading || !detailData) {
     return (
@@ -110,7 +119,22 @@ console.log("==========================================");
 
         {/* 추천 조합 */}
         <Text style={styles.sectionTitle}>추천조합</Text>
-        <Text style={{ color: '#666' }}>추천 조합이 없습니다.</Text>
+
+        {detailData.topPost?.recommendedStuffName ? (
+          <View>
+            {detailData.topPost.recommendedImageUrl ? (
+              <Image
+                source={{ uri: getImageUrl(detailData.topPost.recommendedImageUrl) || '' }}
+                style={{ width: 80, height: 80, borderRadius: 12 }}
+              />
+            ) : null}
+
+            <Text>{detailData.topPost.recommendedBrandName}</Text>
+            <Text>{detailData.topPost.recommendedStuffName}</Text>
+          </View>
+        ) : (
+          <Text>추천 조합이 없습니다.</Text>
+        )}
         <TouchableOpacity>
           <Text style={styles.moreText}>더보기 {'>'}</Text>
         </TouchableOpacity>

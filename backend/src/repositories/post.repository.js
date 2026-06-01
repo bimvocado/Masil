@@ -80,8 +80,50 @@ const findAllPosts = async (viewerId = null) => {
 
 // 게시글 개별 조회
 const findPostById = async (postId) => {
-    return await Post.findByPk(postId);
-}
+    const posts = await sequelize.query(`
+        SELECT
+            p.post_id AS postId,
+            p.user_id AS userId,
+            p.stuff_id AS stuffId,
+            p.content AS content,
+            p.image_url AS imageUrl,
+            p.recommended_stuff_id AS recommendedStuffId,
+            p.recommended_image_url AS recommendedImageUrl,
+            p.price AS price,
+            p.created_at AS createdAt,
+            p.updated_at AS updatedAt,
+
+            u.nickname AS nickname,
+            u.profile_image_url AS profileImageUrl,
+
+            st.stuff_name AS stuffName,
+            b.brand_id AS brandId,
+            b.brand_name AS brandName,
+
+            rst.stuff_name AS recommendedStuffName,
+            rb.brand_id AS recommendedBrandId,
+            rb.brand_name AS recommendedBrandName
+
+        FROM posts p
+        LEFT JOIN users u ON p.user_id = u.user_id
+        LEFT JOIN stuffs st ON p.stuff_id = st.stuff_id
+        LEFT JOIN brands b ON st.brand_id = b.brand_id
+
+        -- 추천 조합 상품 정보
+        LEFT JOIN stuffs rst ON p.recommended_stuff_id = rst.stuff_id
+        LEFT JOIN brands rb ON rst.brand_id = rb.brand_id
+
+        WHERE p.post_id = :postId
+          AND p.deleted_at IS NULL
+
+        LIMIT 1
+    `, {
+        replacements: { postId },
+        type: QueryTypes.SELECT
+    });
+
+    return posts[0] || null;
+};
 
 // 게시글 수정
 const updatePost = async (post, updateData) => {

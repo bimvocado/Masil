@@ -4,33 +4,86 @@ const sequelize = require('../config/db');
 const Stuff = require('../models/stuff.model');
 const Brand = require('../models/brand.model');
 
-// 검색창 - 상품으로 검색
+// // 검색창 - 상품으로 검색
+// const searchStuffs = async ({ keyword, category }) => {
+//   const where = {};
+//   const brandWhere = {};
+
+//   if (keyword) {
+//     where.stuffName = {
+//       [Op.like]: `%${keyword}%`,
+//     };
+//   }
+
+//   if (category) {
+//     brandWhere.category = category;
+//   }
+
+//   return await Stuff.findAll({
+//     where,
+//     include: [
+//       {
+//         model: Brand,
+//         where: brandWhere,
+//         required: true,
+//       },
+//     ],
+//     order: [['stuffName', 'ASC']],
+//   });
+// };
+
 // 검색창 - 상품으로 검색
 const searchStuffs = async ({ keyword, category }) => {
-  const where = {};
-  const brandWhere = {};
+  const rows = await sequelize.query(
+    `
+    SELECT
+      s.stuff_id AS stuffId,
+      s.stuff_name AS stuffName,
+      s.price AS price,
+      s.is_discontinued AS isDiscontinued,
 
-  if (keyword) {
-    where.stuffName = {
-      [Op.like]: `%${keyword}%`,
-    };
-  }
+      b.brand_id AS brandId,
+      b.brand_name AS brandName,
+      b.logo_url AS logoUrl,
+      b.category AS category,
 
-  if (category) {
-    brandWhere.category = category;
-  }
+      (
+        SELECT p.image_url
+        FROM posts p
+        LEFT JOIN post_scraps sc
+          ON p.post_id = sc.post_id
+          AND sc.deleted_at IS NULL
+        WHERE p.stuff_id = s.stuff_id
+          AND p.image_url IS NOT NULL
+          AND p.image_url != ''
+          AND p.deleted_at IS NULL
+        GROUP BY p.post_id
+        ORDER BY COUNT(sc.scrap_id) DESC, p.created_at DESC
+        LIMIT 1
+      ) AS imageUrl
 
-  return await Stuff.findAll({
-    where,
-    include: [
-      {
-        model: Brand,
-        where: brandWhere,
-        required: true,
+    FROM stuffs s
+
+    INNER JOIN brands b
+      ON s.brand_id = b.brand_id
+      AND b.deleted_at IS NULL
+
+    WHERE s.deleted_at IS NULL
+      AND (:keyword IS NULL OR s.stuff_name LIKE CONCAT('%', :keyword, '%'))
+      AND (:category IS NULL OR b.category = :category)
+
+    ORDER BY s.stuff_name ASC
+    `,
+    {
+      replacements: {
+        keyword: keyword || null,
+        category: category || null,
       },
-    ],
-    order: [['stuffName', 'ASC']],
-  });
+      type: QueryTypes.SELECT,
+    }
+  );
+
+  return rows;
 };
 
 // 상품창 - 상세 페이지 전체
@@ -158,6 +211,13 @@ const findTopPostByStuff = async (stuffId) => {
       u.nickname AS nickname,
       p.created_at AS createdAt,
 
+      -- 추천 조합
+      p.recommended_stuff_id AS recommendedStuffId,
+      p.recommended_image_url AS recommendedImageUrl,
+      rst.stuff_name AS recommendedStuffName,
+      rb.brand_id AS recommendedBrandId,
+      rb.brand_name AS recommendedBrandName,
+
       COUNT(sc.scrap_id) AS scrapCount
 
     FROM posts p
@@ -169,16 +229,28 @@ const findTopPostByStuff = async (stuffId) => {
     LEFT JOIN users u
       ON p.user_id = u.user_id
 
+    LEFT JOIN stuffs rst 
+      ON p.recommended_stuff_id = rst.stuff_id
+    
+    LEFT JOIN brands rb 
+      ON rst.brand_id = rb.brand_id
+
     WHERE p.stuff_id = :stuffId
       AND p.deleted_at IS NULL
 
-    GROUP BY 
-      p.post_id, 
-      p.content, 
-      p.image_url, 
-      p.user_id, 
-      u.nickname, 
-      p.created_at
+  GROUP BY 
+    p.post_id, 
+    p.content, 
+    p.image_url, 
+    p.user_id, 
+    u.nickname, 
+    p.created_at,
+    p.recommended_stuff_id,
+    p.recommended_image_url,
+    rst.stuff_id,
+    rst.stuff_name,
+    rb.brand_id,
+    rb.brand_name
 
     ORDER BY scrapCount DESC, p.created_at DESC
 

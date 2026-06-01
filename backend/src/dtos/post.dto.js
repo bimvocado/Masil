@@ -27,6 +27,10 @@ class PostResDTO {
         this.stuffId = post.stuffId;
         this.price = post.price;
         this.recommendedStuffId = post.recommendedStuffId;
+        this.recommendedStuffName = post.recommendedStuffName;
+        this.recommendedBrandId = post.recommendedBrandId;
+        this.recommendedBrandName = post.recommendedBrandName;
+        this.recommendedImageUrl = post.recommendedImageUrl;
         this.createdAt = post.createdAt;
         this.updatedAt = post.updatedAt;
         this.nickname = post.nickname;
