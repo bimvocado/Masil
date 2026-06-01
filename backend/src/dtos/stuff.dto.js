@@ -34,6 +34,12 @@ const toTopPostDTO = (post) => {
 
     scrapCount: Number(post.scrapCount || 0),
 
+    recommendedStuffId: post.recommendedStuffId,
+    recommendedImageUrl: post.recommendedImageUrl,
+    recommendedStuffName: post.recommendedStuffName,
+    recommendedBrandId: post.recommendedBrandId,
+    recommendedBrandName: post.recommendedBrandName,
+
     createdAt: post.createdAt,
   };
 };
@@ -69,25 +75,7 @@ const toStuffDetailDTO = ({
 
     // 하단 인기 게시글
     // 전체 게시글 중 스크랩이 가장 많은 글
-    // topPost: topPost ? toTopPostDTO(topPost) : null,
-
-    topPost: topPost
-      ? {
-          postId: topPost.postId,
-          content: topPost.content,
-          imageUrl: topPost.imageUrl,
-          userId: topPost.userId,
-          nickname: topPost.nickname,
-          createdAt: topPost.createdAt,
-          scrapCount: Number(topPost.scrapCount),
-
-          recommendedStuffId: topPost.recommendedStuffId,
-          recommendedImageUrl: topPost.recommendedImageUrl,
-          recommendedStuffName: topPost.recommendedStuffName,
-          recommendedBrandId: topPost.recommendedBrandId,
-          recommendedBrandName: topPost.recommendedBrandName,
-        }
-      : null,
+    topPost: topPost ? toTopPostDTO(topPost) : null,
   };
 };
 

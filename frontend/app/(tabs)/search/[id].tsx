@@ -72,24 +72,29 @@ export default function BrandDetailScreen() {
         </Text>
         
         {stuffs.map((item: any, index: number) => (
-          <ProductCard 
-            key={item.stuffId}
-            rank={index + 1}
-            name={item.stuffName}
-            price={Number(item.price || 0).toLocaleString()}
-            likes={String(item.likeCount || 0)}
-            comments={String(item.postCount || 0)}
-            onPress={() =>
-              router.push({
-                pathname: "/search/product/[id]",
-                params: {
-                  id: String(item.stuffId),
-                  stuffName: item.stuffName,
-                  brandName: name as string,
-                }
-              } as any)
-            }
-          />
+        <ProductCard 
+          key={item.stuffId}
+          rank={index + 1}
+          name={item.stuffName}
+          price={Number(item.price || 0).toLocaleString()}
+          likes={String(item.likeCount || 0)}
+          comments={String(item.postCount || 0)}
+          imageUrl={
+            item.imageUrl?.startsWith('http')
+              ? item.imageUrl
+              : `http://8.230.21.76:3000${item.imageUrl}`
+          }
+          onPress={() =>
+            router.push({
+              pathname: "/search/product/[id]",
+              params: {
+                id: String(item.stuffId),
+                stuffName: item.stuffName,
+                brandName: name as string,
+              }
+            } as any)
+          }
+        />
         ))}
       </ScrollView>
     </View>

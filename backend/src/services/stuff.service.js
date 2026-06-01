@@ -62,6 +62,8 @@ const getStuffDetail = async (stuffId) => {
 
   const topPost = await stuffRepository.findTopPostByStuff(stuffId);
 
+  console.log('topPost 확인:', topPost);
+
   return toStuffDetailDTO({
     stuff,
     topPost,
