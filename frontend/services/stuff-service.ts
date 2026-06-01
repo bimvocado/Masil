@@ -6,6 +6,8 @@ export interface StuffSuggestion {
   stuffId: number;
   stuffName: string;
   brandId: number;
+  brandName: string;
+  logoUrl?: string;
   price?: number;
   averagePrice?: number;
 }
@@ -19,7 +21,7 @@ export const stuffService = {
     return response.data.result?.stuffs ?? [];
   },
 
-  createStuff: async (data: { brandId: number; stuffName: string; price?: number }) => {
+  createStuff: async (data: { brandId: number; stuffName: string; price?: number, imageUrl?: string; }) => {
     const response = await axios.post(`${BASE_URL}/api/stuffs`, data);
     return response.data.result;
   },

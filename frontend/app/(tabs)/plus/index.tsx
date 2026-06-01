@@ -40,6 +40,8 @@ export default function PlusScreen() {
   const [selectedBrandLogoUrl, setSelectedBrandLogoUrl] = useState('');
   
   const [isBrandModalVisible, setIsBrandModalVisible] = useState(false);
+  const [brandSelectTarget, setBrandSelectTarget] = useState<'main' | 'recommended'>('main');
+
   const [brandQuery, setBrandQuery] = useState('');
   const [brandResults, setBrandResults] = useState<any[]>([]);
   const [content, setContent] = useState('');
@@ -49,6 +51,18 @@ export default function PlusScreen() {
 
   const [stuffId, setStuffId] = useState<number | null>(null);
   const [suggestions, setSuggestions] = useState<StuffSuggestion[]>([]);
+
+  // 추천 조합
+  const [recommendedStuffName, setRecommendedStuffName] = useState('');
+  const [recommendedStuffId, setRecommendedStuffId] = useState<number | null>(null);
+  const [recommendedSuggestions, setRecommendedSuggestions] = useState<StuffSuggestion[]>([]);
+  const [recommendedPrice, setRecommendedPrice] = useState<string>('');
+  const [recommendedImageUri, setRecommendedImageUri] = useState<string | null>(null);
+
+  // 추천 조합 브랜드
+  const [recommendedBrandId, setRecommendedBrandId] = useState<number | null>(null);
+  const [recommendedBrandName, setRecommendedBrandName] = useState('');
+  const [recommendedBrandLogoUrl, setRecommendedBrandLogoUrl] = useState('');
 
   const handleBackPress = () => {
     if (step === 2) {
@@ -73,6 +87,24 @@ export default function PlusScreen() {
 
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
+    }
+  };
+
+  const handlePickRecommendedImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert('알림', '이미지 접근 권한이 필요합니다.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setRecommendedImageUri(result.assets[0].uri);
     }
   };
 
@@ -134,13 +166,53 @@ export default function PlusScreen() {
 
     setPrice(
       item.averagePrice !== undefined && item.averagePrice !== null
-      ? String(Math.round(item.averagePrice))
-      : item.price !== undefined && item.price !== null
-        ? String(item.price)
-        : ''
-  );
+        ? String(Math.round(item.averagePrice))
+        : item.price !== undefined && item.price !== null
+          ? String(item.price)
+          : ''
+    );
   
     setSuggestions([]);
+  };
+
+  // 추천 조합 자동완성
+  const handleRecommendedStuffChange = async (value: string) => {
+    setRecommendedStuffName(value);
+    setRecommendedStuffId(null);
+    setRecommendedPrice('');
+
+    const keyword = value.replace('@', '').trim();
+
+    if (!keyword) {
+      setRecommendedSuggestions([]);
+      return;
+    }
+
+    try {
+      const result = await stuffService.searchStuffs(keyword);
+      setRecommendedSuggestions(result ?? []);
+    } catch (error) {
+      console.error('추천 조합 자동완성 검색 실패:', error);
+      setRecommendedSuggestions([]);
+    }
+  };
+
+  const handleSelectRecommendedSuggestion = (item: StuffSuggestion) => {
+    setRecommendedStuffName(`@${item.stuffName}`);
+    setRecommendedStuffId(item.stuffId);
+    setRecommendedBrandId(item.brandId ?? null);
+    setRecommendedBrandName((item as any).brandName ?? '');
+    setRecommendedBrandLogoUrl((item as any).logoUrl ?? (item as any).brandLogoUrl ?? '');
+
+    setRecommendedPrice(
+      item.averagePrice !== undefined && item.averagePrice !== null
+        ? String(Math.round(item.averagePrice))
+        : item.price !== undefined && item.price !== null
+          ? String(item.price)
+          : ''
+    );
+
+    setRecommendedSuggestions([]);
   };
 
   const handleNext = async () => {
@@ -157,31 +229,71 @@ export default function PlusScreen() {
         return;
       }
 
+      let finalStuffId = stuffId;
+      let finalRecommendedStuffId = recommendedStuffId;
+
       // 먼저 같은 이름의 상품이 있는지 조회
       const searchResult = await stuffService.searchStuffs(cleanName);
       const existing = searchResult.find((s: any) => s.stuffName === cleanName && s.brandId === selectedBrandId);
 
       if (existing) {
+        finalStuffId = existing.stuffId;
         setStuffId(existing.stuffId);
         setBrandName(`@${existing.stuffName}`);
         setSelectedBrandName(selectedBrandName || '');
         setSuggestions([]);
-        setStep(2);
-        return;
+      } else {
+        // 없으면 새로 생성 (가격 포함)
+        const priceValue = Number(price) || 0;
+        const created = await stuffService.createStuff({
+          brandId: selectedBrandId,
+          stuffName: cleanName,
+          price: priceValue,
+        });
+
+        finalStuffId = created.stuffId;
+        setStuffId(created.stuffId);
+        setBrandName(`@${created.stuffName}`);
+        setSelectedBrandName(created.brandName || selectedBrandName || '');
+        setSuggestions([]);
       }
 
-      // 없으면 새로 생성 (가격 포함)
-      const priceValue = Number(price) || 0;
-      const created = await stuffService.createStuff({
-        brandId: selectedBrandId,
-        stuffName: cleanName,
-        price: priceValue,
-      });
+      // 추천 조합 상품 확인
+      const cleanRecommendedName = recommendedStuffName.replace('@', '').trim();
 
-      setStuffId(created.stuffId);
-      setBrandName(`@${created.stuffName}`);
-      setSelectedBrandName(created.brandName || selectedBrandName || '');
-      setSuggestions([]);
+      if (cleanRecommendedName) {
+        if (!recommendedBrandId) {
+          Alert.alert('알림', '추천 조합 브랜드를 먼저 선택해주세요. 추천 조합 좌측 원을 눌러 브랜드를 선택하세요.');
+          return;
+        }
+
+        const recommendedSearchResult = await stuffService.searchStuffs(cleanRecommendedName);
+
+        const recommendedExisting = recommendedSearchResult.find(
+          (s: any) => s.stuffName === cleanRecommendedName && s.brandId === recommendedBrandId
+        );
+
+        if (recommendedExisting) {
+          finalRecommendedStuffId = recommendedExisting.stuffId;
+          setRecommendedStuffId(recommendedExisting.stuffId);
+          setRecommendedStuffName(`@${recommendedExisting.stuffName}`);
+          setRecommendedSuggestions([]);
+        } else {
+          const recommendedPriceValue = Number(recommendedPrice) || 0;
+
+          const createdRecommended = await stuffService.createStuff({
+            brandId: recommendedBrandId,
+            stuffName: cleanRecommendedName,
+            price: recommendedPriceValue,
+          });
+
+          finalRecommendedStuffId = createdRecommended.stuffId;
+          setRecommendedStuffId(createdRecommended.stuffId);
+          setRecommendedStuffName(`@${createdRecommended.stuffName}`);
+          setRecommendedSuggestions([]);
+        }
+      }
+
       setStep(2);
     } catch (error: any) {
       console.error('상품 확인 실패:', error);
@@ -203,6 +315,17 @@ export default function PlusScreen() {
     setPrice('');
     setStuffId(null);
     setSuggestions([]);
+
+    // 추천 조합 초기화
+    setRecommendedStuffName('');
+    setRecommendedStuffId(null);
+    setRecommendedSuggestions([]);
+    setRecommendedPrice('');
+    setRecommendedImageUri(null);
+    setRecommendedBrandId(null);
+    setRecommendedBrandName('');
+    setRecommendedBrandLogoUrl('');
+    setBrandSelectTarget('main');
   };
 
   const handleUpload = async () => {
@@ -221,6 +344,10 @@ export default function PlusScreen() {
       formData.append('content', content);
       formData.append('stuffId', String(stuffId));
       formData.append('price', price);
+
+      if (recommendedStuffId) {
+        formData.append('recommendedStuffId', String(recommendedStuffId));
+      }
 
       if (imageUri) {
         if (Platform.OS === 'web') {
@@ -241,6 +368,31 @@ export default function PlusScreen() {
 
           formData.append('image', {
             uri: imageUri,
+            name: filename,
+            type,
+          } as any);
+        }
+      }
+
+      if (recommendedImageUri) {
+        if (Platform.OS === 'web') {
+          const response = await fetch(recommendedImageUri);
+          const blob = await response.blob();
+
+          const file = new File(
+            [blob],
+            'recommended-image.jpg',
+            { type: blob.type || 'image/jpeg' }
+          );
+
+          formData.append('recommendedImage', file);
+        } else {
+          const filename = recommendedImageUri.split('/').pop() || 'recommended-image.jpg';
+          const match = /\.(\w+)$/.exec(filename);
+          const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+          formData.append('recommendedImage', {
+            uri: recommendedImageUri,
             name: filename,
             type,
           } as any);
@@ -296,7 +448,12 @@ export default function PlusScreen() {
                 {/* <TouchableOpacity onPress={() => setIsBrandModalVisible(true)}>
                   <View style={styles.avatarPlaceholder} />
                 </TouchableOpacity> */}
-                <TouchableOpacity onPress={() => setIsBrandModalVisible(true)}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setBrandSelectTarget('main');
+                    setIsBrandModalVisible(true);
+                  }}
+                >
                   {selectedBrandLogoUrl ? (
                     <Image
                       source={{ uri: getImageUrl(selectedBrandLogoUrl) }}
@@ -399,9 +556,17 @@ export default function PlusScreen() {
                         key={b.brandId}
                         style={styles.modalBrandCard}
                         onPress={() => {
-                          setSelectedBrandId(b.brandId);
-                          setSelectedBrandName(b.brandName);
-                          setSelectedBrandLogoUrl(b.logoUrl || '');
+                          if (brandSelectTarget === 'main') {
+                            setSelectedBrandId(b.brandId);
+                            setSelectedBrandName(b.brandName);
+                            setSelectedBrandLogoUrl(b.logoUrl || '');
+                          } else {
+                            setRecommendedBrandId(b.brandId);
+                            setRecommendedBrandName(b.brandName);
+                            setRecommendedBrandLogoUrl(b.logoUrl || '');
+                          }
+
+                          setBrandQuery('');
                           setIsBrandModalVisible(false);
                         }}
                       >
@@ -432,21 +597,21 @@ export default function PlusScreen() {
                 </View>
               </Modal>
 
-                {Array.isArray(suggestions) && suggestions.length > 0 && (
-                  <View style={styles.suggestionBox}>
-                    {suggestions.map((item) => (
-                      <TouchableOpacity
-                        key={item.stuffId}
-                        onPress={() => handleSelectSuggestion(item)}
-                        style={styles.suggestionItem}
-                      >
-                        <Text style={styles.suggestionText}>
-                          @{item.stuffName}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
+              {Array.isArray(suggestions) && suggestions.length > 0 && (
+                <View style={styles.suggestionBox}>
+                  {suggestions.map((item) => (
+                    <TouchableOpacity
+                      key={item.stuffId}
+                      onPress={() => handleSelectSuggestion(item)}
+                      style={styles.suggestionItem}
+                    >
+                      <Text style={styles.suggestionText}>
+                        @{item.stuffName}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
 
               <View style={{ marginBottom: 12 }}>
                 <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>가격 (선택, 신규 생성 시 사용)</Text>
@@ -455,6 +620,87 @@ export default function PlusScreen() {
                   keyboardType="numeric"
                   value={price}
                   onChangeText={setPrice}
+                  style={{ borderWidth: 1, borderColor: '#eee', padding: 8, borderRadius: 8 }}
+                />
+              </View>
+
+              <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>
+                추천 조합 이미지
+              </Text>
+
+              <TouchableOpacity style={styles.imageUploadCard} onPress={handlePickRecommendedImage}>
+                {recommendedImageUri ? (
+                  <Image
+                    source={{ uri: recommendedImageUri }}
+                    style={styles.previewImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Image
+                    source={require('@/assets/icons/search.png')}
+                    style={styles.imageIconPlaceHolder}
+                    resizeMode="contain"
+                  />
+                )}
+              </TouchableOpacity>
+
+              <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>
+                추천 조합
+              </Text>
+
+              <View style={styles.userInfoCard}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setBrandSelectTarget('recommended');
+                    setIsBrandModalVisible(true);
+                  }}
+                >
+                  {recommendedBrandLogoUrl ? (
+                    <Image
+                      source={{ uri: getImageUrl(recommendedBrandLogoUrl) }}
+                      style={styles.avatarPlaceholder}
+                    />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Text style={styles.questionMark}>?</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
+                <View style={styles.nameInputWrapper}>
+                  <TextInput
+                    placeholder="@추천 조합 작성"
+                    placeholderTextColor={Colors.gray.light}
+                    style={styles.nameInput}
+                    value={recommendedStuffName}
+                    onChangeText={handleRecommendedStuffChange}
+                  />
+                </View>
+              </View>
+
+              {Array.isArray(recommendedSuggestions) && recommendedSuggestions.length > 0 && (
+                <View style={styles.suggestionBox}>
+                  {recommendedSuggestions.map((item) => (
+                    <TouchableOpacity
+                      key={item.stuffId}
+                      onPress={() => handleSelectRecommendedSuggestion(item)}
+                      style={styles.suggestionItem}
+                    >
+                      <Text style={styles.suggestionText}>
+                        @{item.stuffName}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>추천 조합 가격 (선택, 신규 생성 시 사용)</Text>
+                <TextInput
+                  placeholder="예: 1500"
+                  keyboardType="numeric"
+                  value={recommendedPrice}
+                  onChangeText={setRecommendedPrice}
                   style={{ borderWidth: 1, borderColor: '#eee', padding: 8, borderRadius: 8 }}
                 />
               </View>
@@ -486,6 +732,31 @@ export default function PlusScreen() {
                   />
                 </View>
               </View>
+
+              {recommendedStuffName ? (
+                <View style={styles.userInfoCard}>
+                  {recommendedBrandLogoUrl ? (
+                    <Image
+                      source={{ uri: getImageUrl(recommendedBrandLogoUrl) }}
+                      style={styles.avatarPlaceholder}
+                    />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Text style={styles.questionMark}>?</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.nameInputWrapper}>
+                    <TextInput
+                      placeholder="@추천 조합"
+                      placeholderTextColor={Colors.gray.light}
+                      style={styles.nameInput}
+                      value={recommendedStuffName}
+                      editable={false}
+                    />
+                  </View>
+                </View>
+              ) : null}
 
               <View style={styles.contentUploadCard}>
                 <View style={styles.contentInputBox}>
