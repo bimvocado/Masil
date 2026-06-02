@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/use-auth-store';
 import { useRouter } from 'expo-router';
 import { authService } from '@/api/auth-service';
 import { saveToken } from '@/utils/storage';
+import { makeRedirectUri } from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -16,13 +17,15 @@ export function GoogleLoginButton() {
   const setUser = useAuthStore((state) => state.setUser);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    responseType: 'code',
-    shouldAutoExchangeCode: false,
-    redirectUri: AuthSession.makeRedirectUri(),
-  });
+  redirectUri: makeRedirectUri({
+    scheme: 'frontend',
+    preferLocalhost: true
+  }),
+
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+});
 
   React.useEffect(() => {
     if (response?.type === 'success' && response.params.code) {
