@@ -41,11 +41,23 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.837732936258-2fggnlj3gb3p36qmskfkpq5ilifteobc"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e93c8380-21e6-4050-8834-52a0edad2e0d"
+      }
     }
   }
 }
