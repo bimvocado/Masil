@@ -125,11 +125,10 @@ const updateProfile = async (req, res, next) => {
 
     const updatedUser = await userService.updateUserProfile(userId, updateData);
 
-    if (updatedUser.profileImageUrl?.startsWith('/uploads')) {
-        const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
-        updatedUser.profileImageUrl = `${SERVER_URL}${updatedUser.profileImageUrl}`;
-    }
-
+   if (updatedUser.profileImageUrl?.startsWith('/uploads')) {
+    const SERVER_URL = process.env.SERVER_URL || 'https://supermasil.duckdns.org';
+    updatedUser.profileImageUrl = `${SERVER_URL}${updatedUser.profileImageUrl}`;
+}
     return ApiResponse.send(res, updatedUser, '프로필이 수정되었습니다.');
   } catch (error) {
     next(error);

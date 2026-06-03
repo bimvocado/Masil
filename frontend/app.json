@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "masil",
+    "slug": "masil",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "com.team.masil",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -56,8 +56,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "e93c8380-21e6-4050-8834-52a0edad2e0d"
+        "projectId": "ddee9cd3-1db6-42b8-bc23-1ff898297b01"
       }
-    }
+    },
+    "owner": "aerinee"
   }
 }

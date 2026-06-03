@@ -11,7 +11,7 @@ import { InteractionStatsBar } from '@/components/ui/interaction-stats-bar';
 
 import { useStuffDetail } from '@/hooks/useStuffDetail';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://8.230.21.76:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 
 const getImageUrl = (url?: string | null) => {
   if (!url) return undefined;

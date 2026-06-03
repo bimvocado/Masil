@@ -1,8 +1,7 @@
 import { getToken } from '@/utils/storage';
 import axios from 'axios'; 
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
-
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 const apiClient = axios.create({
   baseURL: BASE_URL, 
   timeout: 5000,

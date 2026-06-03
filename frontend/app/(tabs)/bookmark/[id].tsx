@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, ActivityIndicator, TouchableOpacity, ImageBackground } from 'react-native';
+import { Platform ,View, Text, FlatList,  ActivityIndicator, TouchableOpacity, ImageBackground } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles } from '@/components/styles/bookmark-detail';
 import { formatDate } from '@/utils/date';
-import { Platform } from 'react-native';
 import { InteractionButton } from '@/constants/interaction-button';
 import { Post } from '@/types/post';
 import { TopBar } from '@/components/layout/top-bar';
@@ -12,7 +11,7 @@ import { scrapService } from '@/api/scrap-service';
 import { useAuthStore } from '@/store/use-auth-store';
 import { CommonModal } from '@/components/ui/common-modal';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 
 const getImageUrl = (url?: string) => {
   if (!url) return undefined;
@@ -42,8 +41,7 @@ export default function BookmarkDetailScreen() {
       const loaded = res.data ?? [];
       setPosts(loaded);
 
-      // 웹에서만 이미지 밝기 체크하여 텍스트 컬러 테마 결정
-      if (Platform.OS === 'web') {
+        if (Platform.OS === 'web' && loaded.length < 20) {
         const themes: Record<number, 'dark'|'light'> = {};
         await Promise.all(
           loaded.map(async (p: any) => {
@@ -62,7 +60,7 @@ export default function BookmarkDetailScreen() {
   };
 
   const estimateImageIsLight = (uri?: string | null) => {
-    if (Platform.OS !== 'web') return Promise.resolve(false);
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return Promise.resolve(false);
     return new Promise<boolean>((resolve) => {
       if (!uri) return resolve(false);
       try {
@@ -102,18 +100,18 @@ export default function BookmarkDetailScreen() {
   };
 
   const renderPostInfo = (item: any, customStyle: any, shadowStyle: any) => (
-  <>
-    <Text style={[styles.postTitle, customStyle, shadowStyle]} numberOfLines={2}>
-      {item.content}
-    </Text>
-    <Text style={[styles.postDate, customStyle, shadowStyle]} numberOfLines={1}>
-      {item.brandName || '-'} • {item.stuffName || '-'}
-    </Text>
-    <Text style={[styles.postDate, customStyle, shadowStyle]}>
-      {formatDate(item.createdAt)}
-    </Text>
-  </>
-);
+    <>
+      <Text style={[styles.postTitle, customStyle, shadowStyle]} numberOfLines={2}>
+        {item.content}
+      </Text>
+      <Text style={[styles.postDate, customStyle, shadowStyle]} numberOfLines={1}>
+        {item.brandName || '-'} • {item.stuffName || '-'}
+      </Text>
+      <Text style={[styles.postDate, customStyle, shadowStyle]}>
+        {formatDate(item.createdAt)}
+      </Text>
+    </>
+  );
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -127,71 +125,71 @@ export default function BookmarkDetailScreen() {
           keyExtractor={(item) => item.postId.toString()}
           contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => {
-  const theme = imageThemes[item.postId] ?? 'dark';
-  
-  // 💡 이미지가 있을 때 쓸 스타일 (라이트/다크 테마 대응)
-  const imgTextColor = theme === 'light' ? { color: '#000' } : { color: '#fff' };
-  const imgTextShadow = theme === 'light'
-    ? { textShadowColor: 'rgba(255,255,255,0.85)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }
-    : { textShadowColor: 'rgba(0,0,0,0.85)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 };
+            const theme = imageThemes[item.postId] ?? 'dark';
+            
+            const imgTextColor = theme === 'light' ? { color: '#000' } : { color: '#fff' };
+            const imgTextShadow = theme === 'light'
+              ? { textShadowColor: 'rgba(255,255,255,0.85)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }
+              : { textShadowColor: 'rgba(0,0,0,0.85)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 };
 
-  // 💡 이미지가 없을 때 쓸 기본 스타일
-  const defaultShadow = { textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 };
+            const defaultShadow = { textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 };
 
-  return (
-    <TouchableOpacity
-      style={[styles.postCard, { padding: 0 }]}
-      onPress={() => router.push({ pathname: `/user/post-feed/${item.postId}` } as any)}
-      activeOpacity={0.8}
-    >
-      {item.imageUrl ? (
-        /* --- 1. 이미지 배경 케이스 --- */
-        <ImageBackground
-          source={{ uri: getImageUrl(item.imageUrl) }}
-          style={styles.imageBackground}
-          imageStyle={{ borderRadius: 24 }}
-          resizeMode="cover"
-        >
-          <View style={styles.imageOverlay}>
-            {renderPostInfo(item, imgTextColor, imgTextShadow)}
-            <View style={[styles.interactionRow, { marginTop: 8 }]}> 
-              <InteractionButton
-                type="bookmark"
-                isActive={true}
-                tintColor={imgTextColor.color}
-                withShadow
-                onPress={() => setConfirmDeleteId(item.postId)}
-              />
-            </View>
-          </View>
-        </ImageBackground>
-      ) : (
-        /* --- 2. 텍스트 위주 케이스 --- */
-        <View style={{ flexDirection: 'row' }}>
-          <View style={styles.cardLeft}>
-            {renderPostInfo(item, {}, defaultShadow)}
-            <View style={styles.interactionRow}>
-              <InteractionButton
-                type="bookmark"
-                count={item.scrapCount || 0}
-                isActive={true}
-                onPress={() => setConfirmDeleteId(item.postId)}
-              />
-              <InteractionButton
-                type="comment"
-                count={item.commentCount || 0}
-                textPosition="right"
-              />
-            </View>
-          </View>
-          <View style={styles.cardRight}>
-            <View style={styles.thumbnailPlaceholder} />
-          </View>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-}}
+            return (
+              <TouchableOpacity
+                style={[styles.postCard, { padding: 0 }]}
+                onPress={() => router.push({ pathname: `/user/post-feed/${item.postId}` } as any)}
+                activeOpacity={0.8}
+              >
+                {item.imageUrl ? (
+                  /* --- 1. 이미지 배경 케이스 --- */
+                  <ImageBackground
+                    source={{ uri: getImageUrl(item.imageUrl) }}
+                    style={styles.imageBackground}
+                    imageStyle={{ borderRadius: 24 }}
+                    resizeMode="cover"
+                  >
+                    {/* 💡 팁: 디자인이 깨지거나 글씨가 안 보일 땐 style.imageOverlay에 
+                        backgroundColor: 'rgba(0,0,0,0.25)' 같은 어두운 필터를 아주 살짝 입혀주면 가독성이 극대화됩니다. */}
+                    <View style={styles.imageOverlay}>
+                      {renderPostInfo(item, imgTextColor, imgTextShadow)}
+                      <View style={[styles.interactionRow, { marginTop: 8 }]}> 
+                        <InteractionButton
+                          type="bookmark"
+                          isActive={true}
+                          tintColor={imgTextColor.color}
+                          withShadow
+                          onPress={() => setConfirmDeleteId(item.postId)}
+                        />
+                      </View>
+                    </View>
+                  </ImageBackground>
+                ) : (
+                  /* --- 2. 텍스트 위주 케이스 --- */
+                  <View style={{ flexDirection: 'row' }}>
+                    <View style={styles.cardLeft}>
+                      {renderPostInfo(item, {}, defaultShadow)}
+                      <View style={styles.interactionRow}>
+                        <InteractionButton
+                          type="bookmark"
+                          count={item.scrapCount || 0}
+                          isActive={true}
+                          onPress={() => setConfirmDeleteId(item.postId)}
+                        />
+                        <InteractionButton
+                          type="comment"
+                          count={item.commentCount || 0}
+                          textPosition="right"
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.cardRight}>
+                      <View style={styles.thumbnailPlaceholder} />
+                    </View>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          }}
           ListEmptyComponent={
             <Text style={{ textAlign: 'center', marginTop: 40, color: '#999' }}>
               스크랩된 게시물이 없어요.
@@ -217,4 +215,3 @@ export default function BookmarkDetailScreen() {
     </View>
   );
 }
-

@@ -7,7 +7,6 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useEffect, useState } from 'react';
 
-
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { initialize } = useAuthStore();
@@ -29,6 +28,9 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        
+
+        <Stack.Screen name="oauthredirect" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

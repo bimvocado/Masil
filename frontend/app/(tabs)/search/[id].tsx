@@ -80,10 +80,10 @@ export default function BrandDetailScreen() {
           likes={String(item.likeCount || 0)}
           comments={String(item.postCount || 0)}
           imageUrl={
-            item.imageUrl?.startsWith('http')
-              ? item.imageUrl
-              : `http://8.230.21.76:3000${item.imageUrl}`
-          }
+    item.imageUrl?.startsWith('http')
+      ? item.imageUrl
+      : `${process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org'}${item.imageUrl?.startsWith('/') ? '' : '/'}${item.imageUrl}`
+  }
           onPress={() =>
             router.push({
               pathname: "/search/product/[id]",
