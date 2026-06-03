@@ -109,13 +109,10 @@ export const authService = {
   /**
    * 구글 로그인
    */
-  loginWithGoogle: async (idToken: string) => { // 👈 매개변수 이름을 idToken으로 변경
+loginWithGoogle: async (idToken: string) => {
     try {
-      // 🚨 [핵심] 백엔드가req.body에서 { idToken }을 찾으므로 키값을 똑같이 맞춰줍니다!
+      // 🚨 백엔드가 req.body에서 { idToken } 을 꺼내서 verifyIdToken을 하므로 키값을 똑같이 맞춰줍니다!
       const response = await apiClient.post('/api/auth/google', { idToken }); 
-      
-      const token = response.data.data?.token || response.data.token;
-      if (token) await saveToken(token);
       return response.data;
     } catch (error) {
       console.error('구글 로그인 에러:', error);

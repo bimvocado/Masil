@@ -14,37 +14,49 @@ export function GoogleLoginButton() {
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
 
-  // 🟢 구글 안드로이드 네이티브 규격과 100% 일치하도록 정렬한 유일한 정답 옵션
+  // Expo/Android에서 Google ID token을 정상적으로 받아오려면
+  // web client id를 expoClientId로, native client id는 별도로 넣어야 합니다.
   const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID, 
-    clientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID, // 👈 빌드본이므로 안드 ID를 기준점으로 잡습니다.
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-  });
+  androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID, // 🟢 기존 안드 ID 하나만 쓰는 것 200% 정답!
+  clientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+});
 
-  const handleGoogleLogin = React.useCallback(async (idToken: string) => {
-    try {
-      const result = await authService.loginWithGoogle(idToken); 
-      if (result.success) {
-        if (result.data.user) {
-          setUser(result.data.user);
-          await saveToken(result.data.token);
-        }
-        router.replace('/(tabs)/home');
-      }
-    } catch (error) {
-      console.error("백엔드 로그인 실패:", error);
-      Alert.alert('오류', '구글 로그인 중 에러가 발생했습니다.');
-    }
-  }, [setUser, router]);
+  // GoogleLoginButton.tsx
 
-  // 🟢 구글이 앱을 깨우면서 던져준 idToken을 안전하게 수신하는 정석 리스너
-  React.useEffect(() => {
-    if (response?.type === 'success' && response.authentication?.idToken) {
-      const idToken = response.authentication.idToken; 
-      console.log("🔥 네이티브 앱 복귀 성공! 구글 토큰 확보:", idToken);
-      handleGoogleLogin(idToken); 
+// 🟢 [수정 1] 함수가 idToken 문자열을 받도록 명확하게 선언
+const handleGoogleLogin = React.useCallback(async (idToken: string) => {
+  try {
+    const result = await authService.loginWithGoogle(idToken); 
+    
+    // 🟢 [수정 2] 아까 찾은 파싱 에러 방지용 리턴 규격 맞춤 (result.success 제거)
+    const token = result?.token || result?.data?.token || result?.accessToken;
+    const user = result?.user || result?.data?.user;
+
+    if (token) {
+      if (user) setUser(user);
+      await saveToken(token);
+      console.log("🎉 [대성공] 구글 로그인 완료!");
+      router.replace('/(tabs)/home');
+    } else {
+      Alert.alert('오류', '토큰 발급에 실패했습니다.');
     }
-  }, [response, handleGoogleLogin]);
+  } catch (error) {
+    console.error("백엔드 로그인 실패:", error);
+    Alert.alert('오류', '구글 로그인 중 에러가 발생했습니다.');
+  }
+}, [setUser, router]);
+
+// 🟢 [수정 3] useEffect에서 진짜 'idToken'을 꺼내서 전달!
+React.useEffect(() => {
+  // responseType 지정을 안 해도 안드 네이티브는 success 시 authentication 안에 idToken을 줍니다!
+  if (response?.type === 'success' && response.authentication?.idToken) {
+    const idToken = response.authentication.idToken; 
+    console.log("🔥 드디어 잡았다 진짜 idToken! 백엔드로 슛:", idToken);
+    
+    handleGoogleLogin(idToken); 
+  }
+}, [response, handleGoogleLogin]);
 
   return (
     <TouchableOpacity
