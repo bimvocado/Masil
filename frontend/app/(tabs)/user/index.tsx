@@ -15,9 +15,7 @@ import { formatDate } from '@/utils/date';
 
 import React, { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
-
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 export default function UserScreen() {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');

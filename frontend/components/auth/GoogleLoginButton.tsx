@@ -1,14 +1,12 @@
 import React from 'react';
 import { TouchableOpacity, Text, Alert, View, StyleSheet } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
+import * as Google from 'expo-auth-session/providers/google'; // 🟢 다시 정석 구글 프로바이더로 복구!
 import Svg, { Path } from 'react-native-svg'; 
 import { useAuthStore } from '@/store/use-auth-store';
 import { useRouter } from 'expo-router';
 import { authService } from '@/api/auth-service';
 import { saveToken } from '@/utils/storage';
-import { makeRedirectUri } from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -16,28 +14,16 @@ export function GoogleLoginButton() {
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
 
+  // 🟢 구글 안드로이드 네이티브 규격과 100% 일치하도록 정렬한 유일한 정답 옵션
   const [request, response, promptAsync] = Google.useAuthRequest({
-  redirectUri: makeRedirectUri({
-    scheme: 'frontend',
-    preferLocalhost: true
-  }),
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID, 
+    clientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID, // 👈 빌드본이므로 안드 ID를 기준점으로 잡습니다.
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  });
 
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-  androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-});
-
-  React.useEffect(() => {
-    if (response?.type === 'success' && response.params.code) {
-      const { code } = response.params;
-      const verifier = request?.codeVerifier;
-      handleGoogleLogin(code, verifier);
-    }
-  }, [response]);
-
-  const handleGoogleLogin = async (code: string, codeVerifier?: string) => {
+  const handleGoogleLogin = React.useCallback(async (idToken: string) => {
     try {
-      const result = await authService.loginWithGoogle(code, codeVerifier);
+      const result = await authService.loginWithGoogle(idToken); 
       if (result.success) {
         if (result.data.user) {
           setUser(result.data.user);
@@ -49,18 +35,27 @@ export function GoogleLoginButton() {
       console.error("백엔드 로그인 실패:", error);
       Alert.alert('오류', '구글 로그인 중 에러가 발생했습니다.');
     }
-  };
+  }, [setUser, router]);
+
+  // 🟢 구글이 앱을 깨우면서 던져준 idToken을 안전하게 수신하는 정석 리스너
+  React.useEffect(() => {
+    if (response?.type === 'success' && response.authentication?.idToken) {
+      const idToken = response.authentication.idToken; 
+      console.log("🔥 네이티브 앱 복귀 성공! 구글 토큰 확보:", idToken);
+      handleGoogleLogin(idToken); 
+    }
+  }, [response, handleGoogleLogin]);
 
   return (
     <TouchableOpacity
       style={styles.gsiMaterialButton}
-      onPress={() => promptAsync()}
+      // 🚨 [핵심] 팝업 내부에서 처리를 완료하도록 만들어 브라우저 강제 이탈을 차단합니다.
+      onPress={() => promptAsync({  })}
       disabled={!request}
       activeOpacity={0.7}
     >
       <View style={styles.gsiMaterialButtonContentWrapper}>
-        {/* 구글 G 로고 SVG */}
-        <View style={[styles.gsiMaterialButtonIcon,]}>
+        <View style={styles.gsiMaterialButtonIcon}>
           <Svg viewBox="0 0 48 48" width={20} height={20}>
             <Path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
             <Path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
@@ -104,7 +99,7 @@ const styles = StyleSheet.create({
   gsiMaterialButtonContents: {
     color: '#1F1F1F',
     fontSize: 14,
-    fontWeight: '500', // Medium
+    fontWeight: '500',
     letterSpacing: 0.25,
   },
 });

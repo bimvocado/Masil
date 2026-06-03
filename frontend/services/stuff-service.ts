@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
-
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 export interface StuffSuggestion {
   stuffId: number;
   stuffName: string;

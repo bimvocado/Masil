@@ -6,8 +6,7 @@ import { Post } from '@/types/post';
 import apiClient from '@/api/client';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
-
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 const getImageUrl = (url?: string | null) => {
   if (!url) return undefined;
   return url.startsWith('http') ? url : `${BASE_URL}${url}`;
