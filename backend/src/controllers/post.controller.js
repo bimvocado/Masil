@@ -83,6 +83,11 @@ const updatePost = async (req, res, next) => {
 
     const userId = req.user.userId;
 
+    // 파일이 업로드된 경우 경로로 변환, 아니면 req.body에서 받은 값 사용
+    const recommendedImageUrl = req.files?.recommendedImage?.[0]
+      ? `/uploads/${req.files.recommendedImage[0].filename}`
+      : (req.body.recommendedImageUrl || null);
+
     const reqDTO = new UpdatePostReqDTO(
       content,
       imageUrl,

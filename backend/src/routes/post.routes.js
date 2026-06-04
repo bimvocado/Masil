@@ -21,6 +21,10 @@ router.get('/:postId', authMiddleware, postController.getPost);
 router.delete('/:postId', authMiddleware, postController.deletePost);
 
 // 게시글 수정
-router.patch('/:postId', authMiddleware, postController.updatePost);
+router.patch('/:postId', authMiddleware,
+    upload.fields([
+        { name: 'image', maxCount: 1 },
+        { name: 'recommendedImage', maxCount: 1 }
+    ]), postController.updatePost);
 
 module.exports = router;
