@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 
 import { styles } from '@/components/styles/plus';
 import { Colors } from '@/constants/colors';
@@ -385,8 +386,27 @@ export default function PlusScreen() {
           const match = /\.(\w+)$/.exec(filename);
           const type = match ? `image/${match[1]}` : 'image/jpeg';
 
+          // Android may return content:// URIs which need to be copied to a file:// path
+          let uriForForm = imageUri;
+          if (Platform.OS === 'android' && imageUri.startsWith('content://')) {
+            try {
+              const dest = FileSystem.cacheDirectory + filename;
+              const copied = await FileSystem.copyAsync({ from: imageUri, to: dest });
+              uriForForm = copied.uri;
+            } catch (e) {
+              console.warn('파일 복사 실패, 원본 URI 사용:', e);
+              // fall back to original uri
+              uriForForm = imageUri;
+            }
+          }
+
+          // Ensure Android file URIs have file:// prefix
+          if (Platform.OS === 'android' && !uriForForm.startsWith('file://')) {
+            uriForForm = 'file://' + uriForForm;
+          }
+
           formData.append('image', {
-            uri: imageUri,
+            uri: uriForForm,
             name: filename,
             type,
           } as any);
@@ -410,8 +430,24 @@ export default function PlusScreen() {
           const match = /\.(\w+)$/.exec(filename);
           const type = match ? `image/${match[1]}` : 'image/jpeg';
 
+          let uriForForm = recommendedImageUri;
+          if (Platform.OS === 'android' && recommendedImageUri.startsWith('content://')) {
+            try {
+              const dest = FileSystem.cacheDirectory + filename;
+              const copied = await FileSystem.copyAsync({ from: recommendedImageUri, to: dest });
+              uriForForm = copied.uri;
+            } catch (e) {
+              console.warn('추천 이미지 파일 복사 실패, 원본 URI 사용:', e);
+              uriForForm = recommendedImageUri;
+            }
+          }
+
+          if (Platform.OS === 'android' && !uriForForm.startsWith('file://')) {
+            uriForForm = 'file://' + uriForForm;
+          }
+
           formData.append('recommendedImage', {
-            uri: recommendedImageUri,
+            uri: uriForForm,
             name: filename,
             type,
           } as any);

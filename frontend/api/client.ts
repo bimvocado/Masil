@@ -3,11 +3,8 @@ import axios from 'axios';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 const apiClient = axios.create({
-  baseURL: BASE_URL, 
-  timeout: 5000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: BASE_URL,
+  timeout: 60000,
 });
 
 apiClient.interceptors.request.use(
