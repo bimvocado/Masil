@@ -1,23 +1,33 @@
 class CreatePostReqDTO {
-    constructor(content, imageUrl, userId, stuffId, price, recommendedStuffId) {
+    constructor(content, imageUrl, userId, stuffId, price, recommendedStuffId, recommendedImageUrl) {
         this.content = content;
         this.imageUrl = imageUrl;
         this.userId = userId;
         this.stuffId = Number(stuffId);
-        this.price = Number(price);
-        this.recommendedStuffId = Number(recommendedStuffId);
-        this.recommendedImageUrl = recommendedImageUrl;;
+
+        this.price =
+            price === null || price === undefined || price === ''
+                ? null
+                : Number(price);
+
+        this.recommendedStuffId =
+            recommendedStuffId === null || recommendedStuffId === undefined || recommendedStuffId === ''
+                ? null
+                : Number(recommendedStuffId);
+
+        this.recommendedImageUrl = recommendedImageUrl ?? null;
     }
 }
 
 class UpdatePostReqDTO {
     constructor(content, imageUrl, price, recommendedStuffId) {
-        this.content = content,
+        this.content = content;
         this.imageUrl = imageUrl;
         this.price = price;
         this.recommendedStuffId = recommendedStuffId;
     }
 }
+
 class PostResDTO {
     constructor(post) {
         this.postId = post.postId;
@@ -36,7 +46,7 @@ class PostResDTO {
         this.nickname = post.nickname;
         this.stuffName = post.stuffName;
         this.brandName = post.brandName;
-        this.isLiked = !!post.isLiked; 
+        this.isLiked = !!post.isLiked;
         this.isDisliked = !!post.isDisliked;
         this.isScrapped = !!post.isScrapped;
         this.likeCount = Number(post.likeCount || 0);

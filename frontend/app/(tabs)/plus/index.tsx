@@ -22,6 +22,7 @@ import { searchService } from '@/api/search-service';
 import { TopBar } from '@/components/layout/top-bar';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
+
 const getImageUrl = (url?: string | null) => {
   if (!url) return undefined;
   return url.startsWith('http') ? url : `${BASE_URL}${url}`;
@@ -31,22 +32,22 @@ export default function PlusScreen() {
   const router = useRouter();
 
   const [step, setStep] = useState<1 | 2>(1);
+
   const [brandName, setBrandName] = useState('');
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
   const [selectedBrandName, setSelectedBrandName] = useState('');
-
-  // 브랜드 이미지
   const [selectedBrandLogoUrl, setSelectedBrandLogoUrl] = useState('');
-  
+
   const [isBrandModalVisible, setIsBrandModalVisible] = useState(false);
   const [brandSelectTarget, setBrandSelectTarget] = useState<'main' | 'recommended'>('main');
 
   const [brandQuery, setBrandQuery] = useState('');
   const [brandResults, setBrandResults] = useState<any[]>([]);
+  const [brandCategory, setBrandCategory] = useState<'FOOD' | 'HOUSEHOLD'>('FOOD');
+
   const [content, setContent] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [price, setPrice] = useState<string>('');
-  const [brandCategory, setBrandCategory] = useState<'FOOD' | 'HOUSEHOLD'>('FOOD');
 
   const [stuffId, setStuffId] = useState<number | null>(null);
   const [suggestions, setSuggestions] = useState<StuffSuggestion[]>([]);
@@ -54,13 +55,13 @@ export default function PlusScreen() {
   // 추천 조합
   const [recommendedStuffName, setRecommendedStuffName] = useState('');
   const [recommendedStuffId, setRecommendedStuffId] = useState<number | null>(null);
+  const [confirmedRecommendedStuffId, setConfirmedRecommendedStuffId] = useState<number | null>(null);
   const [recommendedSuggestions, setRecommendedSuggestions] = useState<StuffSuggestion[]>([]);
   const [recommendedPrice, setRecommendedPrice] = useState<string>('');
   const [recommendedImageUri, setRecommendedImageUri] = useState<string | null>(null);
 
   // 추천 조합 브랜드
   const [recommendedBrandId, setRecommendedBrandId] = useState<number | null>(null);
-  const [confirmedRecommendedStuffId, setConfirmedRecommendedStuffId] = useState<number | null>(null);
   const [recommendedBrandName, setRecommendedBrandName] = useState('');
   const [recommendedBrandLogoUrl, setRecommendedBrandLogoUrl] = useState('');
 
@@ -109,40 +110,27 @@ export default function PlusScreen() {
   };
 
   useEffect(() => {
-    if (isBrandModalVisible) {
-      // 모달 열릴 때 해당 카테고리의 모든 브랜드 로드
-      // const loadBrands = async () => {
-      //   try {
-      //     const res = await searchService.getBrands('', brandCategory);
-      //     setBrandResults(res.data || []);
-      //   } catch (e) {
-      //     console.error('브랜드 로드 실패:', e);
-      //     setBrandResults([]);
-      //   }
-      // };
+    if (!isBrandModalVisible) return;
 
-      // 수정!
-      const loadBrands = async () => {
-        try {
-          const res = brandQuery.trim()
-            ? await searchService.searchBrands(brandQuery, brandCategory)
-            : await searchService.getBrands(brandCategory);
+    const loadBrands = async () => {
+      try {
+        const res = brandQuery.trim()
+          ? await searchService.searchBrands(brandQuery, brandCategory)
+          : await searchService.getBrands(brandCategory);
 
-          setBrandResults(res.data?.result?.brands ?? []);
-        } catch (e) {
-          console.error('브랜드 로드 실패:', e);
-          setBrandResults([]);
-        }
-      };
-      loadBrands();
-    }
-  // }, [isBrandModalVisible, brandCategory]);
+        setBrandResults(res.data?.result?.brands ?? []);
+      } catch (error) {
+        console.error('브랜드 로드 실패:', error);
+        setBrandResults([]);
+      }
+    };
+
+    loadBrands();
   }, [isBrandModalVisible, brandCategory, brandQuery]);
 
   const handleStuffNameChange = async (value: string) => {
     setBrandName(value);
     setStuffId(null);
-    // selectedBrandId는 초기화하지 않음 — 브랜드 선택 후 상품명 입력 시 브랜드가 사라지는 버그 방지
 
     const keyword = value.replace('@', '').trim();
 
@@ -164,6 +152,10 @@ export default function PlusScreen() {
     setBrandName(`@${item.stuffName}`);
     setStuffId(item.stuffId);
 
+    setSelectedBrandId(item.brandId ?? selectedBrandId);
+    setSelectedBrandName(item.brandName ?? selectedBrandName);
+    setSelectedBrandLogoUrl(item.logoUrl ?? item.brandLogoUrl ?? selectedBrandLogoUrl);
+
     setPrice(
       item.averagePrice !== undefined && item.averagePrice !== null
         ? String(Math.round(item.averagePrice))
@@ -171,14 +163,14 @@ export default function PlusScreen() {
           ? String(item.price)
           : ''
     );
-  
+
     setSuggestions([]);
   };
 
-  // 추천 조합 자동완성
   const handleRecommendedStuffChange = async (value: string) => {
     setRecommendedStuffName(value);
     setRecommendedStuffId(null);
+    setConfirmedRecommendedStuffId(null);
     setRecommendedPrice('');
 
     const keyword = value.replace('@', '').trim();
@@ -200,9 +192,11 @@ export default function PlusScreen() {
   const handleSelectRecommendedSuggestion = (item: StuffSuggestion) => {
     setRecommendedStuffName(`@${item.stuffName}`);
     setRecommendedStuffId(item.stuffId);
-    setRecommendedBrandId(item.brandId ?? null);
-    setRecommendedBrandName((item as any).brandName ?? '');
-    setRecommendedBrandLogoUrl((item as any).logoUrl ?? (item as any).brandLogoUrl ?? '');
+    setConfirmedRecommendedStuffId(item.stuffId);
+
+    setRecommendedBrandId(item.brandId ?? recommendedBrandId);
+    setRecommendedBrandName(item.brandName ?? recommendedBrandName);
+    setRecommendedBrandLogoUrl(item.logoUrl ?? item.brandLogoUrl ?? recommendedBrandLogoUrl);
 
     setRecommendedPrice(
       item.averagePrice !== undefined && item.averagePrice !== null
@@ -232,19 +226,24 @@ export default function PlusScreen() {
       let finalStuffId = stuffId;
       let finalRecommendedStuffId = recommendedStuffId;
 
-      // 먼저 같은 이름의 상품이 있는지 조회
       const searchResult = await stuffService.searchStuffs(cleanName);
-      const existing = searchResult.find((s: any) => s.stuffName === cleanName && s.brandId === selectedBrandId);
+
+      const existing = searchResult.find(
+        (s: StuffSuggestion) =>
+          s.stuffName === cleanName && s.brandId === selectedBrandId
+      );
 
       if (existing) {
         finalStuffId = existing.stuffId;
         setStuffId(existing.stuffId);
         setBrandName(`@${existing.stuffName}`);
-        setSelectedBrandName(selectedBrandName || '');
+        setSelectedBrandId(existing.brandId ?? selectedBrandId);
+        setSelectedBrandName(existing.brandName ?? selectedBrandName);
+        setSelectedBrandLogoUrl(existing.logoUrl ?? existing.brandLogoUrl ?? selectedBrandLogoUrl);
         setSuggestions([]);
       } else {
-        // 없으면 새로 생성 (가격 포함)
         const priceValue = Number(price) || 0;
+
         const created = await stuffService.createStuff({
           brandId: selectedBrandId,
           stuffName: cleanName,
@@ -258,7 +257,6 @@ export default function PlusScreen() {
         setSuggestions([]);
       }
 
-      // 추천 조합 상품 확인
       const cleanRecommendedName = recommendedStuffName.replace('@', '').trim();
 
       if (cleanRecommendedName) {
@@ -270,13 +268,22 @@ export default function PlusScreen() {
         const recommendedSearchResult = await stuffService.searchStuffs(cleanRecommendedName);
 
         const recommendedExisting = recommendedSearchResult.find(
-          (s: any) => s.stuffName === cleanRecommendedName && s.brandId === recommendedBrandId
+          (s: StuffSuggestion) =>
+            s.stuffName === cleanRecommendedName && s.brandId === recommendedBrandId
         );
 
         if (recommendedExisting) {
           finalRecommendedStuffId = recommendedExisting.stuffId;
           setRecommendedStuffId(recommendedExisting.stuffId);
+          setConfirmedRecommendedStuffId(recommendedExisting.stuffId);
           setRecommendedStuffName(`@${recommendedExisting.stuffName}`);
+          setRecommendedBrandId(recommendedExisting.brandId ?? recommendedBrandId);
+          setRecommendedBrandName(recommendedExisting.brandName ?? recommendedBrandName);
+          setRecommendedBrandLogoUrl(
+            recommendedExisting.logoUrl ??
+            recommendedExisting.brandLogoUrl ??
+            recommendedBrandLogoUrl
+          );
           setRecommendedSuggestions([]);
         } else {
           const recommendedPriceValue = Number(recommendedPrice) || 0;
@@ -289,12 +296,14 @@ export default function PlusScreen() {
 
           finalRecommendedStuffId = createdRecommended.stuffId;
           setRecommendedStuffId(createdRecommended.stuffId);
+          setConfirmedRecommendedStuffId(createdRecommended.stuffId);
           setRecommendedStuffName(`@${createdRecommended.stuffName}`);
           setRecommendedSuggestions([]);
         }
       }
 
-      setConfirmedRecommendedStuffId(finalRecommendedStuffId);
+      setStuffId(finalStuffId);
+      setConfirmedRecommendedStuffId(finalRecommendedStuffId ?? null);
 
       setStep(2);
     } catch (error: any) {
@@ -303,32 +312,65 @@ export default function PlusScreen() {
     }
   };
 
-  // 업로드 완료 후 폼 전체 초기화
   const resetForm = () => {
     setStep(1);
+
     setBrandName('');
     setSelectedBrandId(null);
     setSelectedBrandName('');
     setSelectedBrandLogoUrl('');
+
     setBrandQuery('');
     setBrandResults([]);
+    setBrandSelectTarget('main');
+
     setContent('');
     setImageUri(null);
     setPrice('');
+
     setStuffId(null);
     setSuggestions([]);
 
-    // 추천 조합 초기화
     setRecommendedStuffName('');
     setRecommendedStuffId(null);
     setConfirmedRecommendedStuffId(null);
     setRecommendedSuggestions([]);
     setRecommendedPrice('');
     setRecommendedImageUri(null);
+
     setRecommendedBrandId(null);
     setRecommendedBrandName('');
     setRecommendedBrandLogoUrl('');
-    setBrandSelectTarget('main');
+  };
+
+  const appendImageToFormData = async (
+    formData: FormData,
+    fieldName: 'image' | 'recommendedImage',
+    uri: string,
+    defaultFileName: string
+  ) => {
+    if (Platform.OS === 'web') {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      const file = new File(
+        [blob],
+        defaultFileName,
+        { type: blob.type || 'image/jpeg' }
+      );
+
+      formData.append(fieldName, file);
+    } else {
+      const filename = uri.split('/').pop() || defaultFileName;
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+      formData.append(fieldName, {
+        uri,
+        name: filename,
+        type,
+      } as any);
+    }
   };
 
   const handleUpload = async () => {
@@ -344,77 +386,47 @@ export default function PlusScreen() {
       }
 
       const formData = new FormData();
+
       formData.append('content', content);
       formData.append('stuffId', String(stuffId));
-      formData.append('price', price);
+
+      if (price.trim()) {
+        formData.append('price', price);
+      }
 
       if (confirmedRecommendedStuffId !== null) {
         formData.append('recommendedStuffId', String(confirmedRecommendedStuffId));
       }
 
       if (imageUri) {
-        if (Platform.OS === 'web') {
-          const response = await fetch(imageUri);
-          const blob = await response.blob();
-
-          const file = new File(
-            [blob],
-            'post-image.jpg',
-            { type: blob.type || 'image/jpeg' }
-          );
-
-          formData.append('image', file);
-        } else {
-          const filename = imageUri.split('/').pop() || 'post-image.jpg';
-          const match = /\.(\w+)$/.exec(filename);
-          const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-          formData.append('image', {
-            uri: imageUri,
-            name: filename,
-            type,
-          } as any);
-        }
+        await appendImageToFormData(
+          formData,
+          'image',
+          imageUri,
+          'post-image.jpg'
+        );
       }
 
       if (recommendedImageUri) {
-        if (Platform.OS === 'web') {
-          const response = await fetch(recommendedImageUri);
-          const blob = await response.blob();
-
-          const file = new File(
-            [blob],
-            'recommended-image.jpg',
-            { type: blob.type || 'image/jpeg' }
-          );
-
-          formData.append('recommendedImage', file);
-        } else {
-          const filename = recommendedImageUri.split('/').pop() || 'recommended-image.jpg';
-          const match = /\.(\w+)$/.exec(filename);
-          const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-          formData.append('recommendedImage', {
-            uri: recommendedImageUri,
-            name: filename,
-            type,
-          } as any);
-        }
+        await appendImageToFormData(
+          formData,
+          'recommendedImage',
+          recommendedImageUri,
+          'recommended-image.jpg'
+        );
       }
 
-
+      console.log('stuffId:', stuffId);
       console.log('confirmedRecommendedStuffId:', confirmedRecommendedStuffId);
 
       for (const pair of (formData as any)._parts ?? []) {
         console.log('formData:', pair[0], pair[1]);
       }
-      
-      
+
       const result = await postService.createPost(formData);
 
       console.log('게시글 등록 성공:', result);
 
-      // 성공 후 즉시 폼 초기화 (다시 + 탭 열었을 때 빈 화면으로 시작)
       resetForm();
 
       Alert.alert('성공', '게시글이 등록되었습니다.');
@@ -456,9 +468,6 @@ export default function PlusScreen() {
               </TouchableOpacity>
 
               <View style={styles.userInfoCard}>
-                {/* <TouchableOpacity onPress={() => setIsBrandModalVisible(true)}>
-                  <View style={styles.avatarPlaceholder} />
-                </TouchableOpacity> */}
                 <TouchableOpacity
                   onPress={() => {
                     setBrandSelectTarget('main');
@@ -476,6 +485,7 @@ export default function PlusScreen() {
                     </View>
                   )}
                 </TouchableOpacity>
+
                 <View style={styles.nameInputWrapper}>
                   <TextInput
                     placeholder="@이름 작성"
@@ -486,127 +496,6 @@ export default function PlusScreen() {
                   />
                 </View>
               </View>
-
-              <Modal visible={isBrandModalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-
-                  {/* 상단 검색바 영역 */}
-                  <View style={styles.modalSearchBarContainer}>
-                    <View style={styles.modalSearchBar}>
-
-                      <Image
-                        source={require('@/assets/icons/search.png')}
-                        style={{
-                          width: 16,
-                          height: 16,
-                          tintColor: '#aaa',
-                          marginRight: 8,
-                        }}
-                      />
-
-                      <TextInput
-                        style={styles.modalSearchInput}
-                        placeholder="브랜드 or 상품"
-                        placeholderTextColor="#aaa"
-                        value={brandQuery}
-                        onChangeText={setBrandQuery}
-                      />
-
-                    </View>
-                  </View>
-
-                  {/* 음식 / 물건 탭 버튼 영역 */}
-                  <View style={styles.modalTabContainer}>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.modalTabButton,
-                        brandCategory === 'FOOD' &&
-                        styles.modalActiveTabButton
-                      ]}
-                      onPress={() => setBrandCategory('FOOD')}
-                    >
-                      <Text
-                        style={[
-                          styles.modalTabText,
-                          brandCategory === 'FOOD' &&
-                          styles.modalActiveTabText
-                        ]}
-                      >
-                        음식
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.modalTabButton,
-                        brandCategory === 'HOUSEHOLD' &&
-                        styles.modalActiveTabButton
-                      ]}
-                      onPress={() => setBrandCategory('HOUSEHOLD')}
-                    >
-                      <Text
-                        style={[
-                          styles.modalTabText,
-                          brandCategory === 'HOUSEHOLD' &&
-                          styles.modalActiveTabText
-                        ]}
-                      >
-                        물건
-                      </Text>
-                    </TouchableOpacity>
-
-                  </View>
-
-                  {/* 3열 그리드 브랜드 리스트 영역 */}
-                  <ScrollView contentContainerStyle={styles.modalBrandGridContainer}>
-
-                    {brandResults.map((b) => (
-
-                      <TouchableOpacity
-                        key={b.brandId}
-                        style={styles.modalBrandCard}
-                        onPress={() => {
-                          if (brandSelectTarget === 'main') {
-                            setSelectedBrandId(b.brandId);
-                            setSelectedBrandName(b.brandName);
-                            setSelectedBrandLogoUrl(b.logoUrl || '');
-                          } else {
-                            setRecommendedBrandId(b.brandId);
-                            setRecommendedBrandName(b.brandName);
-                            setRecommendedBrandLogoUrl(b.logoUrl || '');
-                          }
-
-                          setBrandQuery('');
-                          setIsBrandModalVisible(false);
-                        }}
-                      >
-
-                        {/* 브랜드 로고 */}
-                        {b.logoUrl ? (
-                          <Image
-                            source={{ uri: getImageUrl(b.logoUrl) }}
-                            style={styles.modalBrandLogoCircle}
-                          />
-                        ) : (
-                          <View style={styles.modalBrandLogoCircle} />
-                        )}
-
-                        {/* 브랜드 이름 */}
-                        <Text
-                          style={styles.modalBrandNameText}
-                          numberOfLines={1}
-                        >
-                          {b.brandName}
-                        </Text>
-
-                      </TouchableOpacity>
-                    ))}
-
-                  </ScrollView>
-
-                </View>
-              </Modal>
 
               {Array.isArray(suggestions) && suggestions.length > 0 && (
                 <View style={styles.suggestionBox}>
@@ -625,13 +514,20 @@ export default function PlusScreen() {
               )}
 
               <View style={{ marginBottom: 12 }}>
-                <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>가격 (선택, 신규 생성 시 사용)</Text>
+                <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>
+                  가격 (선택, 신규 생성 시 사용)
+                </Text>
                 <TextInput
                   placeholder="예: 12000"
                   keyboardType="numeric"
                   value={price}
                   onChangeText={setPrice}
-                  style={{ borderWidth: 1, borderColor: '#eee', padding: 8, borderRadius: 8 }}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: '#eee',
+                    padding: 8,
+                    borderRadius: 8,
+                  }}
                 />
               </View>
 
@@ -706,19 +602,127 @@ export default function PlusScreen() {
               )}
 
               <View style={{ marginBottom: 12 }}>
-                <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>추천 조합 가격 (선택, 신규 생성 시 사용)</Text>
+                <Text style={{ marginBottom: 6, color: Colors.gray.dark }}>
+                  추천 조합 가격 (선택, 신규 생성 시 사용)
+                </Text>
                 <TextInput
                   placeholder="예: 1500"
                   keyboardType="numeric"
                   value={recommendedPrice}
                   onChangeText={setRecommendedPrice}
-                  style={{ borderWidth: 1, borderColor: '#eee', padding: 8, borderRadius: 8 }}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: '#eee',
+                    padding: 8,
+                    borderRadius: 8,
+                  }}
                 />
               </View>
 
               <TouchableOpacity style={styles.submitButton} onPress={handleNext}>
                 <Text style={styles.submitButtonText}>다음</Text>
               </TouchableOpacity>
+
+              <Modal visible={isBrandModalVisible} animationType="slide">
+                <View style={styles.modalContainer}>
+                  <View style={styles.modalSearchBarContainer}>
+                    <View style={styles.modalSearchBar}>
+                      <Image
+                        source={require('@/assets/icons/search.png')}
+                        style={{
+                          width: 16,
+                          height: 16,
+                          tintColor: '#aaa',
+                          marginRight: 8,
+                        }}
+                      />
+
+                      <TextInput
+                        style={styles.modalSearchInput}
+                        placeholder="브랜드 or 상품"
+                        placeholderTextColor="#aaa"
+                        value={brandQuery}
+                        onChangeText={setBrandQuery}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.modalTabContainer}>
+                    <TouchableOpacity
+                      style={[
+                        styles.modalTabButton,
+                        brandCategory === 'FOOD' && styles.modalActiveTabButton
+                      ]}
+                      onPress={() => setBrandCategory('FOOD')}
+                    >
+                      <Text
+                        style={[
+                          styles.modalTabText,
+                          brandCategory === 'FOOD' && styles.modalActiveTabText
+                        ]}
+                      >
+                        음식
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.modalTabButton,
+                        brandCategory === 'HOUSEHOLD' && styles.modalActiveTabButton
+                      ]}
+                      onPress={() => setBrandCategory('HOUSEHOLD')}
+                    >
+                      <Text
+                        style={[
+                          styles.modalTabText,
+                          brandCategory === 'HOUSEHOLD' && styles.modalActiveTabText
+                        ]}
+                      >
+                        물건
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <ScrollView contentContainerStyle={styles.modalBrandGridContainer}>
+                    {brandResults.map((b) => (
+                      <TouchableOpacity
+                        key={b.brandId}
+                        style={styles.modalBrandCard}
+                        onPress={() => {
+                          if (brandSelectTarget === 'main') {
+                            setSelectedBrandId(b.brandId);
+                            setSelectedBrandName(b.brandName);
+                            setSelectedBrandLogoUrl(b.logoUrl || '');
+                          } else {
+                            setRecommendedBrandId(b.brandId);
+                            setRecommendedBrandName(b.brandName);
+                            setRecommendedBrandLogoUrl(b.logoUrl || '');
+                          }
+
+                          setBrandQuery('');
+                          setIsBrandModalVisible(false);
+                        }}
+                      >
+                        {b.logoUrl ? (
+                          <Image
+                            source={{ uri: getImageUrl(b.logoUrl) }}
+                            style={styles.modalBrandLogoCircle}
+                          />
+                        ) : (
+                          <View style={styles.modalBrandLogoCircle} />
+                        )}
+
+                        <Text
+                          style={styles.modalBrandNameText}
+                          numberOfLines={1}
+                        >
+                          {b.brandName}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </Modal>
             </>
           ) : (
             <>
@@ -733,6 +737,7 @@ export default function PlusScreen() {
                     <Text style={styles.questionMark}>?</Text>
                   </View>
                 )}
+
                 <View style={styles.nameInputWrapper}>
                   <TextInput
                     placeholder="@이름 작성"
