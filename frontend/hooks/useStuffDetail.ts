@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import apiClient from '@/api/client';
-import { BASE_URL } from '@/api/auth-service';
+// import { BASE_URL } from '@/api/auth-service';
+
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';export const API_URL = BASE_URL;
 
 const getAbsoluteUrl = (url: string | null | undefined) => {
   if (!url) return null;
