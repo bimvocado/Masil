@@ -404,17 +404,32 @@ export default function PlusScreen() {
           // Log final URI used for FormData
           console.log('이미지 전송 URI(for image):', uriForForm);
 
-          // Only add file:// prefix for bare paths (starting with '/'),
-          // do NOT prefix content:// URIs.
-          if (Platform.OS === 'android' && uriForForm.startsWith('/') && !uriForForm.startsWith('file://')) {
-            uriForForm = 'file://' + uriForForm;
+          // Try to convert file URI to Blob first (more reliable for multipart)
+          let appended = false;
+          if (Platform.OS !== 'web') {
+            try {
+              const resp = await fetch(uriForForm);
+              const blob = await resp.blob();
+              // @ts-ignore
+              formData.append('image', blob, filename);
+              appended = true;
+              console.log('이미지 Blob으로 변환하여 FormData에 추가했습니다.');
+            } catch (e) {
+              console.warn('URI -> Blob 변환 실패, 객체로 append 시도:', e);
+            }
           }
 
-          formData.append('image', {
-            uri: uriForForm,
-            name: filename,
-            type,
-          } as any);
+          if (!appended) {
+            if (Platform.OS === 'android' && uriForForm.startsWith('/') && !uriForForm.startsWith('file://')) {
+              uriForForm = 'file://' + uriForForm;
+            }
+
+            formData.append('image', {
+              uri: uriForForm,
+              name: filename,
+              type,
+            } as any);
+          }
         }
       }
 
@@ -449,15 +464,31 @@ export default function PlusScreen() {
 
           console.log('이미지 전송 URI(for recommended):', uriForForm);
 
-          if (Platform.OS === 'android' && uriForForm.startsWith('/') && !uriForForm.startsWith('file://')) {
-            uriForForm = 'file://' + uriForForm;
+          let appendedRec = false;
+          if (Platform.OS !== 'web') {
+            try {
+              const resp = await fetch(uriForForm);
+              const blob = await resp.blob();
+              // @ts-ignore
+              formData.append('recommendedImage', blob, filename);
+              appendedRec = true;
+              console.log('추천 이미지 Blob으로 변환하여 FormData에 추가했습니다.');
+            } catch (e) {
+              console.warn('추천 URI -> Blob 변환 실패, 객체로 append 시도:', e);
+            }
           }
 
-          formData.append('recommendedImage', {
-            uri: uriForForm,
-            name: filename,
-            type,
-          } as any);
+          if (!appendedRec) {
+            if (Platform.OS === 'android' && uriForForm.startsWith('/') && !uriForForm.startsWith('file://')) {
+              uriForForm = 'file://' + uriForForm;
+            }
+
+            formData.append('recommendedImage', {
+              uri: uriForForm,
+              name: filename,
+              type,
+            } as any);
+          }
         }
       }
 
