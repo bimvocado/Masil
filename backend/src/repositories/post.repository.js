@@ -159,7 +159,7 @@ const updatePost = async (post, updateData) => {
   return await post.update(updateData);
 };
 
-// 게시글 삭제 (soft delete), 게시글 DELETE가 아니라 deletedAt 값을 채워줌!
+// 게시글 삭제
 const deletePost = async (post) => {
   return await post.destroy();
 };
@@ -251,19 +251,16 @@ const findPostsByUserId = async (userId, viewerId = null) => {
 };
 
 const getAveragePriceByStuffId = async (stuffId) => {
-  const result = await sequelize.query(`
-    SELECT ROUND(AVG(price)) AS averagePrice
-    FROM posts
-    WHERE stuff_id = :stuffId
-      AND price IS NOT NULL
-      AND deleted_at IS NULL
-  `, {
-    replacements: { stuffId },
-    type: QueryTypes.SELECT
-  });
-
-  return result[0]?.averagePrice || null;
-};
+    const result = await sequelize.query(`
+        SELECT ROUND(AVG(price)) AS averagePrice
+        FROM posts
+        WHERE stuff_id = :stuffId
+          AND price IS NOT NULL
+          AND deleted_at IS NULL
+    `, {
+        replacements: { stuffId },
+        type: QueryTypes.SELECT
+    });
 
 module.exports = {
   createPost,

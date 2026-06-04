@@ -1,11 +1,15 @@
 import axios from 'axios';
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
+
+const BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
+
 export interface StuffSuggestion {
   stuffId: number;
   stuffName: string;
   brandId: number;
   brandName: string;
   logoUrl?: string;
+  brandLogoUrl?: string;
   price?: number;
   averagePrice?: number;
 }
@@ -16,12 +20,18 @@ export const stuffService = {
       params: { keyword },
     });
 
-    return response.data.result?.stuffs ?? [];
+    return response.data.result?.stuffs ?? response.data.data ?? [];
   },
 
-  createStuff: async (data: { brandId: number; stuffName: string; price?: number, imageUrl?: string; }) => {
+  createStuff: async (data: {
+    brandId: number;
+    stuffName: string;
+    price?: number;
+    imageUrl?: string;
+  }): Promise<StuffSuggestion> => {
     const response = await axios.post(`${BASE_URL}/api/stuffs`, data);
-    return response.data.result;
+
+    return response.data.result ?? response.data.data;
   },
 
   findOrCreateStuff: async (stuffName: string): Promise<StuffSuggestion> => {
@@ -29,6 +39,6 @@ export const stuffService = {
       stuffName,
     });
 
-    return response.data.data;
+    return response.data.result ?? response.data.data;
   },
 };

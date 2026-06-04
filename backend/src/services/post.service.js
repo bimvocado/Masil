@@ -197,10 +197,10 @@ const getUserPosts = async (userId, viewerId = null) => {
 };
 
 module.exports = {
-  createPost,
-  getPosts,
-  getPost,
-  updatePost,
-  deletePost,
-  getUserPosts,
+    createPost,
+    getPosts,
+    getPost,
+    updatePost,
+    deletePost,
+    getUserPosts,
 };

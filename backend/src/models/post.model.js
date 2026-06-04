@@ -25,21 +25,21 @@ const Post = sequelize.define('Post', {
     },
     price: {
         type: DataTypes.INTEGER,
-        allowNull: true // 이전 데이터들 때문에 일단 null 해둘게요
+        allowNull: true
     },
     recommendedStuffId: {
         type: DataTypes.BIGINT,
-        allowNull: true, // 이전 데이터들 때문에 일단 null !
+        allowNull: true
     },
     recommendedImageUrl: {
         type: DataTypes.STRING(255),
         allowNull: true
     },
 }, {
-    tableName: 'posts',   
-    timestamps: true,  // createdAt, updatedAt 자동 관리      
-    paranoid: true,    // deletedAt 자동 관리    
-    underscored: true, // db에 위 3가지 생성 (ex created_at)
-})
+    tableName: 'posts',
+    timestamps: true,
+    paranoid: true,
+    underscored: true,
+});
 
 module.exports = Post;
