@@ -16,11 +16,12 @@ const createPost = async (req, res, next) => {
 
     const userId = req.user.userId;
 
-    const imageUrl = req.files?.image
+    // req.files 및 각 이미지 배열 존재 여부를 안전하게 체크
+    const imageUrl = (req.files && req.files.image && req.files.image[0])
       ? `/uploads/${req.files.image[0].filename}`
       : null;
 
-    const recommendedImageUrl = req.files?.recommendedImage
+    const recommendedImageUrl = (req.files && req.files.recommendedImage && req.files.recommendedImage[0])
       ? `/uploads/${req.files.recommendedImage[0].filename}`
       : null;
 
