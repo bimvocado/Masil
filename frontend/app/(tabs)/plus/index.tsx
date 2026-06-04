@@ -18,6 +18,7 @@ import * as FileSystem from 'expo-file-system';
 import { styles } from '@/components/styles/plus';
 import { Colors } from '@/constants/colors';
 import { postService } from '@/services/post-service';
+import { getToken } from '@/utils/storage';
 import { stuffService, StuffSuggestion } from '@/services/stuff-service';
 import { searchService } from '@/api/search-service';
 import { TopBar } from '@/components/layout/top-bar';
@@ -400,8 +401,12 @@ export default function PlusScreen() {
             }
           }
 
-          // Ensure Android file URIs have file:// prefix
-          if (Platform.OS === 'android' && !uriForForm.startsWith('file://')) {
+          // Log final URI used for FormData
+          console.log('이미지 전송 URI(for image):', uriForForm);
+
+          // Only add file:// prefix for bare paths (starting with '/'),
+          // do NOT prefix content:// URIs.
+          if (Platform.OS === 'android' && uriForForm.startsWith('/') && !uriForForm.startsWith('file://')) {
             uriForForm = 'file://' + uriForForm;
           }
 
@@ -442,7 +447,9 @@ export default function PlusScreen() {
             }
           }
 
-          if (Platform.OS === 'android' && !uriForForm.startsWith('file://')) {
+          console.log('이미지 전송 URI(for recommended):', uriForForm);
+
+          if (Platform.OS === 'android' && uriForForm.startsWith('/') && !uriForForm.startsWith('file://')) {
             uriForForm = 'file://' + uriForForm;
           }
 
@@ -462,15 +469,50 @@ export default function PlusScreen() {
       }
       
       
-      const result = await postService.createPost(formData);
+      try {
+        const result = await postService.createPost(formData);
+        console.log('게시글 등록 성공:', result);
+        resetForm();
+        Alert.alert('성공', '게시글이 등록되었습니다.');
+        router.push('/(tabs)/home' as Href);
+      } catch (err: any) {
+        console.error('게시글 등록 실패(axios):', err);
 
-      console.log('게시글 등록 성공:', result);
+        // 폴백: axios Network Error 시 fetch로 재시도
+        const isNetworkError = err?.message?.includes('Network Error') || (err?.toString && err.toString().includes('Network Error'));
+        if (isNetworkError) {
+          try {
+            console.log('네트워크 오류 감지: fetch로 재시도합니다.');
+            const token = await getToken();
+            const url = `${BASE_URL}/api/posts`;
+            const headers: any = {};
+            if (token) headers.Authorization = `Bearer ${token}`;
 
-      // 성공 후 즉시 폼 초기화 (다시 + 탭 열었을 때 빈 화면으로 시작)
-      resetForm();
+            const res = await fetch(url, {
+              method: 'POST',
+              headers,
+              body: formData,
+            });
 
-      Alert.alert('성공', '게시글이 등록되었습니다.');
-      router.push('/(tabs)/home' as Href);
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              console.error('fetch 업로드 실패:', res.status, json);
+              throw new Error(json?.message || 'fetch upload failed');
+            }
+
+            console.log('게시글 등록 성공(fetch):', json);
+            resetForm();
+            Alert.alert('성공', '게시글이 등록되었습니다. (fetch)');
+            router.push('/(tabs)/home' as Href);
+            return;
+          } catch (fetchErr) {
+            console.error('fetch 재시도 실패:', fetchErr);
+          }
+        }
+
+        // 모든 시도 실패
+        Alert.alert('오류', err.response?.data?.message || '게시글 등록에 실패했습니다.');
+      }
     } catch (error: any) {
       console.error('게시글 등록 실패:', error);
       Alert.alert('오류', error.response?.data?.message || '게시글 등록에 실패했습니다.');
