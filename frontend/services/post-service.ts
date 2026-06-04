@@ -21,13 +21,9 @@ export const postService = {
     return response.data.data;
   },
 
-  // 게시글 등록 (multipart 헤더 추가)
+  // 게시글 등록
   createPost: async (postData: FormData): Promise<Post> => {
-    const response = await apiClient.post('/api/posts', postData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await apiClient.post('/api/posts', postData);
     return response.data.data;
   },
 

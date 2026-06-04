@@ -79,10 +79,8 @@ export const authService = {
    */
   updateProfile: async (formData: FormData, config?: any) => { // 👈 config?: any 추가
     try {
-
       const response = await apiClient.patch('/api/users/profile', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        ...config, 
+        ...config,
       });
       return response.data;
     } catch (error) {

@@ -80,9 +80,7 @@ export default function ProfileEditScreen() {
         }
       }
 
-      const res = await authService.updateProfile(formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await authService.updateProfile(formData);
       console.log("🔥🔥 서버가 보내준 이미지 경로:", res.data.profileImageUrl);
       if (res.success) {
         const rawPath = res.data.profileImageUrl; 
