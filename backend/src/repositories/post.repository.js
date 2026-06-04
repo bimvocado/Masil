@@ -1,11 +1,19 @@
 const Post = require('../models/post.model');
-const Stuff = require('../models/stuff.model');
 const { QueryTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
 // 게시글 생성
 const createPost = async (postData) => {
   return await Post.create(postData);
+};
+
+// 수정/삭제용 게시글 모델 조회
+const findPostModelById = async (postId) => {
+  return await Post.findOne({
+    where: {
+      postId,
+    },
+  });
 };
 
 const findAllPosts = async (viewerId = null) => {
@@ -67,15 +75,35 @@ const findAllPosts = async (viewerId = null) => {
     WHERE p.deleted_at IS NULL
     
     GROUP BY 
-      p.post_id, u.user_id, st.stuff_id, b.brand_id, rst.stuff_id, rb.brand_id, su.scrap_id
+      p.post_id,
+      p.user_id,
+      p.stuff_id,
+      p.content,
+      p.image_url,
+      p.recommended_stuff_id,
+      p.recommended_image_url,
+      p.price,
+      p.created_at,
+      p.updated_at,
+      u.user_id,
+      u.nickname,
+      u.profile_image_url,
+      st.stuff_id,
+      st.stuff_name,
+      b.brand_id,
+      b.brand_name,
+      rst.stuff_id,
+      rst.stuff_name,
+      rb.brand_id,
+      rb.brand_name,
+      su.scrap_id
       
     ORDER BY p.created_at DESC
   `, {
-    // 💡 viewerId가 null이면 0을 넣어 쿼리 에러 방지
-    replacements: { viewerId: viewerId || 0 }, 
+    replacements: { viewerId: viewerId || 0 },
     type: QueryTypes.SELECT
   });
-  
+
   return posts;
 };
 
@@ -163,7 +191,6 @@ const findPostsByUserId = async (userId, viewerId = null) => {
       rb.brand_id AS recommendedBrandId,
       rb.brand_name AS recommendedBrandName,
 
-      -- 💡 1. 여기에 콤마(,) 추가했고, IFNULL 처리로 더 안전하게 만들었습니다.
       MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
       MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
       
@@ -187,17 +214,39 @@ const findPostsByUserId = async (userId, viewerId = null) => {
     LEFT JOIN post_scraps s ON p.post_id = s.post_id AND s.deleted_at IS NULL
     LEFT JOIN post_scraps su ON p.post_id = su.post_id AND su.user_id = :viewerId AND su.deleted_at IS NULL
     
-    WHERE p.user_id = :userId AND p.deleted_at IS NULL
+    WHERE p.user_id = :userId
+      AND p.deleted_at IS NULL
     
     GROUP BY 
-      p.post_id, u.user_id, st.stuff_id, b.brand_id, rst.stuff_id, rb.brand_id, su.scrap_id
+      p.post_id,
+      p.user_id,
+      p.stuff_id,
+      p.content,
+      p.image_url,
+      p.recommended_stuff_id,
+      p.recommended_image_url,
+      p.price,
+      p.created_at,
+      p.updated_at,
+      u.user_id,
+      u.nickname,
+      u.profile_image_url,
+      st.stuff_id,
+      st.stuff_name,
+      b.brand_id,
+      b.brand_name,
+      rst.stuff_id,
+      rst.stuff_name,
+      rb.brand_id,
+      rb.brand_name,
+      su.scrap_id
       
     ORDER BY p.created_at DESC
   `, {
     replacements: { userId, viewerId: viewerId || 0 },
     type: QueryTypes.SELECT
   });
-  
+
   return posts;
 };
 
@@ -218,6 +267,7 @@ const getAveragePriceByStuffId = async (stuffId) => {
 
 module.exports = {
   createPost,
+  findPostModelById,
   findPostById,
   updatePost,
   deletePost,
