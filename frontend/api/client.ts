@@ -17,9 +17,20 @@ apiClient.interceptors.request.use(
 
     if (config.data instanceof FormData) {
       if (config.headers) {
+        // Ensure axios does not set an incorrect Content-Type without boundary
         delete config.headers['Content-Type'];
         delete config.headers['content-type'];
       }
+      console.log('📡 [인터셉터] FormData 전송, headers after cleanup:', config.headers);
+    }
+
+    // Debug: log request basics for multipart failures
+    try {
+      if (config && config.url) {
+        console.log(`📡 [요청] ${config.method?.toUpperCase()} ${config.url} dataType=${Object.prototype.toString.call(config.data)}`);
+      }
+    } catch (e) {
+      // ignore
     }
 
     return config;
