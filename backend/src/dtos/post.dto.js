@@ -1,23 +1,51 @@
 class CreatePostReqDTO {
-    constructor(content, imageUrl, userId, stuffId, price, recommendedStuffId) {
+    constructor(
+        content,
+        imageUrl,
+        userId,
+        stuffId,
+        price,
+        recommendedStuffId,
+        recommendedImageUrl
+    ) {
         this.content = content;
         this.imageUrl = imageUrl;
         this.userId = userId;
         this.stuffId = Number(stuffId);
-        this.price = Number(price);
-        this.recommendedStuffId = Number(recommendedStuffId);
-        this.recommendedImageUrl = recommendedImageUrl;;
+        this.price = price !== undefined && price !== null && price !== ''
+            ? Number(price)
+            : null;
+
+        this.recommendedStuffId =
+            recommendedStuffId !== undefined &&
+            recommendedStuffId !== null &&
+            recommendedStuffId !== ''
+                ? Number(recommendedStuffId)
+                : null;
+
+        this.recommendedImageUrl = recommendedImageUrl || null;
     }
 }
 
 class UpdatePostReqDTO {
-    constructor(content, imageUrl, price, recommendedStuffId) {
-        this.content = content,
+    constructor(content, imageUrl, price, recommendedStuffId, recommendedImageUrl) {
+        this.content = content;
         this.imageUrl = imageUrl;
-        this.price = price;
-        this.recommendedStuffId = recommendedStuffId;
+        this.price = price !== undefined && price !== null && price !== ''
+            ? Number(price)
+            : null;
+
+        this.recommendedStuffId =
+            recommendedStuffId !== undefined &&
+            recommendedStuffId !== null &&
+            recommendedStuffId !== ''
+                ? Number(recommendedStuffId)
+                : null;
+
+        this.recommendedImageUrl = recommendedImageUrl || null;
     }
 }
+
 class PostResDTO {
     constructor(post) {
         this.postId = post.postId;
@@ -26,17 +54,20 @@ class PostResDTO {
         this.userId = post.userId;
         this.stuffId = post.stuffId;
         this.price = post.price;
+
         this.recommendedStuffId = post.recommendedStuffId;
         this.recommendedStuffName = post.recommendedStuffName;
         this.recommendedBrandId = post.recommendedBrandId;
         this.recommendedBrandName = post.recommendedBrandName;
         this.recommendedImageUrl = post.recommendedImageUrl;
+
         this.createdAt = post.createdAt;
         this.updatedAt = post.updatedAt;
         this.nickname = post.nickname;
         this.stuffName = post.stuffName;
         this.brandName = post.brandName;
-        this.isLiked = !!post.isLiked; 
+
+        this.isLiked = !!post.isLiked;
         this.isDisliked = !!post.isDisliked;
         this.isScrapped = !!post.isScrapped;
         this.likeCount = Number(post.likeCount || 0);
