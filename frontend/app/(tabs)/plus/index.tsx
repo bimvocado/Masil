@@ -60,6 +60,7 @@ export default function PlusScreen() {
 
   // 추천 조합 브랜드
   const [recommendedBrandId, setRecommendedBrandId] = useState<number | null>(null);
+  const [confirmedRecommendedStuffId, setConfirmedRecommendedStuffId] = useState<number | null>(null);
   const [recommendedBrandName, setRecommendedBrandName] = useState('');
   const [recommendedBrandLogoUrl, setRecommendedBrandLogoUrl] = useState('');
 
@@ -293,6 +294,8 @@ export default function PlusScreen() {
         }
       }
 
+      setConfirmedRecommendedStuffId(finalRecommendedStuffId);
+
       setStep(2);
     } catch (error: any) {
       console.error('상품 확인 실패:', error);
@@ -318,6 +321,7 @@ export default function PlusScreen() {
     // 추천 조합 초기화
     setRecommendedStuffName('');
     setRecommendedStuffId(null);
+    setConfirmedRecommendedStuffId(null);
     setRecommendedSuggestions([]);
     setRecommendedPrice('');
     setRecommendedImageUri(null);
@@ -344,8 +348,8 @@ export default function PlusScreen() {
       formData.append('stuffId', String(stuffId));
       formData.append('price', price);
 
-      if (recommendedStuffId) {
-        formData.append('recommendedStuffId', String(recommendedStuffId));
+      if (confirmedRecommendedStuffId !== null) {
+        formData.append('recommendedStuffId', String(confirmedRecommendedStuffId));
       }
 
       if (imageUri) {
@@ -398,6 +402,14 @@ export default function PlusScreen() {
         }
       }
 
+
+      console.log('confirmedRecommendedStuffId:', confirmedRecommendedStuffId);
+
+      for (const pair of (formData as any)._parts ?? []) {
+        console.log('formData:', pair[0], pair[1]);
+      }
+      
+      
       const result = await postService.createPost(formData);
 
       console.log('게시글 등록 성공:', result);

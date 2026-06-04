@@ -68,6 +68,9 @@ export function useStuffDetail(id: string) {
         const response = await apiClient.get(`/api/stuffs/${id}/detail`);
         const responseData = response.data?.data ?? response.data?.result;
 
+        console.log('responseData', responseData);
+        console.log('responseData.topPost', responseData.topPost);
+
         if (!responseData) {
           setDetailData(null);
           return;
