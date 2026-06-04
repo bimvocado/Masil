@@ -2,188 +2,198 @@ const postRepository = require('../repositories/post.repository');
 const Stuff = require('../models/stuff.model');
 
 const {
-    PostResDTO
+  PostResDTO
 } = require('../dtos/post.dto');
+
+const DEFAULT_RECOMMENDED_IMAGE_URL = 'https://example.com/default-recommended.png';
 
 // 게시글 등록
 const createPost = async (createPostReqDTO) => {
-    const {
-        content,
-        imageUrl,
-        userId,
-        stuffId,
-        price,
-        recommendedStuffId,
-        recommendedImageUrl
-    } = createPostReqDTO;
+  const {
+    content,
+    imageUrl,
+    userId,
+    stuffId,
+    price,
+    recommendedStuffId,
+    recommendedImageUrl
+  } = createPostReqDTO;
 
-    // 기본 검증
-    if (!content) {
-        throw new Error('내용을 입력해주세요.');
+  // 기본 검증
+  if (!content) {
+    throw new Error('내용을 입력해주세요.');
+  }
+
+  if (!stuffId) {
+    throw new Error('상품을 선택해주세요.');
+  }
+
+  // 상품 존재 확인
+  const stuff = await Stuff.findByPk(stuffId);
+
+  if (!stuff) {
+    throw new Error('존재하지 않는 상품입니다.');
+  }
+
+  // 추천 조합 상품 검증
+  if (recommendedStuffId) {
+    const recommendedStuff = await Stuff.findByPk(recommendedStuffId);
+
+    if (!recommendedStuff) {
+      throw new Error('존재하지 않는 추천 조합 상품입니다.');
     }
+  }
 
-    // 상품 존재 확인
-    const stuff = await Stuff.findByPk(stuffId);
+  // 추천 조합 상품이 있으면 추천 이미지가 없을 때 기본 이미지 저장
+  // 추천 조합 상품이 없으면 추천 이미지도 null
+  const finalRecommendedImageUrl = recommendedStuffId
+    ? (recommendedImageUrl || DEFAULT_RECOMMENDED_IMAGE_URL)
+    : null;
 
-    if (!stuff) {
-        throw new Error('존재하지 않는 상품입니다.');
-    }
+  // 게시글 생성
+  const newPost = await postRepository.createPost({
+    content,
+    imageUrl,
+    userId,
+    stuffId,
+    price,
+    recommendedStuffId,
+    recommendedImageUrl: finalRecommendedImageUrl,
+  });
 
-    // 추천 조합 상품 검증
-    if (recommendedStuffId) {
-        const recommendedStuff = await Stuff.findByPk(recommendedStuffId);
-
-        if (!recommendedStuff) {
-            throw new Error('존재하지 않는 추천 조합 상품입니다.');
-        }
-    }
-
-    // 게시글 생성
-    const newPost = await postRepository.createPost({
-        content,
-        imageUrl,
-        userId,
-        stuffId,
-        price,
-        recommendedStuffId,
-        recommendedImageUrl,
-    });
-
-    return new PostResDTO(newPost);
+  // 응답 dto 반환
+  return new PostResDTO(newPost);
 };
 
 // 게시글 전체 조회 
 const getPosts = async (viewerId = null) => {
-    const posts = await postRepository.findAllPosts(viewerId);
+  const posts = await postRepository.findAllPosts(viewerId);
 
-    return posts.map((post) => ({
-        postId: post.postId,
-        userId: post.userId,
-        stuffId: post.stuffId,
-        content: post.content,
-        imageUrl: post.imageUrl,
-        price: post.price === null || post.price === undefined ? null : Number(post.price),
+  return posts.map((post) => ({
+    postId: post.postId,
+    userId: post.userId,
+    stuffId: post.stuffId,
+    content: post.content,
+    imageUrl: post.imageUrl,
+    price: Number(post.price || 0),
 
-        recommendedStuffId: post.recommendedStuffId,
-        recommendedStuffName: post.recommendedStuffName,
-        recommendedBrandId: post.recommendedBrandId,
-        recommendedBrandName: post.recommendedBrandName,
-        recommendedImageUrl: post.recommendedImageUrl,
+    recommendedStuffId: post.recommendedStuffId,
+    recommendedStuffName: post.recommendedStuffName,
+    recommendedBrandId: post.recommendedBrandId,
+    recommendedBrandName: post.recommendedBrandName,
+    recommendedImageUrl: post.recommendedImageUrl,
 
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    nickname: post.nickname,
+    profileImageUrl: post.profileImageUrl,
+    stuffName: post.stuffName,
+    brandId: post.brandId,
+    brandName: post.brandName,
 
-        nickname: post.nickname,
-        profileImageUrl: post.profileImageUrl,
-
-        stuffName: post.stuffName,
-        brandId: post.brandId,
-        brandName: post.brandName,
-
-        commentCount: Number(post.commentCount || 0),
-        likeCount: Number(post.likeCount || 0),
-        dislikeCount: Number(post.dislikeCount || 0),
-
-        isLiked: !!post.isLiked,
-        isDisliked: !!post.isDisliked,
-
-        scrapCount: Number(post.scrapCount || 0),
-        isScrapped: !!post.isScrapped,
-    }));
+    commentCount: Number(post.commentCount || 0),
+    likeCount: Number(post.likeCount || 0),
+    dislikeCount: Number(post.dislikeCount || 0),
+    isLiked: !!post.isLiked,
+    isDisliked: !!post.isDisliked,
+    scrapCount: Number(post.scrapCount || 0),
+    isScrapped: !!post.isScrapped,
+  }));
 };
 
 // 게시글 개별 조회
 const getPost = async (postId) => {
-    const post = await postRepository.findPostById(postId);
+  const post = await postRepository.findPostById(postId);
 
-    if (!post) {
-        throw new Error('존재하지 않는 게시글입니다.');
-    }
+  if (!post) {
+    throw new Error('존재하지 않는 게시글입니다.');
+  }
 
-    return new PostResDTO(post);
+  return new PostResDTO(post);
 };
 
 // 게시글 수정
 const updatePost = async (
-    postId,
-    userId,
-    updatePostReqDTO
+  postId,
+  userId,
+  updatePostReqDTO
 ) => {
-    const post = await postRepository.findPostById(postId);
+  const post = await postRepository.findPostModelById(postId);
 
-    if (!post) {
-        throw new Error('존재하지 않는 게시글입니다.');
-    }
+  if (!post) {
+    throw new Error('존재하지 않는 게시글입니다.');
+  }
 
-    if (post.userId !== userId) {
-        throw new Error('게시글 수정 권한이 없습니다.');
-    }
+  if (post.userId !== userId) {
+    throw new Error('게시글 수정 권한이 없습니다.');
+  }
 
-    await postRepository.updatePost(post, {
-        content: updatePostReqDTO.content,
-        imageUrl: updatePostReqDTO.imageUrl,
-        price: updatePostReqDTO.price,
-        recommendedStuffId: updatePostReqDTO.recommendedStuffId,
-    });
+  await postRepository.updatePost(post, {
+    content: updatePostReqDTO.content,
+    imageUrl: updatePostReqDTO.imageUrl,
+    price: updatePostReqDTO.price,
+    recommendedStuffId: updatePostReqDTO.recommendedStuffId,
+    recommendedImageUrl: updatePostReqDTO.recommendedImageUrl,
+  });
 
-    return new PostResDTO(post);
+  return new PostResDTO(post);
 };
 
 // 게시글 삭제
 const deletePost = async (postId, userId) => {
-    const post = await postRepository.findPostById(postId);
+  const post = await postRepository.findPostModelById(postId);
 
-    if (!post) {
-        throw new Error('존재하지 않는 게시글입니다.');
-    }
+  if (!post) {
+    throw new Error('존재하지 않는 게시글입니다.');
+  }
 
-    if (post.userId !== userId) {
-        throw new Error('게시글 삭제 권한이 없습니다.');
-    }
+  if (post.userId !== userId) {
+    throw new Error('게시글 삭제 권한이 없습니다.');
+  }
 
-    await postRepository.deletePost(post);
+  await postRepository.deletePost(post);
 
-    return { message: '게시글이 삭제되었습니다.' };
+  return { message: '게시글이 삭제되었습니다.' };
 };
 
 // 사용자별 게시글 조회
 const getUserPosts = async (userId, viewerId = null) => {
-    const posts = await postRepository.findPostsByUserId(userId, viewerId);
+  const posts = await postRepository.findPostsByUserId(userId, viewerId);
 
-    return posts.map((post) => ({
-        postId: post.postId,
-        userId: post.userId,
-        stuffId: post.stuffId,
-        content: post.content,
-        imageUrl: post.imageUrl,
-        price: post.price === null || post.price === undefined ? null : Number(post.price),
+  return posts.map((post) => ({
+    postId: post.postId,
+    userId: post.userId,
+    stuffId: post.stuffId,
+    content: post.content,
+    imageUrl: post.imageUrl,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
 
-        recommendedStuffId: post.recommendedStuffId,
-        recommendedStuffName: post.recommendedStuffName,
-        recommendedBrandId: post.recommendedBrandId,
-        recommendedBrandName: post.recommendedBrandName,
-        recommendedImageUrl: post.recommendedImageUrl,
+    nickname: post.nickname,
+    profileImageUrl: post.profileImageUrl,
 
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt,
+    stuffName: post.stuffName,
+    price: Number(post.price || 0),
 
-        nickname: post.nickname,
-        profileImageUrl: post.profileImageUrl,
+    brandId: post.brandId,
+    brandName: post.brandName,
 
-        stuffName: post.stuffName,
-        brandId: post.brandId,
-        brandName: post.brandName,
+    recommendedStuffId: post.recommendedStuffId,
+    recommendedStuffName: post.recommendedStuffName,
+    recommendedBrandId: post.recommendedBrandId,
+    recommendedBrandName: post.recommendedBrandName,
+    recommendedImageUrl: post.recommendedImageUrl,
 
-        commentCount: Number(post.commentCount || 0),
-        likeCount: Number(post.likeCount || 0),
-        dislikeCount: Number(post.dislikeCount || 0),
+    commentCount: Number(post.commentCount || 0),
+    likeCount: Number(post.likeCount || 0),
+    dislikeCount: Number(post.dislikeCount || 0),
 
-        isLiked: !!post.isLiked,
-        isDisliked: !!post.isDisliked,
+    isLiked: !!post.isLiked,
+    isDisliked: !!post.isDisliked,
 
-        scrapCount: Number(post.scrapCount || 0),
-        isScrapped: !!post.isScrapped,
-    }));
+    scrapCount: Number(post.scrapCount || 0),
+    isScrapped: !!post.isScrapped,
+  }));
 };
 
 module.exports = {

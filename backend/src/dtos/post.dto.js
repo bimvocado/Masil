@@ -4,27 +4,37 @@ class CreatePostReqDTO {
         this.imageUrl = imageUrl;
         this.userId = userId;
         this.stuffId = Number(stuffId);
-
-        this.price =
-            price === null || price === undefined || price === ''
-                ? null
-                : Number(price);
+        this.price = price !== undefined && price !== null && price !== ''
+            ? Number(price)
+            : null;
 
         this.recommendedStuffId =
-            recommendedStuffId === null || recommendedStuffId === undefined || recommendedStuffId === ''
-                ? null
-                : Number(recommendedStuffId);
+            recommendedStuffId !== undefined &&
+            recommendedStuffId !== null &&
+            recommendedStuffId !== ''
+                ? Number(recommendedStuffId)
+                : null;
 
-        this.recommendedImageUrl = recommendedImageUrl ?? null;
+        this.recommendedImageUrl = recommendedImageUrl || null;
     }
 }
 
 class UpdatePostReqDTO {
-    constructor(content, imageUrl, price, recommendedStuffId) {
+    constructor(content, imageUrl, price, recommendedStuffId, recommendedImageUrl) {
         this.content = content;
         this.imageUrl = imageUrl;
-        this.price = price;
-        this.recommendedStuffId = recommendedStuffId;
+        this.price = price !== undefined && price !== null && price !== ''
+            ? Number(price)
+            : null;
+
+        this.recommendedStuffId =
+            recommendedStuffId !== undefined &&
+            recommendedStuffId !== null &&
+            recommendedStuffId !== ''
+                ? Number(recommendedStuffId)
+                : null;
+
+        this.recommendedImageUrl = recommendedImageUrl || null;
     }
 }
 
