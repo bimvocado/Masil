@@ -17,13 +17,17 @@ export const postService = {
 
   // 게시글 개별 조회
   getPost: async (postId: number): Promise<Post> => {
-    const response = await apiClient.get(`/api/posts/${postId}`);
+    const response = await apiClient.get('/api/posts/${postId}');
     return response.data.data;
   },
 
-  // 게시글 등록
+  // 게시글 등록 (multipart 헤더 추가)
   createPost: async (postData: FormData): Promise<Post> => {
-    const response = await apiClient.post('/api/posts', postData);
+    const response = await apiClient.post('/api/posts', postData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data.data;
   },
 
