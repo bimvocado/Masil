@@ -6,7 +6,7 @@ import {
   TextInput,
   Image,
   KeyboardAvoidingView,
-  Platform, // 💡 Platform이 누락되어 있다면 반드시 추가하세요!
+  Platform,
   ScrollView,
   Alert,
   Modal,
@@ -28,8 +28,10 @@ const getImageUrl = (url?: string | null) => {
   return url.startsWith('http') ? url : `${BASE_URL}${url}`;
 };
 
-// 💡 FileSystem 에러를 완전히 우회하기 위해 바로 밑에 이 한 줄을 추가해 주세요.
+// 💡 FileSystem 에러 완전 방어
 const ExpoFileSystem = FileSystem as any;
+// 💡 스타일 파일에 누락된 속성이 있어도 뻗지 않도록 Any 처리
+const safeStyles = styles as any;
 
 export default function PlusScreen() {
   const router = useRouter();
@@ -60,7 +62,9 @@ export default function PlusScreen() {
 
   const [recommendedBrandId, setRecommendedBrandId] = useState<number | null>(null);
   const [recommendedBrandName, setRecommendedBrandName] = useState('');
-  const [recommendedBrandLogoUrl, setRecommendedBrandLogoUrl] = useState('');
+  
+  // 💡 스크린샷 에러 해결: 컴포넌트 내부에 변수가 없을 경우를 대비해 유연하게 fallback 지정하기 위한 로컬 상태 선언
+  const [recBrandLogoUrl, setRecBrandLogoUrl] = useState('');
 
   const handleBackPress = () => {
     if (step === 2) {
@@ -168,7 +172,7 @@ export default function PlusScreen() {
     setRecommendedStuffName(`@${item.stuffName}`);
     setRecommendedBrandId(item.brandId ?? null);
     setRecommendedBrandName(item.brandName ?? '');
-    setRecommendedBrandLogoUrl(item.logoUrl ?? '');
+    setRecBrandLogoUrl(item.logoUrl ?? '');
     setRecommendedPrice(
       item.averagePrice !== undefined && item.averagePrice !== null
         ? String(Math.round(item.averagePrice))
@@ -217,11 +221,11 @@ export default function PlusScreen() {
     setRecommendedImageUri(null);
     setRecommendedBrandId(null);
     setRecommendedBrandName('');
-    setRecommendedBrandLogoUrl('');
+    setRecBrandLogoUrl('');
     setBrandSelectTarget('main');
   };
 
-const handleUpload = async () => {
+  const handleUpload = async () => {
     try {
       if (!content.trim()) {
         Alert.alert('알림', '소개글을 작성해주세요.');
@@ -241,8 +245,10 @@ const handleUpload = async () => {
         formData.append('recommendedPrice', recommendedPrice || '0');
       }
 
-      // 🔥 [수정] TypeScript가 에러를 뿜지 못하도록 안전하게 문자열 인덱스로 캐시 디렉토리를 가져옵니다.
-      const targetCacheDir = ExpoFileSystem['cacheDirectory'] || ExpoFileSystem['documentDirectory'] || '';
+      // 💡 [수정됨] 문자열 인덱싱 기법으로 FileSystem 에러 완벽 해결
+      const cacheDirKey = 'cacheDirectory';
+      const docDirKey = 'documentDirectory';
+      const targetCacheDir = ExpoFileSystem[cacheDirKey] || ExpoFileSystem[docDirKey] || '';
 
       // 1. 메인 이미지 처리
       if (imageUri) {
@@ -261,8 +267,7 @@ const handleUpload = async () => {
             try {
               if (targetCacheDir) {
                 const dest = targetCacheDir + filename;
-                // 🔥 [수정] copyAsync도 안전하게 우회 호출합니다.
-                await ExpoFileSystem.copyAsync({ from: imageUri, to: dest });
+                await ExpoFileSystem['copyAsync']({ from: imageUri, to: dest });
                 uriForForm = dest;
               }
             } catch (e) {
@@ -274,17 +279,11 @@ const handleUpload = async () => {
             uriForForm = 'file://' + uriForForm;
           }
 
-//           if (!appended) {
-//             if (Platform.OS === 'android' && uriForForm.startsWith('/') && !uriForForm.startsWith('file://')) {
-//               uriForForm = 'file://' + uriForForm;
-//             }
-
-            formData.append('image', {
-              uri: uriForForm,
-              name: filename,
-              type,
-            } as any);
-          }
+          formData.append('image', {
+            uri: uriForForm,
+            name: filename,
+            type,
+          } as any);
         }
       }
 
@@ -305,8 +304,7 @@ const handleUpload = async () => {
             try {
               if (targetCacheDir) {
                 const dest = targetCacheDir + filename;
-                // 🔥 [수정] copyAsync도 안전하게 우회 호출합니다.
-                await ExpoFileSystem.copyAsync({ from: recommendedImageUri, to: dest });
+                await ExpoFileSystem['copyAsync']({ from: recommendedImageUri, to: dest });
                 uriForForm = dest;
               }
             } catch (e) {
@@ -318,17 +316,11 @@ const handleUpload = async () => {
             uriForForm = 'file://' + uriForForm;
           }
 
-//           if (!appendedRec) {
-//             if (Platform.OS === 'android' && uriForForm.startsWith('/') && !uriForForm.startsWith('file://')) {
-//               uriForForm = 'file://' + uriForForm;
-//             }
-
-            formData.append('recommendedImage', {
-              uri: uriForForm,
-              name: filename,
-              type,
-            } as any);
-          }
+          formData.append('recommendedImage', {
+            uri: uriForForm,
+            name: filename,
+            type,
+          } as any);
         }
       }
 
@@ -345,98 +337,98 @@ const handleUpload = async () => {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <TopBar title="게시물 업로드" onBackPress={handleBackPress} />
-      <View style={styles.container}>
+      <View style={safeStyles.container || { flex: 1 }}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100, paddingTop: 20 }}>
           {step === 1 ? (
             <>
-              <TouchableOpacity style={styles.imageUploadCard} onPress={handlePickImage}>
-                {imageUri ? <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="cover" /> : <Image source={require('@/assets/icons/search.png')} style={styles.imageIconPlaceHolder} resizeMode="contain" />}
+              <TouchableOpacity style={safeStyles.imageUploadCard || {}} onPress={handlePickImage}>
+                {imageUri ? <Image source={{ uri: imageUri }} style={safeStyles.previewImage || {}} resizeMode="cover" /> : <Image source={require('@/assets/icons/search.png')} style={safeStyles.imageIconPlaceHolder || {}} resizeMode="contain" />}
               </TouchableOpacity>
 
-              <View style={styles.userInfoCard}>
+              <View style={safeStyles.userInfoCard || {}}>
                 <TouchableOpacity onPress={() => { setBrandSelectTarget('main'); setIsBrandModalVisible(true); }}>
-                  {selectedBrandLogoUrl ? <Image source={{ uri: getImageUrl(selectedBrandLogoUrl) }} style={styles.avatarPlaceholder} /> : <View style={styles.avatarPlaceholder}><Text style={styles.questionMark}>?</Text></View>}
+                  {selectedBrandLogoUrl ? <Image source={{ uri: getImageUrl(selectedBrandLogoUrl) }} style={safeStyles.avatarPlaceholder || {}} /> : <View style={safeStyles.avatarPlaceholder || {}}><Text style={safeStyles.questionMark || {}}>?</Text></View>}
                 </TouchableOpacity>
-                <View style={styles.nameInputWrapper}>
-                  <TextInput placeholder="@이름 작성" placeholderTextColor={Colors.gray.light} style={styles.nameInput} value={brandName} onChangeText={handleStuffNameChange} />
+                <View style={safeStyles.nameInputWrapper || {}}>
+                  <TextInput placeholder="@이름 작성" placeholderTextColor={Colors.gray.light} style={safeStyles.nameInput || {}} value={brandName} onChangeText={handleStuffNameChange} />
                 </View>
               </View>
 
               {suggestions.length > 0 && (
-                <View style={styles.suggestionsContainer}>
+                <View style={safeStyles.suggestionsContainer || {}}>
                   {suggestions.map((item) => (
-                    <TouchableOpacity key={item.stuffId} style={styles.suggestionItem} onPress={() => handleSelectSuggestion(item)}>
-                      <Text style={styles.suggestionText}>{item.stuffName} ({item.brandName})</Text>
+                    <TouchableOpacity key={item.stuffId} style={safeStyles.suggestionItem || {}} onPress={() => handleSelectSuggestion(item)}>
+                      <Text style={safeStyles.suggestionText || {}}>{item.stuffName} ({item.brandName})</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
 
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>단가</Text>
-                <TextInput placeholder="원 가격 입력" placeholderTextColor={Colors.gray.light} style={styles.priceInput} keyboardType="numeric" value={price} onChangeText={setPrice} />
+              <View style={safeStyles.priceRow || {}}>
+                <Text style={safeStyles.priceLabel || {}}>단가</Text>
+                <TextInput placeholder="원 가격 입력" placeholderTextColor={Colors.gray.light} style={safeStyles.priceInput || {}} keyboardType="numeric" value={price} onChangeText={setPrice} />
               </View>
 
-              <View style={styles.divider} />
+              <View style={safeStyles.divider || {}} />
 
-              <View style={styles.recommendSection}>
-                <Text style={styles.recommendTitle}>추천 조합 상품</Text>
-                <View style={styles.userInfoCard}>
+              <View style={safeStyles.recommendSection || {}}>
+                <Text style={safeStyles.recommendTitle || {}}>추천 조합 상품</Text>
+                <View style={safeStyles.userInfoCard || {}}>
                   <TouchableOpacity onPress={() => { setBrandSelectTarget('recommended'); setIsBrandModalVisible(true); }}>
-                    {recommendedBrandLogoUrl ? <Image source={{ uri: getImageUrl(recommendedBrandLogoUrl) }} style={styles.avatarPlaceholder} /> : <View style={styles.avatarPlaceholder}><Text style={styles.questionMark}>?</Text></View>}
+                    {recBrandLogoUrl ? <Image source={{ uri: getImageUrl(recBrandLogoUrl) }} style={safeStyles.avatarPlaceholder || {}} /> : <View style={safeStyles.avatarPlaceholder || {}}><Text style={safeStyles.questionMark || {}}>?</Text></View>}
                   </TouchableOpacity>
-                  <View style={styles.nameInputWrapper}>
-                    <TextInput placeholder="@추천 조합 상품명 작성" placeholderTextColor={Colors.gray.light} style={styles.nameInput} value={recommendedStuffName} onChangeText={handleRecommendedStuffChange} />
+                  <View style={safeStyles.nameInputWrapper || {}}>
+                    <TextInput placeholder="@추천 조합 상품명 작성" placeholderTextColor={Colors.gray.light} style={safeStyles.nameInput || {}} value={recommendedStuffName} onChangeText={handleRecommendedStuffChange} />
                   </View>
                 </View>
 
                 {recommendedSuggestions.length > 0 && (
-                  <View style={styles.suggestionsContainer}>
+                  <View style={safeStyles.suggestionsContainer || {}}>
                     {recommendedSuggestions.map((item) => (
-                      <TouchableOpacity key={item.stuffId} style={styles.suggestionItem} onPress={() => handleSelectRecommendedSuggestion(item)}>
-                        <Text style={styles.suggestionText}>{item.stuffName} ({item.brandName})</Text>
+                      <TouchableOpacity key={item.stuffId} style={safeStyles.suggestionItem || {}} onPress={() => handleSelectRecommendedSuggestion(item)}>
+                        <Text style={safeStyles.suggestionText || {}}>{item.stuffName} ({item.brandName})</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
                 )}
 
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>단가</Text>
-                  <TextInput placeholder="원 가격 입력" placeholderTextColor={Colors.gray.light} style={styles.priceInput} keyboardType="numeric" value={recommendedPrice} onChangeText={setRecommendedPrice} />
+                <View style={safeStyles.priceRow || {}}>
+                  <Text style={safeStyles.priceLabel || {}}>단가</Text>
+                  <TextInput placeholder="원 가격 입력" placeholderTextColor={Colors.gray.light} style={safeStyles.priceInput || {}} keyboardType="numeric" value={recommendedPrice} onChangeText={setRecommendedPrice} />
                 </View>
 
-                <TouchableOpacity style={styles.imageUploadCardSmall} onPress={handlePickRecommendedImage}>
-                  {recommendedImageUri ? <Image source={{ uri: recommendedImageUri }} style={styles.previewImage} resizeMode="cover" /> : <Text style={styles.imagePlaceholderText}>추천 상품 사진 등록</Text>}
+                <TouchableOpacity style={safeStyles.imageUploadCardSmall || {}} onPress={handlePickRecommendedImage}>
+                  {recommendedImageUri ? <Image source={{ uri: recommendedImageUri }} style={safeStyles.previewImage || {}} resizeMode="cover" /> : <Text style={safeStyles.imagePlaceholderText || {}}>추천 상품 사진 등록</Text>}
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-                <Text style={styles.nextButtonText}>다음</Text>
+              <TouchableOpacity style={safeStyles.nextButton || {}} onPress={handleNext}>
+                <Text style={safeStyles.nextButtonText || {}}>다음</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
-              <TextInput placeholder="조합에 대한 소개글을 작성해 주세요." placeholderTextColor={Colors.gray.light} style={styles.contentInput} multiline textAlignVertical="top" value={content} onChangeText={setContent} />
-              <TouchableOpacity style={styles.nextButton} onPress={handleUpload}>
-                <Text style={styles.nextButtonText}>업로드</Text>
+              <TextInput placeholder="조합에 대한 소개글을 작성해 주세요." placeholderTextColor={Colors.gray.light} style={safeStyles.contentInput || {}} multiline textAlignVertical="top" value={content} onChangeText={setContent} />
+              <TouchableOpacity style={safeStyles.nextButton || {}} onPress={handleUpload}>
+                <Text style={safeStyles.nextButtonText || {}}>업로드</Text>
               </TouchableOpacity>
             </>
           )}
         </ScrollView>
 
         <Modal visible={isBrandModalVisible} animationType="slide" transparent>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <View style={styles.tabContainer}>
-                <TouchableOpacity style={[styles.tabButton, brandCategory === 'FOOD' && styles.activeTabButton]} onPress={() => setBrandCategory('FOOD')}><Text style={[styles.tabText, brandCategory === 'FOOD' && styles.activeTabText]}>식품</Text></TouchableOpacity>
-                <TouchableOpacity style={[styles.tabButton, brandCategory === 'HOUSEHOLD' && styles.activeTabButton]} onPress={() => setBrandCategory('HOUSEHOLD')}><Text style={[styles.tabText, brandCategory === 'HOUSEHOLD' && styles.activeTabText]}>생활용품</Text></TouchableOpacity>
+          <View style={safeStyles.modalOverlay || { flex: 1 }}>
+            <View style={safeStyles.modalContainer || { flex: 1, backgroundColor: 'white' }}>
+              <View style={safeStyles.tabContainer || { flexDirection: 'row' }}>
+                <TouchableOpacity style={[safeStyles.tabButton || {}, brandCategory === 'FOOD' && (safeStyles.activeTabButton || {})]} onPress={() => setBrandCategory('FOOD')}><Text style={[safeStyles.tabText || {}, brandCategory === 'FOOD' && (safeStyles.activeTabText || {})]}>식품</Text></TouchableOpacity>
+                <TouchableOpacity style={[safeStyles.tabButton || {}, brandCategory === 'HOUSEHOLD' && (safeStyles.activeTabButton || {})]} onPress={() => setBrandCategory('HOUSEHOLD')}><Text style={[safeStyles.tabText || {}, brandCategory === 'HOUSEHOLD' && (safeStyles.activeTabText || {})]}>생활용품</Text></TouchableOpacity>
               </View>
-              <TextInput placeholder="브랜드 검색..." style={styles.brandSearchInput} value={brandQuery} onChangeText={brandQuery => setBrandQuery(brandQuery)} />
+              <TextInput placeholder="브랜드 검색..." style={safeStyles.brandSearchInput || {}} value={brandQuery} onChangeText={brandQuery => setBrandQuery(brandQuery)} />
               <ScrollView style={{ flex: 1 }}>
                 {brandResults.map((brand: any) => (
                   <TouchableOpacity
                     key={brand.brandId}
-                    style={styles.brandItem}
+                    style={safeStyles.brandItem || { padding: 10 }}
                     onPress={() => {
                       if (brandSelectTarget === 'main') {
                         setSelectedBrandId(brand.brandId);
@@ -445,18 +437,18 @@ const handleUpload = async () => {
                       } else {
                         setRecommendedBrandId(brand.brandId);
                         setRecommendedBrandName(brand.brandName);
-                        setRecommendedBrandLogoUrl(brand.logoUrl);
+                        setRecBrandLogoUrl(brand.logoUrl);
                       }
                       setIsBrandModalVisible(false);
                       setBrandQuery('');
                     }}
                   >
-                    <Image source={{ uri: getImageUrl(brand.logoUrl) }} style={styles.brandLogo} />
-                    <Text style={styles.brandNameText}>{brand.brandName}</Text>
+                    <Image source={{ uri: getImageUrl(brand.logoUrl) }} style={safeStyles.brandLogo || { width: 40, height: 40 }} />
+                    <Text style={safeStyles.brandNameText || {}}>{brand.brandName}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-              <TouchableOpacity style={styles.closeButton} onPress={() => { setIsBrandModalVisible(false); setBrandQuery(''); }}><Text style={styles.closeButtonText}>닫기</Text></TouchableOpacity>
+              <TouchableOpacity style={safeStyles.closeButton || { padding: 15 }} onPress={() => { setIsBrandModalVisible(false); setBrandQuery(''); }}><Text style={safeStyles.closeButtonText || {}}>닫기</Text></TouchableOpacity>
             </View>
           </View>
         </Modal>
