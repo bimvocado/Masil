@@ -2,9 +2,9 @@ const Post = require('../models/post.model');
 const { QueryTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
-// 게시글 생성
-const createPost = async (postData) => {
-    return await Post.create(postData);
+// 게시글 생성 (options 추가로 트랜잭션 수신 가능하게 변경)
+const createPost = async (postData, options = {}) => {
+    return await Post.create(postData, options);
 };
 
 const findAllPosts = async (viewerId = null) => {
@@ -75,7 +75,6 @@ const findAllPosts = async (viewerId = null) => {
     return posts;
 };
 
-// 게시글 개별 조회
 const findPostById = async (postId) => {
     const posts = await sequelize.query(`
         SELECT
@@ -121,12 +120,10 @@ const findPostById = async (postId) => {
     return posts[0] || null;
 };
 
-// 게시글 수정
 const updatePost = async (post, updateData) => {
     return await post.update(updateData);
 };
 
-// 게시글 삭제
 const deletePost = async (post) => {
     return await post.destroy();
 };
