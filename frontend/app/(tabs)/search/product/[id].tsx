@@ -186,16 +186,24 @@ export default function ProductDetailScreen() {
           {detailData.topPost ? (
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() =>
+              onPress={() => {
+                const postId = detailData.topPost?.postId;
+              
+                if (!postId) {
+                  console.warn('대표 리뷰 postId가 없습니다.');
+                  return;
+                }
+              
                 router.push({
                   pathname: '/search/post/[id]',
-                  params: { 
-                    id: String(detailData.topPost?.postId),
-                    fetchType: 'single'
+                  params: {
+                    id: String(postId),
+                    fetchType: 'single',
                   },
-                })
-              }
+                } as any);
+              }}
             >
+              
               <Text style={{ fontWeight: 'bold' }}>{detailData.topPost.nickname}</Text>
               <Text style={{ color: '#666', marginTop: 5 }}>{detailData.topPost.content}</Text>
               <Text style={{ color: '#888', marginTop: 5 }}>스크랩 {detailData.topPost.scrapCount}</Text>
