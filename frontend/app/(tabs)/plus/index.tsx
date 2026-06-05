@@ -274,11 +274,17 @@ const handleUpload = async () => {
             uriForForm = 'file://' + uriForForm;
           }
 
-          formData.append('image', {
-            uri: uriForForm,
-            name: filename,
-            type,
-          } as any);
+//           if (!appended) {
+//             if (Platform.OS === 'android' && uriForForm.startsWith('/') && !uriForForm.startsWith('file://')) {
+//               uriForForm = 'file://' + uriForForm;
+//             }
+
+            formData.append('image', {
+              uri: uriForForm,
+              name: filename,
+              type,
+            } as any);
+          }
         }
       }
 
@@ -312,11 +318,17 @@ const handleUpload = async () => {
             uriForForm = 'file://' + uriForForm;
           }
 
-          formData.append('recommendedImage', {
-            uri: uriForForm,
-            name: filename,
-            type,
-          } as any);
+//           if (!appendedRec) {
+//             if (Platform.OS === 'android' && uriForForm.startsWith('/') && !uriForForm.startsWith('file://')) {
+//               uriForForm = 'file://' + uriForForm;
+//             }
+
+            formData.append('recommendedImage', {
+              uri: uriForForm,
+              name: filename,
+              type,
+            } as any);
+          }
         }
       }
 
