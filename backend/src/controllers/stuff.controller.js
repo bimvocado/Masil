@@ -56,15 +56,16 @@ const getStuffDetail = async (req, res, next) => {
     const result = await stuffService.getStuffDetail(
       Number(stuffId)
     );
-    const finalResult = {
-      ...result,
-      isKorean: req.user ? req.user.is_korean : true 
-    };
-
+    
     return res.status(200).json({
       success: true,
       message: '상품 상세 조회 성공',
-      data: finalResult, 
+      result: {
+        ...result,
+        isKorean: req.user
+          ? req.user.is_korean
+          : true,
+      },
     });
   } catch (error) {
     next(error);

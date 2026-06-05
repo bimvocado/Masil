@@ -4,34 +4,6 @@ const sequelize = require('../config/db');
 const Stuff = require('../models/stuff.model');
 const Brand = require('../models/brand.model');
 
-// // 검색창 - 상품으로 검색
-// const searchStuffs = async ({ keyword, category }) => {
-//   const where = {};
-//   const brandWhere = {};
-
-//   if (keyword) {
-//     where.stuffName = {
-//       [Op.like]: `%${keyword}%`,
-//     };
-//   }
-
-//   if (category) {
-//     brandWhere.category = category;
-//   }
-
-//   return await Stuff.findAll({
-//     where,
-//     include: [
-//       {
-//         model: Brand,
-//         where: brandWhere,
-//         required: true,
-//       },
-//     ],
-//     order: [['stuffName', 'ASC']],
-//   });
-// };
-
 // 검색창 - 상품으로 검색
 const searchStuffs = async ({ keyword, category }) => {
   const rows = await sequelize.query(
@@ -229,11 +201,14 @@ const findTopPostByStuff = async (stuffId) => {
     LEFT JOIN users u
       ON p.user_id = u.user_id
 
+    -- 💡 soft delete(삭제 여부) 조건을 명시하여 깨진 데이터 매핑 방지
     LEFT JOIN stuffs rst 
       ON p.recommended_stuff_id = rst.stuff_id
+      AND rst.deleted_at IS NULL
     
     LEFT JOIN brands rb 
       ON rst.brand_id = rb.brand_id
+      AND rb.deleted_at IS NULL
 
     WHERE p.stuff_id = :stuffId
       AND p.deleted_at IS NULL
