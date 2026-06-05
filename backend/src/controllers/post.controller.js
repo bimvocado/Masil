@@ -1,22 +1,25 @@
 const postService = require('../services/post.service');
 const ApiResponse = require('../utils/api.response.util');
-
-const {
-  CreatePostReqDTO,
-  UpdatePostReqDTO
-} = require('../dtos/post.dto');
+const { CreatePostReqDTO, UpdatePostReqDTO } = require('../dtos/post.dto');
 
 // 게시글 등록
 const createPost = async (req, res, next) => {
   try {
-    const { content, stuffId, price, recommendedStuffId } = req.body;
+    const { 
+      content, 
+      brandId, 
+      stuffName, 
+      price, 
+      recommendedBrandId, 
+      recommendedStuffName, 
+      recommendedPrice 
+    } = req.body;
     
     console.log('req.body:', req.body);
     console.log('req.files:', req.files);
 
     const userId = req.user.userId;
 
-    // req.files 및 각 이미지 배열 존재 여부를 안전하게 체크
     const imageUrl = (req.files && req.files.image && req.files.image[0])
       ? `/uploads/${req.files.image[0].filename}`
       : null;
@@ -29,10 +32,13 @@ const createPost = async (req, res, next) => {
       content,
       imageUrl,
       userId,
-      stuffId,
+      recommendedImageUrl,
+      brandId,
+      stuffName,
       price,
-      recommendedStuffId,
-      recommendedImageUrl
+      recommendedBrandId,
+      recommendedStuffName,
+      recommendedPrice
     );
 
     const postResult = await postService.createPost(reqDTO);
@@ -49,12 +55,8 @@ const createPost = async (req, res, next) => {
 const getPosts = async (req, res, next) => {
   try {
     const viewerId = req.user ? req.user.userId : null;
-
     const posts = await postService.getPosts(viewerId); 
-
-    return res.status(200).json(
-      ApiResponse.success(200, '게시글 전체 조회 성공', posts)
-    );
+    return res.status(200).json(ApiResponse.success(200, '게시글 전체 조회 성공', posts));
   } catch (error) {
     next(error);
   }
@@ -65,12 +67,8 @@ const getPost = async (req, res, next) => {
   try {
     const { postId } = req.params;
     const viewerId = req.user ? req.user.userId : null; 
-
     const post = await postService.getPost(Number(postId), viewerId); 
-
-    return res.status(200).json(
-      ApiResponse.success(200, '게시글 조회 성공', post)
-    );
+    return res.status(200).json(ApiResponse.success(200, '게시글 조회 성공', post));
   } catch (error) {
     next(error);
   }
@@ -81,30 +79,11 @@ const updatePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
     const { content, imageUrl, price, recommendedStuffId } = req.body;
-
     const userId = req.user.userId;
 
-    // 파일이 업로드된 경우 경로로 변환, 아니면 req.body에서 받은 값 사용
-    const recommendedImageUrl = req.files?.recommendedImage?.[0]
-      ? `/uploads/${req.files.recommendedImage[0].filename}`
-      : (req.body.recommendedImageUrl || null);
-
-    const reqDTO = new UpdatePostReqDTO(
-      content,
-      imageUrl,
-      price,
-      recommendedStuffId
-    );
-
-    const updateResult = await postService.updatePost(
-      Number(postId),
-      userId,
-      reqDTO
-    );
-
-    return res.status(200).json(
-      ApiResponse.success(200, '게시글 수정 성공', updateResult)
-    );
+    const reqDTO = new UpdatePostReqDTO(content, imageUrl, price, recommendedStuffId);
+    const updateResult = await postService.updatePost(Number(postId), userId, reqDTO);
+    return res.status(200).json(ApiResponse.success(200, '게시글 수정 성공', updateResult));
   } catch (error) {
     next(error);
   }
@@ -114,17 +93,9 @@ const updatePost = async (req, res, next) => {
 const deletePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
-
     const userId = req.user.userId;
-
-    const deleteResult = await postService.deletePost(
-      Number(postId),
-      userId
-    );
-
-    return res.status(200).json(
-      ApiResponse.success(200, '게시글 삭제 성공', deleteResult)
-    );
+    const deleteResult = await postService.deletePost(Number(postId), userId);
+    return res.status(200).json(ApiResponse.success(200, '게시글 삭제 성공', deleteResult));
   } catch (error) {
     next(error);
   }

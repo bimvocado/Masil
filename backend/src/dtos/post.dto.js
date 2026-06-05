@@ -1,66 +1,44 @@
 class CreatePostReqDTO {
-    constructor(content, imageUrl, userId, stuffId, price, recommendedStuffId, recommendedImageUrl) {
-        this.content = content;
-        this.imageUrl = imageUrl;
-        this.userId = userId;
-        this.stuffId = Number(stuffId);
-
-        this.price =
-            price === null || price === undefined || price === ''
-                ? null
-                : Number(price);
-
-        this.recommendedStuffId =
-            recommendedStuffId === null || recommendedStuffId === undefined || recommendedStuffId === ''
-                ? null
-                : Number(recommendedStuffId);
-
-        this.recommendedImageUrl = recommendedImageUrl ?? null;
-    }
+  constructor(content, imageUrl, userId, recommendedImageUrl, brandId, stuffName, price, recommendedBrandId, recommendedStuffName, recommendedPrice) {
+    this.content = content;
+    this.imageUrl = imageUrl;
+    this.userId = userId;
+    this.recommendedImageUrl = recommendedImageUrl;
+    this.brandId = brandId;
+    this.stuffName = stuffName;
+    this.price = price;
+    this.recommendedBrandId = recommendedBrandId;
+    this.recommendedStuffName = recommendedStuffName;
+    this.recommendedPrice = recommendedPrice;
+  }
 }
 
 class UpdatePostReqDTO {
-    constructor(content, imageUrl, price, recommendedStuffId) {
-        this.content = content;
-        this.imageUrl = imageUrl;
-        this.price = price;
-        this.recommendedStuffId = recommendedStuffId;
-    }
+  constructor(content, imageUrl, price, recommendedStuffId) {
+    this.content = content;
+    this.imageUrl = imageUrl;
+    this.price = price;
+    this.recommendedStuffId = recommendedStuffId;
+  }
 }
 
 class PostResDTO {
-    constructor(post) {
-        this.postId = post.postId;
-        this.content = post.content;
-        this.imageUrl = post.imageUrl;
-        this.userId = post.userId;
-        this.stuffId = post.stuffId;
-        this.price = post.price;
-
-        this.recommendedStuffId = post.recommendedStuffId;
-        this.recommendedStuffName = post.recommendedStuffName;
-        this.recommendedBrandId = post.recommendedBrandId;
-        this.recommendedBrandName = post.recommendedBrandName;
-        this.recommendedImageUrl = post.recommendedImageUrl;
-
-        this.createdAt = post.createdAt;
-        this.updatedAt = post.updatedAt;
-        this.nickname = post.nickname;
-        this.stuffName = post.stuffName;
-        this.brandName = post.brandName;
-
-        this.isLiked = !!post.isLiked;
-        this.isDisliked = !!post.isDisliked;
-        this.isScrapped = !!post.isScrapped;
-
-        this.likeCount = Number(post.likeCount || 0);
-        this.dislikeCount = Number(post.dislikeCount || 0);
-        this.commentCount = Number(post.commentCount || 0);
-    }
+  constructor(post) {
+    this.postId = post.postId || post.post_id;
+    this.userId = post.userId || post.user_id;
+    this.stuffId = post.stuffId || post.stuff_id;
+    this.content = post.content;
+    this.imageUrl = post.imageUrl || post.image_url;
+    this.recommendedStuffId = post.recommendedStuffId || post.recommended_stuff_id;
+    this.recommendedImageUrl = post.recommendedImageUrl || post.recommended_image_url;
+    this.price = post.price;
+    this.createdAt = post.createdAt || post.created_at;
+    this.updatedAt = post.updatedAt || post.updated_at;
+  }
 }
 
 module.exports = {
-    CreatePostReqDTO,
-    UpdatePostReqDTO,
-    PostResDTO,
+  CreatePostReqDTO,
+  UpdatePostReqDTO,
+  PostResDTO
 };
