@@ -6,28 +6,26 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.
 
 export const authService = {
  
-  login: async (loginId: string, password: string) => {
-    try {
-      console.log("[디버그] 로그인 API 호출 시작 (ID: " + loginId + ")");
-      const response = await apiClient.post('/api/auth/login', { loginId, password });
-      
-      const token = response.data?.token || 
-                    response.data?.data?.token || 
-                    response.data?.accessToken;
+ login: async (loginId: string, password: string) => {
+  try {
+    console.log(`[디버그] 로그인 API 호출 시작 (ID: ${loginId})`);
+    const response = await apiClient.post('/api/auth/login', { loginId, password });
+    
+    const token = response.data?.token || 
+                  response.data?.data?.token || 
+                  response.data?.accessToken;
 
-      if (token) {
-        await saveToken(token);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('userToken', token);
-        }
-        console.log("✅ [디버그] 토큰 저장 완료");
-      }
-      return response.data;
-    } catch (error) {
-      console.error('로그인 에러:', error);
-      throw error;
+    if (token) {
+      await saveToken(token);
+      console.log("[디버그] 네이티브 저장소에 토큰 저장 완료");
     }
-  },
+    
+    return response.data;
+  } catch (error) {
+    console.error('일반 로그인 에러:', error);
+    throw error;
+  }
+},
 
   /**
    * 프로필 로드: 
