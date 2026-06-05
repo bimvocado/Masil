@@ -13,14 +13,17 @@ import { useStuffDetail } from '@/hooks/useStuffDetail';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 
+// 💡 방법 1: 추천 조합의 이미지가 없을 때 사용할 디폴트 이미지 URL을 정의합니다.
+// (원하시는 기본 이미지의 웹 주소로 변경하여 사용하세요!)
+const DEFAULT_IMAGE_URL = 'https://supermasil.duckdns.org/uploads/default-product.png'; 
+
 const getImageUrl = (url?: string | null) => {
-  if (!url) return undefined;
+  // 💡 이미지가 비어있거나 null/undefined인 경우 디폴트 이미지를 반환합니다.
+  if (!url) return DEFAULT_IMAGE_URL;
   return url.startsWith('http') ? url : `${BASE_URL}${url}`;
 };
 
 export default function ProductDetailScreen() {
-  
-  
   const { id, stuffName, brandName } = useLocalSearchParams<{
     id: string;
     stuffName: string;
@@ -40,12 +43,15 @@ export default function ProductDetailScreen() {
       </View>
     );
   }
-console.log("==========================================");
+
+  console.log("==========================================");
   console.log("📍 [상품 상세 데이터 로드 성공]");
   console.log(`- 전체 좋아요: ${detailData.likeCount}`);
   console.log(`- 내국인(K): ${detailData.koreanLikeCount}`);
   console.log(`- 외국인(F): ${detailData.foreignerLikeCount}`);
-  console.log(`- 내 국적 상태(isKorean): ${(detailData as any).isKorean}`);console.log("==========================================");
+  console.log(`- 내 국적 상태(isKorean): ${(detailData as any).isKorean}`);
+  console.log("==========================================");
+
   return (
     <View style={styles.container}>
       <TopBar title={detailData.stuffName || stuffName || '상품 상세'} showBackButton={true} />
@@ -117,31 +123,58 @@ console.log("==========================================");
 
         <View style={styles.divider} />
 
-        {/* 추천 조합 */}
+        {/* 추천 조합 (2번 문제 해결 - 이미지 디폴트 처리 및 클릭 시 상세이동) */}
         <Text style={styles.sectionTitle}>추천조합</Text>
 
         {detailData.topPost?.recommendedStuffName ? (
-          <View>
-            {detailData.topPost.recommendedImageUrl ? (
-              <Image
-                source={{ uri: getImageUrl(detailData.topPost.recommendedImageUrl) || '' }}
-                style={{ width: 80, height: 80, borderRadius: 12 }}
-              />
-            ) : null}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              const recStuffId = detailData.topPost?.recommendedStuffId;
+              const recStuffName = detailData.topPost?.recommendedStuffName;
+              const recBrandName = detailData.topPost?.recommendedBrandName;
 
-            <Text>{detailData.topPost.recommendedBrandName}</Text>
-            <Text>{detailData.topPost.recommendedStuffName}</Text>
-          </View>
+              if (!recStuffId) {
+                console.warn("📍 [경고] 추천 상품의 recommendedStuffId가 없습니다.");
+                return;
+              }
+
+              console.log(`📍 [이동] 추천 상품 상세 페이지로 이동. ID: ${recStuffId}`);
+
+              router.push({
+                pathname: '/search/product/[id]', 
+                params: {
+                  id: String(recStuffId),
+                  stuffName: recStuffName || '',
+                  brandName: recBrandName || '',
+                },
+              });
+            }}
+            style={styles.recommendedContainer}
+          >
+            {/* 💡 이미지가 없어도 getImageUrl을 통해 디폴트 이미지 URL을 받아와서 항상 출력합니다. */}
+            <Image
+              source={{ uri: getImageUrl(detailData.topPost.recommendedImageUrl) }}
+              style={styles.recommendedImage}
+            />
+
+            <View style={{ justifyContent: 'center', flex: 1 }}>
+              <Text style={styles.recBrandText}>{detailData.topPost.recommendedBrandName}</Text>
+              <Text style={styles.recStuffText}>{detailData.topPost.recommendedStuffName}</Text>
+              <Text style={styles.clickGuideText}>상세보기 〉</Text>
+            </View>
+          </TouchableOpacity>
         ) : (
-          <Text>추천 조합이 없습니다.</Text>
+          <Text style={styles.emptyText}>추천 조합이 없습니다.</Text>
         )}
+        
         <TouchableOpacity>
           <Text style={styles.moreText}>더보기 {'>'}</Text>
         </TouchableOpacity>
 
         <View style={styles.divider} />
 
-        {/* 하단 리뷰 영역 */}
+        {/* 하단 리뷰 영역 (원래 주신 소스코드 형태를 100% 보존합니다) */}
         <View style={styles.reviewHeader}>
           <Text style={{ fontWeight: 'bold' }}>리뷰</Text>
           <TouchableOpacity>
@@ -195,4 +228,42 @@ const styles = StyleSheet.create({
   moreText: { textAlign: 'right', color: '#888', fontSize: 12 },
   reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginBottom: 10 },
   reviewBox: { minHeight: 100, backgroundColor: '#EEE', borderRadius: 20, padding: 20, justifyContent: 'center' },
+  
+  // 💡 추천 조합 영역 컴포넌트들을 가로정렬 및 깔끔하게 배치하는 스타일들입니다.
+  recommendedContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
+    marginVertical: 5,
+    alignItems: 'center',
+  },
+  recommendedImage: { 
+    width: 80, 
+    height: 80, 
+    borderRadius: 12, 
+    marginRight: 12 
+  },
+  recBrandText: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 2,
+  },
+  recStuffText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  clickGuideText: {
+    fontSize: 11,
+    color: '#FF8A00',
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  emptyText: {
+    color: '#888',
+    marginVertical: 10,
+  },
 });
