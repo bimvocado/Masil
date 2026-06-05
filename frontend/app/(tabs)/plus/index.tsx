@@ -6,7 +6,7 @@ import {
   TextInput,
   Image,
   KeyboardAvoidingView,
-  Platform, // 💡 Platform이 누락되어 있다면 반드시 추가하세요!
+  Platform,
   ScrollView,
   Alert,
   Modal,
@@ -28,7 +28,7 @@ const getImageUrl = (url?: string | null) => {
   return url.startsWith('http') ? url : `${BASE_URL}${url}`;
 };
 
-// 💡 FileSystem 에러를 완전히 우회하기 위해 바로 밑에 이 한 줄을 추가해 주세요.
+// 💡 FileSystem 에러를 완전히 우회하기 위한 안전한 사정 선언
 const ExpoFileSystem = FileSystem as any;
 
 export default function PlusScreen() {
@@ -221,7 +221,7 @@ export default function PlusScreen() {
     setBrandSelectTarget('main');
   };
 
-const handleUpload = async () => {
+  const handleUpload = async () => {
     try {
       if (!content.trim()) {
         Alert.alert('알림', '소개글을 작성해주세요.');
@@ -241,7 +241,6 @@ const handleUpload = async () => {
         formData.append('recommendedPrice', recommendedPrice || '0');
       }
 
-      // 🔥 [수정] TypeScript가 에러를 뿜지 못하도록 안전하게 문자열 인덱스로 캐시 디렉토리를 가져옵니다.
       const targetCacheDir = ExpoFileSystem['cacheDirectory'] || ExpoFileSystem['documentDirectory'] || '';
 
       // 1. 메인 이미지 처리
@@ -261,7 +260,6 @@ const handleUpload = async () => {
             try {
               if (targetCacheDir) {
                 const dest = targetCacheDir + filename;
-                // 🔥 [수정] copyAsync도 안전하게 우회 호출합니다.
                 await ExpoFileSystem.copyAsync({ from: imageUri, to: dest });
                 uriForForm = dest;
               }
@@ -299,7 +297,6 @@ const handleUpload = async () => {
             try {
               if (targetCacheDir) {
                 const dest = targetCacheDir + filename;
-                // 🔥 [수정] copyAsync도 안전하게 우회 호출합니다.
                 await ExpoFileSystem.copyAsync({ from: recommendedImageUri, to: dest });
                 uriForForm = dest;
               }
@@ -328,7 +325,7 @@ const handleUpload = async () => {
       console.error('게시글 등록 완전 실패:', error);
       Alert.alert('오류', error.response?.data?.message || '게시글 등록 과정에 실패했습니다.');
     }
-  };
+  }; // 💡 try-catch 블록과 함수 종결 괄호 정상 매칭 완료
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
