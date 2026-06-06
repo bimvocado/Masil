@@ -18,20 +18,27 @@ const findAllPosts = async (viewerId = null) => {
             p.created_at AS createdAt,
             p.updated_at AS updatedAt,
             p.price AS price,
+            
+            -- 💰 [추가] 메인 상품의 실시간 평균 가격 계산
+            (SELECT ROUND(AVG(sub_p.price)) 
+             FROM posts sub_p 
+             WHERE sub_p.stuff_id = p.stuff_id 
+               AND sub_p.price IS NOT NULL 
+               AND sub_p.deleted_at IS NULL) AS avgPrice,
 
             u.nickname AS nickname,
             u.profile_image_url AS profileImageUrl,
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
-            b.logo_url AS brandLogoUrl, -- 🎉 [추가] 메인 브랜드 로고!
+            b.logo_url AS brandLogoUrl, -- 🎉 [추가] 메인 브랜드 로고 주소
 
             p.recommended_stuff_id AS recommendedStuffId,
             p.recommended_image_url AS recommendedImageUrl,
             rst.stuff_name AS recommendedStuffName,
             rb.brand_id AS recommendedBrandId,
             rb.brand_name AS recommendedBrandName,
-            rb.logo_url AS recommendedBrandLogoUrl, -- 🎉 [추가] 추천 조합 브랜드 로고!
+            rb.logo_url AS recommendedBrandLogoUrl, -- 🎉 [추가] 추천 브랜드 로고 주소
             
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
@@ -91,18 +98,25 @@ const findPostById = async (postId) => {
             p.created_at AS createdAt,
             p.updated_at AS updatedAt,
 
+            -- 💰 [추가] 상세 보기용 실시간 평균 가격 계산
+            (SELECT ROUND(AVG(sub_p.price)) 
+             FROM posts sub_p 
+             WHERE sub_p.stuff_id = p.stuff_id 
+               AND sub_p.price IS NOT NULL 
+               AND sub_p.deleted_at IS NULL) AS avgPrice,
+
             u.nickname AS nickname,
             u.profile_image_url AS profileImageUrl,
 
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
-            b.logo_url AS brandLogoUrl, -- 🎉 [추가]
+            b.logo_url AS brandLogoUrl, -- 🎉 [추가] 메인 브랜드 로고 주소
 
             rst.stuff_name AS recommendedStuffName,
             rb.brand_id AS recommendedBrandId,
             rb.brand_name AS recommendedBrandName,
-            rb.logo_url AS recommendedBrandLogoUrl -- 🎉 [추가]
+            rb.logo_url AS recommendedBrandLogoUrl -- 🎉 [추가] 추천 브랜드 로고 주소
 
         FROM posts p
         LEFT JOIN users u ON p.user_id = u.user_id
@@ -143,20 +157,27 @@ const findPostsByUserId = async (userId, viewerId = null) => {
             p.created_at AS createdAt,
             p.updated_at AS updatedAt,
             p.price AS price,
+            
+            -- 💰 [추가] 유저 피드용 실시간 평균 가격 계산
+            (SELECT ROUND(AVG(sub_p.price)) 
+             FROM posts sub_p 
+             WHERE sub_p.stuff_id = p.stuff_id 
+               AND sub_p.price IS NOT NULL 
+               AND sub_p.deleted_at IS NULL) AS avgPrice,
 
             u.nickname AS nickname,
             u.profile_image_url AS profileImageUrl,
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
-            b.logo_url AS brandLogoUrl, -- 🎉 [추가]
+            b.logo_url AS brandLogoUrl, -- 🎉 [추가] 메인 브랜드 로고 주소
 
             p.recommended_stuff_id AS recommendedStuffId,
             p.recommended_image_url AS recommendedImageUrl,
             rst.stuff_name AS recommendedStuffName,
             rb.brand_id AS recommendedBrandId,
             rb.brand_name AS recommendedBrandName,
-            rb.logo_url AS recommendedBrandLogoUrl, -- 🎉 [추가]
+            rb.logo_url AS recommendedBrandLogoUrl, -- 🎉 [추가] 추천 브랜드 로고 주소
 
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,

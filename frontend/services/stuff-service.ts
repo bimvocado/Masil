@@ -10,7 +10,8 @@ export interface StuffSuggestion {
   brandName: string;
   logoUrl?: string;
   price?: number;
-  averagePrice?: number;
+  averagePrice?: number; 
+  avgPrice?: number;
 }
 
 // 추천 조합 아이템 데이터 구조 인터페이스 정의
@@ -22,6 +23,8 @@ export interface RecommendedStuff {
   likeCount: number;
   scrapCount: number;
   recommendedImageUrl: string | null;
+  averagePrice?: number;
+  avgPrice?: number;
 }
 
 export const stuffService = {

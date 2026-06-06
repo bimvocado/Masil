@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import apiClient from '@/api/client';
-// import { BASE_URL } from '@/api/auth-service';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';export const API_URL = BASE_URL;
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
+export const API_URL = BASE_URL;
 
 const getAbsoluteUrl = (url: string | null | undefined) => {
   if (!url) return null;
@@ -17,13 +17,11 @@ export interface StuffDetail {
   price: number;
   bestReviewImageUrl: string | null;
   imageUrl?: string | null;
-
-  // recommendedStuffId?: number | null;
-  // recommendedStuffName?: string | null;
-  // recommendedBrandId?: number | null;
-  // recommendedBrandName?: string | null;
-  // recommendedImageUrl?: string | null;
   
+  // 💰 [추가] 화면단에서 메인 상품의 실시간 평균가를 정상 인식할 수 있도록 타입을 추가합니다.
+  averagePrice?: number;
+  avgPrice?: number;
+
   likeCount: number;
   likeRatio: number;
   koreanLikeCount: number;
@@ -36,7 +34,6 @@ export interface StuffDetail {
 
   recommendedStuffs: any[];
   bestReview: any | null;
-  // topPost?: any | null;
 
   topPost?: {
     postId: number;
@@ -104,7 +101,7 @@ export function useStuffDetail(id: string) {
           const statsResp = await apiClient.get(`/api/interactions/${id}/interactions`);
           const statsData = statsResp.data?.data?.stats ?? statsResp.data?.stats;
           const myReaction = statsResp.data?.data?.myReaction ?? statsResp.data?.myReaction ?? null;
-const isKor = statsResp.data?.data?.isKorean ?? statsResp.data?.isKorean;
+          const isKor = statsResp.data?.data?.isKorean ?? statsResp.data?.isKorean;
 
           if (statsData) {
             mapped.likeCount = statsData.like.total;

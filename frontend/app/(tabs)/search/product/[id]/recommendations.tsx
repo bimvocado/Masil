@@ -65,39 +65,45 @@ export default function RecommendedListScreen() {
           {recommendedStuffs.length}개의 추천 조합
         </Text>
         
-        {recommendedStuffs.map((item: RecommendedStuff, index: number) => (
-          <View key={item.recommendedStuffId || index} style={styles.rankRowContainer}>
-            
-            <View style={styles.rankNumberBox}>
-              <Text style={styles.rankNumberText}>{index + 1}</Text>
-            </View>
+        {recommendedStuffs.map((item: RecommendedStuff, index: number) => {
+          // 💰 [평균가 주입] item.averagePrice나 item.avgPrice가 있으면 쓰고, 없으면 기존 단가로 백업 처리
+          const calculatedAvgPrice = item.averagePrice ?? (item as any).avgPrice ?? item.price ?? 0;
 
-            <View style={{ flex: 1 }}>
-              <ProductCard 
-                name={item.recommendedStuffName}
-                price={Number(item.price || 0).toLocaleString()}
-                likes={String(item.likeCount || 0)}
-                comments={String(item.scrapCount || 0)} 
-                imageUrl={
-                  item.recommendedImageUrl?.startsWith('http')
-                    ? item.recommendedImageUrl
-                    : `${process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org'}${item.recommendedImageUrl?.startsWith('/') ? '' : '/'}${item.recommendedImageUrl}`
-                }
-                onPress={() =>
-                  router.push({
-                    pathname: "/search/product/[id]",
-                    params: {
-                      id: String(item.recommendedStuffId),
-                      stuffName: item.recommendedStuffName,
-                      brandName: item.recommendedBrandName,
-                    }
-                  })
-                }
-              />
-            </View>
+          return (
+            <View key={item.recommendedStuffId || index} style={styles.rankRowContainer}>
+              
+              <View style={styles.rankNumberBox}>
+                <Text style={styles.rankNumberText}>{index + 1}</Text>
+              </View>
 
-          </View>
-        ))}
+              <View style={{ flex: 1 }}>
+                <ProductCard 
+                  name={item.recommendedStuffName}
+                  // 💰 기존 `item.price` 대신 여러 유저의 평균 가격으로 포맷팅하여 컴포넌트에 주입합니다.
+                  price={Number(calculatedAvgPrice).toLocaleString()}
+                  likes={String(item.likeCount || 0)}
+                  comments={String(item.scrapCount || 0)} 
+                  imageUrl={
+                    item.recommendedImageUrl?.startsWith('http')
+                      ? item.recommendedImageUrl
+                      : `${process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org'}${item.recommendedImageUrl?.startsWith('/') ? '' : '/'}${item.recommendedImageUrl}`
+                  }
+                  onPress={() =>
+                    router.push({
+                      pathname: "/search/product/[id]",
+                      params: {
+                        id: String(item.recommendedStuffId),
+                        stuffName: item.recommendedStuffName,
+                        brandName: item.recommendedBrandName,
+                      }
+                    })
+                  }
+                />
+              </View>
+
+            </View>
+          );
+        })}
 
         {error && <Text style={styles.errorText}>{error}</Text>}
       </ScrollView>
