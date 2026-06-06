@@ -24,7 +24,7 @@ export const SharedPostFeed = ({ id, fetchType, onBack }: Props) => {
         if (fetchType === 'single') {
           if (!id) return; 
           
-          const targetPost = await postService.getPost(Number(id));
+          const targetPost = await postService.getPost(Number(id), user?.userId);
           const normalizedPost = {
             ...targetPost,
             imageUrl: targetPost.imageUrl ?? (targetPost as any).image_url ?? null,

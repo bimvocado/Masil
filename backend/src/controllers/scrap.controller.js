@@ -4,12 +4,13 @@ const getScrapsByCategory = async (req, res, next) => {
   try {
     const { categoryId } = req.params;
     const parsedCategoryId = Number(categoryId);
+    const viewerId = req.user ? req.user.userId : null;
     
     if (isNaN(parsedCategoryId)) {
       return res.status(400).json({ success: false, message: '유효하지 않은 카테고리 ID' });
     }
     
-    const scraps = await scrapService.getScrapsByCategory(parsedCategoryId);
+    const scraps = await scrapService.getScrapsByCategory(parsedCategoryId, viewerId);
     return res.status(200).json({ success: true, message: '스크랩 목록 조회 성공', data: scraps });
   } catch (error) {
     next(error);
