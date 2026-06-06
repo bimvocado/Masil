@@ -4,11 +4,10 @@ import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-nat
 
 import { TopBar } from '@/components/layout/top-bar';
 import { ProductCard } from '@/components/ui/product-card';
-
-// 🌟 searchService 대신, 방금 우리가 수정한 진짜 stuffService를 가져옵니다!
-import { stuffService } from '@/services/stuff-service'; // 프로젝트 폴더 구조에 맞게 경로 확인
+import { stuffService, RecommendedStuff } from '@/services/stuff-service'; 
 
 export default function RecommendedListScreen() {
+  // 중첩 라우팅 구조([id]/recommendations) 덕분에 id 인자를 온전히 인식합니다.
   const { id, mainStuffName } = useLocalSearchParams<{
     id: string;
     mainStuffName: string;
@@ -18,19 +17,16 @@ export default function RecommendedListScreen() {
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [recommendedStuffs, setRecommendedStuffs] = useState<any[]>([]);
+  const [recommendedStuffs, setRecommendedStuffs] = useState<RecommendedStuff[]>([]);
 
   const fetchRecommendedStuffs = useCallback(async () => {
+    if (!id) return;
     try {
       setLoading(true);
       setError(null);
         
-      // 🌟 수정한 프론트엔드 서비스 함수 호출
       const resultData = await stuffService.getRecommendationsByStuff(Number(id));
-
-      // 서비스 레이어에서 이미 가공된 stuffs 배열을 상태에 넣어줍니다.
       setRecommendedStuffs(resultData.stuffs || []);
-
     } catch (err: any) {
       console.error('추천 조합 상세 리스트 조회 실패:', err);
       setError(err.message || '데이터를 가져오는데 실패했습니다.');
@@ -69,7 +65,7 @@ export default function RecommendedListScreen() {
           {recommendedStuffs.length}개의 추천 조합
         </Text>
         
-        {recommendedStuffs.map((item: any, index: number) => (
+        {recommendedStuffs.map((item: RecommendedStuff, index: number) => (
           <View key={item.recommendedStuffId || index} style={styles.rankRowContainer}>
             
             <View style={styles.rankNumberBox}>
@@ -81,7 +77,7 @@ export default function RecommendedListScreen() {
                 name={item.recommendedStuffName}
                 price={Number(item.price || 0).toLocaleString()}
                 likes={String(item.likeCount || 0)}
-                comments={String(item.scrapCount || 0)} // 백엔드 서비스의 scrapCount와 바인딩
+                comments={String(item.scrapCount || 0)} 
                 imageUrl={
                   item.recommendedImageUrl?.startsWith('http')
                     ? item.recommendedImageUrl
@@ -95,7 +91,7 @@ export default function RecommendedListScreen() {
                       stuffName: item.recommendedStuffName,
                       brandName: item.recommendedBrandName,
                     }
-                  } as any)
+                  })
                 }
               />
             </View>
@@ -109,7 +105,6 @@ export default function RecommendedListScreen() {
   );
 }
 
-// 스타일시트 생략 (기존 스타일 그대로 유지)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   headerText: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginVertical: 15, color: '#444' },
