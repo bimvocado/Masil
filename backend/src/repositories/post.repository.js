@@ -24,12 +24,14 @@ const findAllPosts = async (viewerId = null) => {
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
+            b.logo_url AS brandLogoUrl, -- 🎉 [추가] 메인 브랜드 로고!
 
             p.recommended_stuff_id AS recommendedStuffId,
             p.recommended_image_url AS recommendedImageUrl,
             rst.stuff_name AS recommendedStuffName,
             rb.brand_id AS recommendedBrandId,
             rb.brand_name AS recommendedBrandName,
+            rb.logo_url AS recommendedBrandLogoUrl, -- 🎉 [추가] 추천 조합 브랜드 로고!
             
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
@@ -95,10 +97,12 @@ const findPostById = async (postId) => {
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
+            b.logo_url AS brandLogoUrl, -- 🎉 [추가]
 
             rst.stuff_name AS recommendedStuffName,
             rb.brand_id AS recommendedBrandId,
-            rb.brand_name AS recommendedBrandName
+            rb.brand_name AS recommendedBrandName,
+            rb.logo_url AS recommendedBrandLogoUrl -- 🎉 [추가]
 
         FROM posts p
         LEFT JOIN users u ON p.user_id = u.user_id
@@ -145,12 +149,14 @@ const findPostsByUserId = async (userId, viewerId = null) => {
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
+            b.logo_url AS brandLogoUrl, -- 🎉 [추가]
 
             p.recommended_stuff_id AS recommendedStuffId,
             p.recommended_image_url AS recommendedImageUrl,
             rst.stuff_name AS recommendedStuffName,
             rb.brand_id AS recommendedBrandId,
             rb.brand_name AS recommendedBrandName,
+            rb.logo_url AS recommendedBrandLogoUrl, -- 🎉 [추가]
 
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
