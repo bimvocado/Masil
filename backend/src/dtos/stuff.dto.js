@@ -1,17 +1,14 @@
-// 검색창 - 상품으로 검색 (stuffs 테이블의 price 자체가 이미 완벽한 실시간 평균가임)
+// 검색창 - 상품으로 검색
 const toStuffSearchDTO = (stuff) => {
   return {
-    stuffId: stuff.stuffId || stuff.stuff_id,
-    stuffName: stuff.stuffName || stuff.stuff_name,
-    
-    // 💰 [확정] 테이블 내 최신 트랜잭션 평균 가격만 깨끗하게 숫자로 매핑해 전달
-    price: stuff.price ? Number(stuff.price) : 0, 
-    
-    isDiscontinued: stuff.isDiscontinued || stuff.is_discontinued,
-    imageUrl: stuff.imageUrl || stuff.image_url,
-    brandId: stuff.Brand?.brandId || stuff.Brand?.brand_id,
-    brandName: stuff.Brand?.brandName || stuff.Brand?.brand_name,
-    logoUrl: stuff.Brand?.logoUrl || stuff.Brand?.logo_url,
+    stuffId: stuff.stuffId,
+    stuffName: stuff.stuffName,
+    price: stuff.price,
+    isDiscontinued: stuff.isDiscontinued,
+    imageUrl: stuff.imageUrl,
+    brandId: stuff.Brand?.brandId,
+    brandName: stuff.Brand?.brandName,
+    logoUrl: stuff.Brand?.logoUrl,
     category: stuff.Brand?.category,
   };
 };
@@ -27,22 +24,23 @@ const toStuffSearchResultDTO = (stuffs) => {
 // 상품창 - 하단 스크랩 가장 많은 글 및 추천 아이템 바인딩 DTO
 const toTopPostDTO = (post) => {
   return {
-    postId: post.postId || post.post_id,
+    postId: post.postId,
     content: post.content,
-    imageUrl: post.imageUrl || post.image_url,
-    userId: post.userId || post.user_id,
+    imageUrl: post.imageUrl,
+    userId: post.userId,
     nickname: post.nickname,
-    scrapCount: Number(post.scrapCount || post.scrap_count || 0),
-    recommendedStuffId: post.recommendedStuffId || post.recommended_stuff_id,
-    recommendedImageUrl: post.recommendedImageUrl || post.recommended_image_url,
-    recommendedStuffName: post.recommendedStuffName || post.recommended_stuff_name,
-    recommendedBrandId: post.recommendedBrandId || post.recommended_brand_id,
-    recommendedBrandName: post.recommendedBrandName || post.recommended_brand_name,
+    scrapCount: Number(post.scrapCount || 0),
+    recommendedStuffId: post.recommendedStuffId,
+    recommendedImageUrl: post.recommendedImageUrl,
+    recommendedStuffName: post.recommendedStuffName,
+    recommendedBrandId: post.recommendedBrandId,
+    recommendedBrandName: post.recommendedBrandName,
 
-    // 💸 가짜 필드 찌꺼기 싹 밀고, 오직 순정 price 필드 하나로 완전히 단일화
-    price: post.price ? Number(post.price) : 0,
+    // 💰 서비스 레이어에서 주입한 평균가 필드가 걸러지지 않도록 패스해 줍니다.
+    averagePrice: post.averagePrice ? Number(post.averagePrice) : undefined,
+    avgPrice: post.avgPrice ? Number(post.avgPrice) : undefined,
 
-    createdAt: post.createdAt || post.created_at,
+    createdAt: post.createdAt,
   };
 };
 
@@ -53,29 +51,26 @@ const toStuffDetailDTO = ({
   recommendations = [] 
 }) => {
   return {
-    stuffId: stuff.stuffId || stuff.stuff_id,
-    stuffName: stuff.stuffName || stuff.stuff_name,
-    
-    // 💰 [확정] 상품 상세 화면 최상단에 뿌릴 실시간 평균가 스냅샷
-    price: stuff.price ? Number(stuff.price) : 0, 
-    
-    brandId: stuff.brandId || stuff.brand_id,
-    brandName: stuff.brandName || stuff.brand_name,
-    logoUrl: stuff.logoUrl || stuff.logo_url,
-    imageUrl: stuff.imageUrl || stuff.image_url,
+    stuffId: stuff.stuffId,
+    stuffName: stuff.stuffName,
+    price: stuff.price,
+    brandId: stuff.brandId,
+    brandName: stuff.brandName,
+    logoUrl: stuff.logoUrl,
+    imageUrl: stuff.imageUrl,
 
-    totalLikeCount: Number(stuff.totalLikeCount || stuff.total_like_count || 0),
-    koreanLikeCount: Number(stuff.koreanLikeCount || stuff.korean_like_count || 0),
-    foreignerLikeCount: Number(stuff.foreignerLikeCount || stuff.foreigner_like_count || 0),
+    totalLikeCount: Number(stuff.totalLikeCount || 0),
+    koreanLikeCount: Number(stuff.koreanLikeCount || 0),
+    foreignerLikeCount: Number(stuff.foreignerLikeCount || 0),
 
-    totalDislikeCount: Number(stuff.totalDislikeCount || stuff.total_dislike_count || 0),
-    koreanDislikeCount: Number(stuff.koreanDislikeCount || stuff.korean_dislike_count || 0),
-    foreignerDislikeCount: Number(stuff.foreignerDislikeCount || stuff.foreigner_dislike_count || 0),
+    totalDislikeCount: Number(stuff.totalDislikeCount || 0),
+    koreanDislikeCount: Number(stuff.koreanDislikeCount || 0),
+    foreignerDislikeCount: Number(stuff.foreignerDislikeCount || 0),
 
-    totalPostCount: Number(stuff.totalPostCount || stuff.total_post_count || 0),
+    totalPostCount: Number(stuff.totalPostCount || 0),
     topPost: topPost ? toTopPostDTO(topPost) : null,
     
-    // 💸 내부의 가공 완료된 toTopPostDTO가 순정 price 데이터만 예쁘게 물고 나갑니다.
+    // 💰 이제 내부에 정의된 toTopPostDTO가 averagePrice를 안전하게 품고 리턴합니다.
     recommendations: recommendations.map(post => toTopPostDTO(post)),
   };
 };

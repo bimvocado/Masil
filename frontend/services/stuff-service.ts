@@ -23,8 +23,8 @@ export interface RecommendedStuff {
   likeCount: number;
   scrapCount: number;
   recommendedImageUrl: string | null;
-  averagePrice?: number; // 💰 백엔드 트랜잭션 결과 대응 추가
-  avgPrice?: number;     // 💰 백엔드 숏네임 대응 추가
+  averagePrice?: number;
+  avgPrice?: number;
 }
 
 export const stuffService = {
@@ -52,11 +52,13 @@ export const stuffService = {
     return response.data.data;
   },
 
-  // 특정 상품의 추천 조합 전체 리스트 가져오기
+// 특정 상품의 추천 조합 전체 리스트 가져오기
   getRecommendationsByStuff: async (stuffId: number): Promise<{ totalCount: number; stuffs: RecommendedStuff[] }> => {
     try {
+      // 1. 개별 export 된 getToken 함수를 실행하여 토큰을 안전하게 읽어옵니다.
       const token = await getToken(); 
 
+      // 2. 기존의 수정한 적 없는 깔끔한 axios 호출 구조에 headers만 탑재합니다.
       const response = await axios.get(`${BASE_URL}/api/stuffs/${stuffId}/recommendations`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

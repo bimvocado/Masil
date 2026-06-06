@@ -105,7 +105,7 @@ export default function PlusScreen() {
     }
   };
 
-  // 💡 모달이 열리지 않아도 자동완성 시 brandResults를 조회할 수 있도록 조건 완화 (백그라운드 로드 보장)
+  // 💡 [수정] 모달이 열리지 않아도 자동완성 시 brandResults를 조회할 수 있도록 조건 완화 (백그라운드 로드 보장)
   useEffect(() => {
     const loadBrands = async () => {
       try {
@@ -137,7 +137,7 @@ export default function PlusScreen() {
     }
   };
 
-  // 🎯 메인 상품 선택 시 brandId 기반 브랜드 로고 실시간 룩업(Lookup) + 가격 매핑 단일화
+  // 🎯 [유저님 기획 전면 반영] 메인 상품 선택 시 brandId 기반 브랜드 로고 실시간 룩업(Lookup)
   const handleSelectSuggestion = (item: StuffSuggestion) => {
     setBrandName(`@${item.stuffName}`);
     
@@ -168,11 +168,12 @@ export default function PlusScreen() {
       
     setSelectedBrandLogoUrl(finalLogoUrl);
 
-    // 💰 [백엔드 가격 캐싱 반영] 중복 필드 없이 완전히 축소된 단일 캐싱 price만 매핑합니다.
     setPrice(
-      item.price !== undefined && item.price !== null
-        ? String(Math.round(item.price))
-        : ''
+      item.averagePrice !== undefined && item.averagePrice !== null
+        ? String(Math.round(item.averagePrice))
+        : item.price !== undefined && item.price !== null
+          ? String(item.price)
+          : ''
     );
     setSuggestions([]);
   };
@@ -193,7 +194,7 @@ export default function PlusScreen() {
     }
   };
 
-  // 🎯 추천 조합 상품 선택 시 brandId 기반 브랜드 로고 실시간 룩업(Lookup) + 가격 매핑 단일화
+  // 🎯 [유저님 기획 전면 반영] 추천 조합 상품 선택 시 brandId 기반 브랜드 로고 실시간 룩업(Lookup)
   const handleSelectRecommendedSuggestion = (item: StuffSuggestion) => {
     setRecommendedStuffName(`@${item.stuffName}`);
     
@@ -224,11 +225,12 @@ export default function PlusScreen() {
 
     setRecBrandLogoUrl(finalRecLogoUrl);
 
-    // 💰 [백엔드 가격 캐싱 반영] 추천 상품도 순정 price 기반 매핑 고정
     setRecommendedPrice(
-      item.price !== undefined && item.price !== null
-        ? String(Math.round(item.price))
-        : ''
+      item.averagePrice !== undefined && item.averagePrice !== null
+        ? String(Math.round(item.averagePrice))
+        : item.price !== undefined && item.price !== null
+          ? String(item.price)
+          : ''
     );
     setRecommendedSuggestions([]);
   };
@@ -245,19 +247,8 @@ export default function PlusScreen() {
     }
 
     const cleanRecommendedName = recommendedStuffName.replace('@', '').trim();
-    // 추천 이미지가 있을 경우에는 추천 조합의 브랜드와 상품명 둘 다 필수로 입력해야 함
-    if (recommendedImageUri && (!cleanRecommendedName || !recommendedBrandId)) {
-      Alert.alert('알림', '추천 조합의 브랜드와 상품명을 입력해주세요.');
-      return;
-    }
-    // 사용자가 추천 상품명을 입력했지만 브랜드를 선택하지 않은 경우
     if (cleanRecommendedName && !recommendedBrandId) {
       Alert.alert('알림', '추천 조합 브랜드를 선택해주세요.');
-      return;
-    }
-    // 사용자가 추천 브랜드를 선택했지만 상품명이 비어있는 경우
-    if (recommendedBrandId && !cleanRecommendedName) {
-      Alert.alert('알림', '추천 조합 상품명을 입력해주세요.');
       return;
     }
 
@@ -282,7 +273,7 @@ export default function PlusScreen() {
     setRecommendedImageUri(null);
     setRecommendedBrandId(null);
     setRecommendedBrandName('');
-    setRecBrandLogoUrl(''); 
+    setRecBrandLogoUrl(''); // ✅ 잔상 방어막 구축 완료
     setBrandSelectTarget('main');
   };
 
@@ -297,24 +288,13 @@ export default function PlusScreen() {
       formData.append('content', content);
       formData.append('brandId', String(selectedBrandId));
       formData.append('stuffName', brandName.replace('@', '').trim());
-      
-      // 💰 [대원칙 반영] 순수 숫자 문자열만 추출하여 전송 (백엔드 에러 원천 차단)
-      const purePrice = price.replace(/[^0-9]/g, '') || '0';
-      formData.append('price', purePrice);
+      formData.append('price', price || '0');
 
       const cleanRecName = recommendedStuffName.replace('@', '').trim();
-      // 업로드 시에도 추천 이미지가 존재하면 추천 조합의 브랜드와 상품명이 모두 필요함
-      if (recommendedImageUri && (!cleanRecName || !recommendedBrandId)) {
-        Alert.alert('알림', '추천 조합의 브랜드와 상품명을 입력해주세요.');
-        return;
-      }
       if (cleanRecName && recommendedBrandId) {
         formData.append('recommendedBrandId', String(recommendedBrandId));
         formData.append('recommendedStuffName', cleanRecName);
-        
-        // 💰 추천 상품 단가도 동일하게 숫자가 아닌 값 정제 후 전송
-        const pureRecPrice = recommendedPrice.replace(/[^0-9]/g, '') || '0';
-        formData.append('recommendedPrice', pureRecPrice);
+        formData.append('recommendedPrice', recommendedPrice || '0');
       }
 
       const cacheDirKey = 'cacheDirectory';
@@ -395,7 +375,7 @@ export default function PlusScreen() {
         }
       }
 
-      await postService.createPost(formData);
+      const result = await postService.createPost(formData);
       resetForm();
       Alert.alert('성공', '게시글이 등록되었습니다.');
       router.push('/(tabs)/home' as Href);
@@ -431,6 +411,7 @@ export default function PlusScreen() {
                   {suggestions.map((item) => {
                     const rawItem = item as any;
                     
+                    // 💡 가이드 리스트 UI의 썸네일도 동일하게 brandId로 실시간 매핑 추적
                     let itemLogoUrl = '';
                     if (item.brandId && brandResults.length > 0) {
                       const mBrand = brandResults.find((b: any) => Number(b.brandId) === Number(item.brandId));
@@ -440,7 +421,7 @@ export default function PlusScreen() {
                       itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || rawItem.logo_url || rawItem.logoUrl;
                     }
 
-                    const suggestionLabel = item.brandName ? `${item.stuffName} (${item.brandName})` : item.stuffName;
+                     const suggestionLabel = item.brandName ? `${item.stuffName} (${item.brandName})` : item.stuffName;
                     return (
                       <TouchableOpacity 
                         key={item.stuffId} 
@@ -483,6 +464,7 @@ export default function PlusScreen() {
                     {recommendedSuggestions.map((item) => {
                       const rawItem = item as any;
                       
+                      // 💡 추천 가이드 리스트 UI 썸네일 brandId 실시간 추적
                       let itemLogoUrl = '';
                       if (item.brandId && brandResults.length > 0) {
                         const mBrand = brandResults.find((b: any) => Number(b.brandId) === Number(item.brandId));

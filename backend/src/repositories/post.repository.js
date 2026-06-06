@@ -2,12 +2,11 @@ const Post = require('../models/post.model');
 const { QueryTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
-// 게시글 생성 (options 추가로 서비스단 트랜잭션 수신 가능하게 보장)
+// 게시글 생성 (options 추가로 트랜잭션 수신 가능하게 변경)
 const createPost = async (postData, options = {}) => {
     return await Post.create(postData, options);
 };
 
-// 게시글 전체 조회
 const findAllPosts = async (viewerId = null) => {
     const posts = await sequelize.query(`
         SELECT
@@ -18,27 +17,28 @@ const findAllPosts = async (viewerId = null) => {
             p.image_url AS imageUrl,
             p.created_at AS createdAt,
             p.updated_at AS updatedAt,
+            p.price AS price,
             
-            -- 💰 [확정] 무거운 실시간 AVG 연산 제거! 트랜잭션으로 항시 최신화되는 stuffs 테이블의 price를 그대로 신뢰합니다.
-            st.price AS price,
+            -- 💰 [추가] 메인 상품의 실시간 평균 가격 계산
+            (SELECT ROUND(AVG(sub_p.price)) 
+             FROM posts sub_p 
+             WHERE sub_p.stuff_id = p.stuff_id 
+               AND sub_p.price IS NOT NULL 
+               AND sub_p.deleted_at IS NULL) AS avgPrice,
 
             u.nickname AS nickname,
             u.profile_image_url AS profileImageUrl,
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
-            b.logo_url AS brandLogoUrl,
+            b.logo_url AS brandLogoUrl, -- 🎉 [추가] 메인 브랜드 로고 주소
 
             p.recommended_stuff_id AS recommendedStuffId,
             p.recommended_image_url AS recommendedImageUrl,
             rst.stuff_name AS recommendedStuffName,
-            
-            -- 💰 추천 조합 상품의 단가도 실시간 계산 없이 캐싱된 데이터로 정직하게 가져옵니다.
-            rst.price AS recommendedPrice, 
-            
             rb.brand_id AS recommendedBrandId,
             rb.brand_name AS recommendedBrandName,
-            rb.logo_url AS recommendedBrandLogoUrl,
+            rb.logo_url AS recommendedBrandLogoUrl, -- 🎉 [추가] 추천 브랜드 로고 주소
             
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
@@ -84,8 +84,7 @@ const findAllPosts = async (viewerId = null) => {
     return posts;
 };
 
-// 게시글 개별 상세 조회
-const findPostById = async (postId) => {
+const findPostById = async (postId, viewerId = null) => {
     const posts = await sequelize.query(`
         SELECT
             p.post_id AS postId,
@@ -95,12 +94,16 @@ const findPostById = async (postId) => {
             p.image_url AS imageUrl,
             p.recommended_stuff_id AS recommendedStuffId,
             p.recommended_image_url AS recommendedImageUrl,
-            
-            -- 💰 개별 단건 뷰에서도 서브쿼리를 완전히 배제하고 트랜잭션 완료된 평균 단가 테이블 매핑
-            st.price AS price, 
-            
+            p.price AS price,
             p.created_at AS createdAt,
             p.updated_at AS updatedAt,
+
+            -- 💰 [추가] 상세 보기용 실시간 평균 가격 계산
+            (SELECT ROUND(AVG(sub_p.price)) 
+             FROM posts sub_p 
+             WHERE sub_p.stuff_id = p.stuff_id 
+               AND sub_p.price IS NOT NULL 
+               AND sub_p.deleted_at IS NULL) AS avgPrice,
 
             u.nickname AS nickname,
             u.profile_image_url AS profileImageUrl,
@@ -108,24 +111,12 @@ const findPostById = async (postId) => {
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
-            b.logo_url AS brandLogoUrl,
+            b.logo_url AS brandLogoUrl, -- 🎉 [추가] 메인 브랜드 로고 주소
 
             rst.stuff_name AS recommendedStuffName,
-            
-            -- 💰 추천 상품 캐싱 단가 정상 노출
-            rst.price AS recommendedPrice, 
-            
             rb.brand_id AS recommendedBrandId,
             rb.brand_name AS recommendedBrandName,
-            rb.logo_url AS recommendedBrandLogoUrl,
-
-            COUNT(DISTINCT CASE WHEN i.reaction_type = 'LIKE' THEN i.interaction_id END) AS likeCount,
-            COUNT(DISTINCT CASE WHEN i.reaction_type = 'DISLIKE' THEN i.interaction_id END) AS dislikeCount,
-            COUNT(DISTINCT c.comment_id) AS commentCount,
-            COUNT(DISTINCT s.scrap_id) AS scrapCount,
-            MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
-            MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
-            CASE WHEN su.scrap_id IS NOT NULL THEN TRUE ELSE FALSE END AS isScrapped
+            rb.logo_url AS recommendedBrandLogoUrl -- 🎉 [추가] 추천 브랜드 로고 주소
 
         FROM posts p
         LEFT JOIN users u ON p.user_id = u.user_id
@@ -135,41 +126,26 @@ const findPostById = async (postId) => {
         LEFT JOIN stuffs rst ON p.recommended_stuff_id = rst.stuff_id
         LEFT JOIN brands rb ON rst.brand_id = rb.brand_id
 
-        LEFT JOIN interactions i ON p.stuff_id = i.stuff_id AND i.deleted_at IS NULL
-        LEFT JOIN comments c ON p.post_id = c.post_id AND c.deleted_at IS NULL
-        LEFT JOIN post_scraps s ON p.post_id = s.post_id AND s.deleted_at IS NULL
-        LEFT JOIN post_scraps su ON p.post_id = su.post_id AND su.user_id = :viewerId AND su.deleted_at IS NULL
-
         WHERE p.post_id = :postId
           AND p.deleted_at IS NULL
 
-        GROUP BY
-            p.post_id, p.user_id, p.stuff_id, p.content, p.image_url, p.recommended_stuff_id, 
-            p.recommended_image_url, p.price, p.created_at, p.updated_at,
-            u.user_id, u.nickname, u.profile_image_url,
-            st.stuff_id, st.stuff_name, b.brand_id, b.brand_name, b.logo_url,
-            rst.stuff_id, rst.stuff_name, rb.brand_id, rb.brand_name, rb.logo_url,
-            su.scrap_id
-
         LIMIT 1
     `, {
-        replacements: { postId, viewerId: viewerId || 0 },
+        replacements: { postId },
         type: QueryTypes.SELECT
     });
 
     return posts[0] || null;
 };
 
-// 게시글 수정 및 삭제 (options 추가로 트랜잭션 전파 보장)
-const updatePost = async (post, updateData, options = {}) => {
-    return await post.update(updateData, options);
+const updatePost = async (post, updateData) => {
+    return await post.update(updateData);
 };
 
-const deletePost = async (post, options = {}) => {
-    return await post.destroy(options);
+const deletePost = async (post) => {
+    return await post.destroy();
 };
 
-// 특정 유저의 게시글 피드 조회
 const findPostsByUserId = async (userId, viewerId = null) => {
     const posts = await sequelize.query(`
         SELECT
@@ -180,27 +156,28 @@ const findPostsByUserId = async (userId, viewerId = null) => {
             p.image_url AS imageUrl,
             p.created_at AS createdAt,
             p.updated_at AS updatedAt,
+            p.price AS price,
             
-            -- 💰 유저 피드 전용 쿼리도 무거운 AVG 제거 후 연동
-            st.price AS price,
+            -- 💰 [추가] 유저 피드용 실시간 평균 가격 계산
+            (SELECT ROUND(AVG(sub_p.price)) 
+             FROM posts sub_p 
+             WHERE sub_p.stuff_id = p.stuff_id 
+               AND sub_p.price IS NOT NULL 
+               AND sub_p.deleted_at IS NULL) AS avgPrice,
 
             u.nickname AS nickname,
             u.profile_image_url AS profileImageUrl,
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
-            b.logo_url AS brandLogoUrl,
+            b.logo_url AS brandLogoUrl, -- 🎉 [추가] 메인 브랜드 로고 주소
 
             p.recommended_stuff_id AS recommendedStuffId,
             p.recommended_image_url AS recommendedImageUrl,
             rst.stuff_name AS recommendedStuffName,
-            
-            -- 💰 추천 조합 상품 평균 가격
-            rst.price AS recommendedPrice, 
-            
             rb.brand_id AS recommendedBrandId,
             rb.brand_name AS recommendedBrandName,
-            rb.logo_url AS recommendedBrandLogoUrl,
+            rb.logo_url AS recommendedBrandLogoUrl, -- 🎉 [추가] 추천 브랜드 로고 주소
 
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
@@ -244,9 +221,7 @@ const findPostsByUserId = async (userId, viewerId = null) => {
     return posts;
 };
 
-// 💡 [서비스 트랜잭션 동기화용 핵심 함수] 
-// 포스트 CUD 발생 후 서비스단에서 이 쿼리를 호출해 stuffs 테이블의 price를 원천 업데이트합니다.
-const getAveragePriceByStuffId = async (stuffId, options = {}) => {
+const getAveragePriceByStuffId = async (stuffId) => {
   const result = await sequelize.query(`
     SELECT ROUND(AVG(price)) AS averagePrice
     FROM posts
@@ -255,11 +230,10 @@ const getAveragePriceByStuffId = async (stuffId, options = {}) => {
       AND deleted_at IS NULL
   `, {
     replacements: { stuffId },
-    type: QueryTypes.SELECT,
-    ...options // 트랜잭션 컨텍스트 전파
+    type: QueryTypes.SELECT
   });
 
-  return result[0]?.averagePrice || 0;
+  return result[0]?.averagePrice || null;
 };
 
 module.exports = {
