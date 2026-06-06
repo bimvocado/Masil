@@ -107,6 +107,10 @@ const getPosts = async (viewerId = null) => {
     content: post.content,
     imageUrl: post.imageUrl,
     price: post.price === null || post.price === undefined ? null : Number(post.price),
+    
+    // 💰 [추가] 실시간 평균 가격 프론트용 매핑
+    avgPrice: post.avgPrice === null || post.avgPrice === undefined ? null : Number(post.avgPrice),
+
     recommendedStuffId: post.recommendedStuffId,
     recommendedStuffName: post.recommendedStuffName,
     recommendedBrandId: post.recommendedBrandId,
@@ -119,6 +123,8 @@ const getPosts = async (viewerId = null) => {
     stuffName: post.stuffName,
     brandId: post.brandId,
     brandName: post.brandName,
+    brandLogoUrl: post.brandLogoUrl,                      // 🎉 메인 브랜드 로고 추가
+    recommendedBrandLogoUrl: post.recommendedBrandLogoUrl, // 🎉 추천 브랜드 로고 추가
     commentCount: Number(post.commentCount || 0),
     likeCount: Number(post.likeCount || 0),
     dislikeCount: Number(post.dislikeCount || 0),
@@ -165,6 +171,10 @@ const getUserPosts = async (userId, viewerId = null) => {
     content: post.content,
     imageUrl: post.imageUrl,
     price: post.price === null || post.price === undefined ? null : Number(post.price),
+    
+    // 💰 [추가] 유저 피드용 평균 가격 매핑
+    avgPrice: post.avgPrice === null || post.avgPrice === undefined ? null : Number(post.avgPrice),
+
     recommendedStuffId: post.recommendedStuffId,
     recommendedStuffName: post.recommendedStuffName,
     recommendedBrandId: post.recommendedBrandId,
@@ -177,6 +187,8 @@ const getUserPosts = async (userId, viewerId = null) => {
     stuffName: post.stuffName,
     brandId: post.brandId,
     brandName: post.brandName,
+    brandLogoUrl: post.brandLogoUrl,                      // 🎉 메인 브랜드 로고 추가
+    recommendedBrandLogoUrl: post.recommendedBrandLogoUrl, // 🎉 추천 브랜드 로고 추가
     commentCount: Number(post.commentCount || 0),
     likeCount: Number(post.likeCount || 0),
     dislikeCount: Number(post.dislikeCount || 0),
