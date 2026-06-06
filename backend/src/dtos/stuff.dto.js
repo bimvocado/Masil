@@ -1,67 +1,87 @@
-class CreatePostReqDTO {
-    constructor(content, imageUrl, userId, stuffId, price, recommendedStuffId, recommendedImageUrl) {
-        this.content = content;
-        this.imageUrl = imageUrl;
-        this.userId = userId;
-        this.stuffId = Number(stuffId);
+// 검색창 - 상품으로 검색
+const toStuffSearchDTO = (stuff) => {
+  return {
+    stuffId: stuff.stuffId,
+    stuffName: stuff.stuffName,
+    price: stuff.price,
+    isDiscontinued: stuff.isDiscontinued,
 
-        this.price =
-            price === null || price === undefined || price === ''
-                ? null
-                : Number(price);
+    imageUrl: stuff.imageUrl,
 
-        this.recommendedStuffId =
-            recommendedStuffId === null || recommendedStuffId === undefined || recommendedStuffId === ''
-                ? null
-                : Number(recommendedStuffId);
+    brandId: stuff.Brand?.brandId,
+    brandName: stuff.Brand?.brandName,
+    logoUrl: stuff.Brand?.logoUrl,
+    category: stuff.Brand?.category,
+  };
+};
 
-        this.recommendedImageUrl = recommendedImageUrl ?? null;
-    }
-}
+// 검색창 - 상품 검색 결과
+const toStuffSearchResultDTO = (stuffs) => {
+  return {
+    stuffListSize: stuffs.length,
+    stuffs: stuffs.map(toStuffSearchDTO),
+  };
+};
 
-class UpdatePostReqDTO {
-    constructor(content, imageUrl, price, recommendedStuffId) {
-        this.content = content;
-        this.imageUrl = imageUrl;
-        this.price = price;
-        this.recommendedStuffId = recommendedStuffId;
-    }
-}
+// 상품창 - 하단 스크랩 가장 많은 글
+const toTopPostDTO = (post) => {
+  return {
+    postId: post.postId,
+    content: post.content,
+    imageUrl: post.imageUrl,
+    userId: post.userId,
+    nickname: post.nickname,
 
-class PostResDTO {
-    constructor(post) {
-        this.postId = post.postId;
-        this.content = post.content;
-        this.imageUrl = post.imageUrl;
-        this.userId = post.userId;
-        this.stuffId = post.stuffId;
-        this.price = post.price;
+    scrapCount: Number(post.scrapCount || 0),
 
-        // 💡 프론트엔드 라우터(router.push)에서 유실 및 예외가 터지지 않도록 안정적으로 정수 캐스팅
-        this.recommendedStuffId = post.recommendedStuffId ? Number(post.recommendedStuffId) : null;
-        this.recommendedStuffName = post.recommendedStuffName;
-        this.recommendedBrandId = post.recommendedBrandId ? Number(post.recommendedBrandId) : null;
-        this.recommendedBrandName = post.recommendedBrandName;
-        this.recommendedImageUrl = post.recommendedImageUrl;
+    recommendedStuffId: post.recommendedStuffId,
+    recommendedImageUrl: post.recommendedImageUrl,
+    recommendedStuffName: post.recommendedStuffName,
+    recommendedBrandId: post.recommendedBrandId,
+    recommendedBrandName: post.recommendedBrandName,
 
-        this.createdAt = post.createdAt;
-        this.updatedAt = post.updatedAt;
-        this.nickname = post.nickname;
-        this.stuffName = post.stuffName;
-        this.brandName = post.brandName;
+    createdAt: post.createdAt,
+  };
+};
 
-        this.isLiked = !!post.isLiked;
-        this.isDisliked = !!post.isDisliked;
-        this.isScrapped = !!post.isScrapped;
+// 상품창 - 상세 페이지 전체
+const toStuffDetailDTO = ({
+  stuff,
+  topPost,
+}) => {
+  return {
+    stuffId: stuff.stuffId,
+    stuffName: stuff.stuffName,
+    price: stuff.price,
 
-        this.likeCount = Number(post.likeCount || 0);
-        this.dislikeCount = Number(post.dislikeCount || 0);
-        this.commentCount = Number(post.commentCount || 0);
-    }
-}
+    brandId: stuff.brandId,
+    brandName: stuff.brandName,
+    logoUrl: stuff.logoUrl,
+
+    // 상단 대표 이미지
+    // 이미지 있는 게시글 중 스크랩이 가장 많은 글의 사진
+    imageUrl: stuff.imageUrl,
+
+    // 상품 Interaction 집계
+    totalLikeCount: Number(stuff.totalLikeCount || 0),
+    koreanLikeCount: Number(stuff.koreanLikeCount || 0),
+    foreignerLikeCount: Number(stuff.foreignerLikeCount || 0),
+
+    totalDislikeCount: Number(stuff.totalDislikeCount || 0),
+    koreanDislikeCount: Number(stuff.koreanDislikeCount || 0),
+    foreignerDislikeCount: Number(stuff.foreignerDislikeCount || 0),
+
+    totalPostCount: Number(stuff.totalPostCount || 0),
+
+    // 하단 인기 게시글
+    // 전체 게시글 중 스크랩이 가장 많은 글
+    topPost: topPost ? toTopPostDTO(topPost) : null,
+  };
+};
 
 module.exports = {
-    CreatePostReqDTO,
-    UpdatePostReqDTO,
-    PostResDTO,
+  toStuffSearchDTO,
+  toStuffSearchResultDTO,
+  toTopPostDTO,
+  toStuffDetailDTO,
 };
