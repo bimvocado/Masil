@@ -421,8 +421,7 @@ export default function PlusScreen() {
                       itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || rawItem.logo_url || rawItem.logoUrl;
                     }
 
-                    const itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || (item.logoUrl && !item.logoUrl.includes('stuff') ? item.logoUrl : '') || rawItem.logo_url;
-                    const suggestionLabel = item.brandName ? `${item.stuffName} (${item.brandName})` : item.stuffName;
+                     const suggestionLabel = item.brandName ? `${item.stuffName} (${item.brandName})` : item.stuffName;
                     return (
                       <TouchableOpacity 
                         key={item.stuffId} 
@@ -474,7 +473,8 @@ export default function PlusScreen() {
                       if (!itemLogoUrl) {
                         itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || rawItem.logo_url || rawItem.logoUrl;
                       }
-
+                    
+                      const suggestionLabel = item.brandName ? `${item.stuffName} (${item.brandName})` : item.stuffName;
                       return (
                         <TouchableOpacity 
                           key={item.stuffId} 
