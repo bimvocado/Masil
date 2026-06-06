@@ -10,6 +10,7 @@ import {
   ScrollView,
   Alert,
   Modal,
+  StyleSheet,
 } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -63,7 +64,7 @@ export default function PlusScreen() {
   const [recommendedBrandId, setRecommendedBrandId] = useState<number | null>(null);
   const [recommendedBrandName, setRecommendedBrandName] = useState('');
   
-  // 💡 스크린샷 에러 해결: 컴포넌트 내부에 변수가 없을 경우를 대비해 유연하게 fallback 지정하기 위한 로컬 상태 선언
+  // 💡Fallback 지정용 로컬 상태 선언
   const [recBrandLogoUrl, setRecBrandLogoUrl] = useState('');
 
   const handleBackPress = () => {
@@ -137,19 +138,22 @@ export default function PlusScreen() {
     }
   };
 
-  // 🌟 [수정본] 메인 상품 선택 핸들러 (브랜드 로고 유실 방지 방어 코드 내장)
+  // 🛡️ [수정 완료] 메인 상품 선택 핸들러: 상품 이미지 필드를 완벽 차단하고 순수 브랜드 로고만 매핑
   const handleSelectSuggestion = (item: StuffSuggestion) => {
     setBrandName(`@${item.stuffName}`);
     setSelectedBrandId(item.brandId ?? selectedBrandId);
     setSelectedBrandName(item.brandName ?? '');
     
-    // 백엔드에서 내려올 수 있는 모든 명칭 필드를 순서대로 체크하여 매핑 유실을 차단합니다.
+    // 🚨 item.imageUrl 이나 오염된 item.logoUrl 대신, 객체 내부에 존재하는 명확한 브랜드 로고 전용 경로 탐색
+    const rawItem = item as any;
     const finalLogoUrl = 
-      item.logoUrl || 
-      (item as any).logo_url || 
-      (item as any).brandLogoUrl || 
-      (item as any).imageUrl || 
+      rawItem.brand?.logoUrl ||          // 1순위: brand 객체 내부의 로고Url
+      rawItem.brandLogoUrl ||            // 2순위: 단독 브랜드 로고 필드명
+      rawItem.brandLogo ||               // 3순위: 단독 브랜드 로고 필드명 2
+      (item.logoUrl && !item.logoUrl.includes('stuff') ? item.logoUrl : '') || // 4순위: 상품이미지가 아님이 검증된 로고 url
+      rawItem.logo_url || 
       '';
+      
     setSelectedBrandLogoUrl(finalLogoUrl);
 
     setPrice(
@@ -178,19 +182,21 @@ export default function PlusScreen() {
     }
   };
 
-  // 🌟 [수정본] 추천 상품 선택 핸들러 (추천 브랜드 로고 유실 방지 방어 코드 내장)
+  // 🛡️ [수정 완료] 추천 상품 선택 핸들러: 위와 동일하게 순수 브랜드 로고 필드만 정밀 매핑
   const handleSelectRecommendedSuggestion = (item: StuffSuggestion) => {
     setRecommendedStuffName(`@${item.stuffName}`);
     setRecommendedBrandId(item.brandId ?? null);
     setRecommendedBrandName(item.brandName ?? '');
     
-    // 추천 상품 데이터 바인딩 시에도 로고 이미지 필드가 깨지지 않도록 동일하게 방어합니다.
+    const rawItem = item as any;
     const finalLogoUrl = 
-      item.logoUrl || 
-      (item as any).logo_url || 
-      (item as any).brandLogoUrl || 
-      (item as any).imageUrl || 
+      rawItem.brand?.logoUrl || 
+      rawItem.brandLogoUrl || 
+      rawItem.brandLogo || 
+      (item.logoUrl && !item.logoUrl.includes('stuff') ? item.logoUrl : '') ||
+      rawItem.logo_url || 
       '';
+
     setRecBrandLogoUrl(finalLogoUrl);
 
     setRecommendedPrice(
@@ -366,6 +372,7 @@ export default function PlusScreen() {
 
               <View style={safeStyles.userInfoCard || {}}>
                 <TouchableOpacity onPress={() => { setBrandSelectTarget('main'); setIsBrandModalVisible(true); }}>
+                  {/* 💡 [정상 반영] 이제 사용자가 자동완성을 누르면 상품 사진이 아닌 순수 브랜드 로고가 꽂힙니다 */}
                   {selectedBrandLogoUrl ? <Image source={{ uri: getImageUrl(selectedBrandLogoUrl) }} style={safeStyles.avatarPlaceholder || {}} /> : <View style={safeStyles.avatarPlaceholder || {}}><Text style={safeStyles.questionMark || {}}>?</Text></View>}
                 </TouchableOpacity>
                 <View style={safeStyles.nameInputWrapper || {}}>
@@ -373,13 +380,27 @@ export default function PlusScreen() {
                 </View>
               </View>
 
+              {/* 메인 상품 자동완성 추천 가이드 리스트 */}
               {suggestions.length > 0 && (
                 <View style={safeStyles.suggestionsContainer || {}}>
-                  {suggestions.map((item) => (
-                    <TouchableOpacity key={item.stuffId} style={safeStyles.suggestionItem || {}} onPress={() => handleSelectSuggestion(item)}>
-                      <Text style={safeStyles.suggestionText || {}}>{item.stuffName} ({item.brandName})</Text>
-                    </TouchableOpacity>
-                  ))}
+                  {suggestions.map((item) => {
+                    const rawItem = item as any;
+                    const itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || (item.logoUrl && !item.logoUrl.includes('stuff') ? item.logoUrl : '') || rawItem.logo_url;
+                    return (
+                      <TouchableOpacity 
+                        key={item.stuffId} 
+                        style={[safeStyles.suggestionItem || {}, localStyles.suggestionRow]} 
+                        onPress={() => handleSelectSuggestion(item)}
+                      >
+                        {itemLogoUrl ? (
+                          <Image source={{ uri: getImageUrl(itemLogoUrl) }} style={localStyles.miniBrandLogo} />
+                        ) : (
+                          <View style={localStyles.miniBrandLogoPlaceholder}><Text style={{fontSize: 10, color: '#aaa'}}>?</Text></View>
+                        )}
+                        <Text style={safeStyles.suggestionText || {}}>{item.stuffName} ({item.brandName})</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               )}
 
@@ -394,6 +415,7 @@ export default function PlusScreen() {
                 <Text style={safeStyles.recommendTitle || {}}>추천 조합 상품</Text>
                 <View style={safeStyles.userInfoCard || {}}>
                   <TouchableOpacity onPress={() => { setBrandSelectTarget('recommended'); setIsBrandModalVisible(true); }}>
+                    {/* 💡 [정상 반영] 추천 조합 칸도 동일하게 상품 사진 차색 후 순수 브랜드 로고 맵핑 */}
                     {recBrandLogoUrl ? <Image source={{ uri: getImageUrl(recBrandLogoUrl) }} style={safeStyles.avatarPlaceholder || {}} /> : <View style={safeStyles.avatarPlaceholder || {}}><Text style={safeStyles.questionMark || {}}>?</Text></View>}
                   </TouchableOpacity>
                   <View style={safeStyles.nameInputWrapper || {}}>
@@ -401,13 +423,27 @@ export default function PlusScreen() {
                   </View>
                 </View>
 
+                {/* 추천 상품 자동완성 추천 가이드 리스트 */}
                 {recommendedSuggestions.length > 0 && (
                   <View style={safeStyles.suggestionsContainer || {}}>
-                    {recommendedSuggestions.map((item) => (
-                      <TouchableOpacity key={item.stuffId} style={safeStyles.suggestionItem || {}} onPress={() => handleSelectRecommendedSuggestion(item)}>
-                        <Text style={safeStyles.suggestionText || {}}>{item.stuffName} ({item.brandName})</Text>
-                      </TouchableOpacity>
-                    ))}
+                    {recommendedSuggestions.map((item) => {
+                      const rawItem = item as any;
+                      const itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || (item.logoUrl && !item.logoUrl.includes('stuff') ? item.logoUrl : '') || rawItem.logo_url;
+                      return (
+                        <TouchableOpacity 
+                          key={item.stuffId} 
+                          style={[safeStyles.suggestionItem || {}, localStyles.suggestionRow]} 
+                          onPress={() => handleSelectRecommendedSuggestion(item)}
+                        >
+                          {itemLogoUrl ? (
+                            <Image source={{ uri: getImageUrl(itemLogoUrl) }} style={localStyles.miniBrandLogo} />
+                          ) : (
+                            <View style={localStyles.miniBrandLogoPlaceholder}><Text style={{fontSize: 10, color: '#aaa'}}>?</Text></View>
+                          )}
+                          <Text style={safeStyles.suggestionText || {}}>{item.stuffName} ({item.brandName})</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 )}
 
@@ -475,3 +511,28 @@ export default function PlusScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+const localStyles = StyleSheet.create({
+  suggestionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  miniBrandLogo: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    marginRight: 10,
+    backgroundColor: '#f5f5f5',
+  },
+  miniBrandLogoPlaceholder: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    marginRight: 10,
+    backgroundColor: '#eee',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }
+});

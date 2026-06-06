@@ -25,6 +25,7 @@ const getImageUrl = (url?: string | null) => {
 export default function ProductDetailScreen() {
   const { id, stuffName, brandName } = useLocalSearchParams<{
     id: string;
+    name: string;
     stuffName: string;
     brandName: string;
   }>();
@@ -56,8 +57,8 @@ export default function ProductDetailScreen() {
 
   // 🌟 가로 스크롤로 렌더링할 개별 추천 카드 컴포넌트
   const renderRecommendationItem = ({ item }: { item: any }) => {
-    // 추천 조합 상품 리스트의 평균 가격 추출
-    const recAvgPrice = item.averagePrice ?? item.avgPrice ?? item.price;
+    // 💰 [추가/수정] 추천 조합 상품 리스트의 유저 포스트 정산 평균 가격을 최우선으로 추출합니다.
+    const recAvgPrice = item.averagePrice ?? item.avgPrice ?? item.price ?? 0;
 
     return (
       <TouchableOpacity
@@ -93,6 +94,7 @@ export default function ProductDetailScreen() {
         <View style={{ justifyContent: 'center', flex: 1 }}>
           <Text style={styles.recBrandText}>{item.recommendedBrandName}</Text>
           <Text style={styles.recStuffText} numberOfLines={1}>{item.recommendedStuffName}</Text>
+          {/* 💸 정산된 평균 가격을 천 단위로 콤마 처리하여 렌더링합니다. */}
           <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>
             평균 {recAvgPrice ? Number(recAvgPrice).toLocaleString() : '0'}원
           </Text>
@@ -207,12 +209,12 @@ export default function ProductDetailScreen() {
             contentContainerStyle={styles.horizontalListPadding}
           />
         ) : (
-          /* ✅ [수정 완료] 백업 데이터(Post 엔티티) 구조에 맞게 item.price만 안전하게 조회하도록 변경 */
+          /* ✅ [수정 완료] 백업용 topPost 단일 렌더링 카드 내에서도 평균 가격 데이터를 우선 조회하도록 수정합니다. */
           detailData.topPost?.recommendedStuffName ? (
             <FlatList
               data={[detailData.topPost]}
               renderItem={({ item }: { item: any }) => {
-                const legacyPrice = item.price;
+                const legacyPrice = item.averagePrice ?? item.avgPrice ?? item.price ?? 0;
                 return (
                   <TouchableOpacity
                     activeOpacity={0.7}
@@ -231,7 +233,8 @@ export default function ProductDetailScreen() {
                       <Text style={styles.recBrandText}>{item.recommendedBrandName}</Text>
                       <Text style={styles.recStuffText}>{item.recommendedStuffName}</Text>
                       <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>
-                        가격 {legacyPrice ? Number(legacyPrice).toLocaleString() : '0'}원
+                        {/* 💸 기존 단가 고정 노출 대신 정산된 평균 가격을 반영합니다. */}
+                        평균 {legacyPrice ? Number(legacyPrice).toLocaleString() : '0'}원
                       </Text>
                       <Text style={styles.clickGuideText}>상세보기 〉</Text>
                     </View>
