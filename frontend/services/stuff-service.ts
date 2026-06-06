@@ -12,7 +12,7 @@ export interface StuffSuggestion {
   averagePrice?: number;
 }
 
-// [추가] 추천 조합 아이템 데이터 구조 인터페이스 정의
+// 추천 조합 아이템 데이터 구조 인터페이스 정의
 export interface RecommendedStuff {
   recommendedStuffId: number;
   recommendedStuffName: string;
@@ -28,7 +28,6 @@ export const stuffService = {
     const response = await axios.get(`${BASE_URL}/api/stuffs/search`, {
       params: { keyword },
     });
-
     return response.data.result?.stuffs ?? [];
   },
 
@@ -39,7 +38,6 @@ export const stuffService = {
     imageUrl?: string;
   }): Promise<StuffSuggestion> => {
     const response = await axios.post(`${BASE_URL}/api/stuffs`, data);
-
     return response.data.result;
   },
 
@@ -47,13 +45,12 @@ export const stuffService = {
     const response = await axios.post(`${BASE_URL}/api/stuffs/find-or-create`, {
       stuffName,
     });
-
     return response.data.data;
   },
-  //  [추가] 특정 상품의 추천 조합 전체 리스트 가져오기 (백엔드 API 호출)
+
+  // 특정 상품의 추천 조합 전체 리스트 가져오기
   getRecommendationsByStuff: async (stuffId: number): Promise<{ totalCount: number; stuffs: RecommendedStuff[] }> => {
     const response = await axios.get(`${BASE_URL}/api/stuffs/${stuffId}/recommendations`);
-    
     return response.data.data;
   },
 };

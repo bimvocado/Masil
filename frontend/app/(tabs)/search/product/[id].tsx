@@ -149,7 +149,7 @@ export default function ProductDetailScreen() {
             total: detailData.dislikeCount,
             ratio: detailData.dislikeRatio,
             korean: detailData.koreanDislikeCount,
-            foreigner: detailData.foreignerDislikeCount,
+            foreigner: detailData.foreignerLikeCount,
           }}
         />
 
@@ -178,13 +178,14 @@ export default function ProductDetailScreen() {
           <Text style={styles.sectionTitle}>추천조합</Text>
           <TouchableOpacity
             onPress={() => {
+              // 🌟 Expo Router 주소 규격에 맞춰 `as any`를 지우고 온전한 객체 경로로 변경했습니다.
               router.push({
-                pathname: '/search/product/[id]/recommendations', 
+                pathname: '/search/product/[id]/recommendations', // 원래대로 깔끔하게 작성
                 params: {
                   id: String(detailData.stuffId),
                   mainStuffName: detailData.stuffName || stuffName || '',
                 },
-              } as any); 
+              } as any);
             }}
           >
             <Text style={styles.moreText}>더보기 {'>'}</Text>
@@ -265,7 +266,7 @@ export default function ProductDetailScreen() {
                     id: String(postId),
                     fetchType: 'single',
                   },
-                } as any);
+                });
               }}
             >
               <Text style={{ fontWeight: 'bold' }}>{detailData.topPost.nickname}</Text>
