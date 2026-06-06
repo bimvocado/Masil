@@ -137,11 +137,21 @@ export default function PlusScreen() {
     }
   };
 
+  // 🌟 [수정본] 메인 상품 선택 핸들러 (브랜드 로고 유실 방지 방어 코드 내장)
   const handleSelectSuggestion = (item: StuffSuggestion) => {
     setBrandName(`@${item.stuffName}`);
     setSelectedBrandId(item.brandId ?? selectedBrandId);
     setSelectedBrandName(item.brandName ?? '');
-    setSelectedBrandLogoUrl(item.logoUrl ?? '');
+    
+    // 백엔드에서 내려올 수 있는 모든 명칭 필드를 순서대로 체크하여 매핑 유실을 차단합니다.
+    const finalLogoUrl = 
+      item.logoUrl || 
+      (item as any).logo_url || 
+      (item as any).brandLogoUrl || 
+      (item as any).imageUrl || 
+      '';
+    setSelectedBrandLogoUrl(finalLogoUrl);
+
     setPrice(
       item.averagePrice !== undefined && item.averagePrice !== null
         ? String(Math.round(item.averagePrice))
@@ -168,11 +178,21 @@ export default function PlusScreen() {
     }
   };
 
+  // 🌟 [수정본] 추천 상품 선택 핸들러 (추천 브랜드 로고 유실 방지 방어 코드 내장)
   const handleSelectRecommendedSuggestion = (item: StuffSuggestion) => {
     setRecommendedStuffName(`@${item.stuffName}`);
     setRecommendedBrandId(item.brandId ?? null);
     setRecommendedBrandName(item.brandName ?? '');
-    setRecBrandLogoUrl(item.logoUrl ?? '');
+    
+    // 추천 상품 데이터 바인딩 시에도 로고 이미지 필드가 깨지지 않도록 동일하게 방어합니다.
+    const finalLogoUrl = 
+      item.logoUrl || 
+      (item as any).logo_url || 
+      (item as any).brandLogoUrl || 
+      (item as any).imageUrl || 
+      '';
+    setRecBrandLogoUrl(finalLogoUrl);
+
     setRecommendedPrice(
       item.averagePrice !== undefined && item.averagePrice !== null
         ? String(Math.round(item.averagePrice))
@@ -245,7 +265,6 @@ export default function PlusScreen() {
         formData.append('recommendedPrice', recommendedPrice || '0');
       }
 
-      // 💡 [수정됨] 문자열 인덱싱 기법으로 FileSystem 에러 완벽 해결
       const cacheDirKey = 'cacheDirectory';
       const docDirKey = 'documentDirectory';
       const targetCacheDir = ExpoFileSystem[cacheDirKey] || ExpoFileSystem[docDirKey] || '';
