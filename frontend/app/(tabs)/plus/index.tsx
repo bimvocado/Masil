@@ -421,6 +421,8 @@ export default function PlusScreen() {
                       itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || rawItem.logo_url || rawItem.logoUrl;
                     }
 
+                    const itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || (item.logoUrl && !item.logoUrl.includes('stuff') ? item.logoUrl : '') || rawItem.logo_url;
+                    const suggestionLabel = item.brandName ? `${item.stuffName} (${item.brandName})` : item.stuffName;
                     return (
                       <TouchableOpacity 
                         key={item.stuffId} 
@@ -432,7 +434,7 @@ export default function PlusScreen() {
                         ) : (
                           <View style={localStyles.miniBrandLogoPlaceholder}><Text style={{fontSize: 10, color: '#aaa'}}>?</Text></View>
                         )}
-                        <Text style={safeStyles.suggestionText || {}}>{item.stuffName} ({item.brandName})</Text>
+                        <Text style={safeStyles.suggestionText || {}}>{suggestionLabel}</Text>
                       </TouchableOpacity>
                     );
                   })}
@@ -484,7 +486,7 @@ export default function PlusScreen() {
                           ) : (
                             <View style={localStyles.miniBrandLogoPlaceholder}><Text style={{fontSize: 10, color: '#aaa'}}>?</Text></View>
                           )}
-                          <Text style={safeStyles.suggestionText || {}}>{item.stuffName} ({item.brandName})</Text>
+                          <Text style={safeStyles.suggestionText || {}}>{suggestionLabel}</Text>
                         </TouchableOpacity>
                       );
                     })}
@@ -507,7 +509,7 @@ export default function PlusScreen() {
             </>
           ) : (
             <>
-              <TextInput placeholder="조합에 대한 소개글을 작성해 주세요." placeholderTextColor={Colors.gray.light} style={safeStyles.contentInput || {}} multiline textAlignVertical="top" value={content} onChangeText={setContent} />
+              <TextInput placeholder="소개글을 작성해 주세요." placeholderTextColor={Colors.gray.light} style={safeStyles.contentInput || {}} multiline textAlignVertical="top" value={content} onChangeText={setContent} />
               <TouchableOpacity style={safeStyles.nextButton || {}} onPress={handleUpload}>
                 <Text style={safeStyles.nextButtonText || {}}>업로드</Text>
               </TouchableOpacity>

@@ -26,23 +26,23 @@ interface PostItemProps {
 export const PostItem = ({ item, user, onOpenComments, isLiked: initialLiked, isDisliked: initialDisliked, isScrapped, onScrapPress, onBack }: PostItemProps) => {
   const insets = useSafeAreaInsets();
 
-  const [liked, setLiked] = useState(false);
-  const [disliked, setDisliked] = useState(false);
+  const currentIsLiked = Boolean(initialLiked || item.isLiked || (item as any).liked);
+  const currentIsDisliked = Boolean(initialDisliked || item.isDisliked || (item as any).disliked);
+
+  const [liked, setLiked] = useState(currentIsLiked);
+  const [disliked, setDisliked] = useState(currentIsDisliked);
   const [likeCount, setLikeCount] = useState(item.likeCount || 0);
   const [dislikeCount, setDislikeCount] = useState(item.dislikeCount || 0);
-  
-  // 2. 초기 데이터 싱크 (부모로부터 받은 값 세팅)
+
+  // 같은 게시글을 다시 렌더링할 때는 스크랩 상태 변경으로 반응 상태가 덮어써지지 않도록,
+  // 실제 postId가 바뀔 때만 반응 상태를 동기화합니다.
   useEffect(() => {
     setLikeCount(item.likeCount || 0);
     setDislikeCount(item.dislikeCount || 0);
-    
-    // props로 들어온 isLiked나 item 내부에 숨어있는 isLiked 모두 체크
-    const checkLiked = initialLiked || (item as any).isLiked || (item as any).liked;
-    const checkDisliked = initialDisliked || (item as any).isDisliked || (item as any).disliked;
-    
-    setLiked(!!checkLiked);
-    setDisliked(!!checkDisliked);
-  }, [item, initialLiked, initialDisliked]); // 💡 의존성에 initialLiked 추가!
+
+    setLiked(currentIsLiked);
+    setDisliked(currentIsDisliked);
+  }, [item.postId, currentIsLiked, currentIsDisliked, item.likeCount, item.dislikeCount]);
 
   // 3. 좋아요/싫어요 로직 (실시간 숫자 반영)
   const toggleReaction = async (reactionType: 'LIKE' | 'DISLIKE') => {

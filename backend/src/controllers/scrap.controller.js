@@ -3,7 +3,13 @@ const scrapService = require('../services/scrap.service');
 const getScrapsByCategory = async (req, res, next) => {
   try {
     const { categoryId } = req.params;
-    const scraps = await scrapService.getScrapsByCategory(categoryId);
+    const parsedCategoryId = Number(categoryId);
+    
+    if (isNaN(parsedCategoryId)) {
+      return res.status(400).json({ success: false, message: '유효하지 않은 카테고리 ID' });
+    }
+    
+    const scraps = await scrapService.getScrapsByCategory(parsedCategoryId);
     return res.status(200).json({ success: true, message: '스크랩 목록 조회 성공', data: scraps });
   } catch (error) {
     next(error);
