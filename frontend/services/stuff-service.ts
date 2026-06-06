@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken } from '@/utils/storage';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 
@@ -48,9 +49,21 @@ export const stuffService = {
     return response.data.data;
   },
 
-  // 특정 상품의 추천 조합 전체 리스트 가져오기
+// 특정 상품의 추천 조합 전체 리스트 가져오기
   getRecommendationsByStuff: async (stuffId: number): Promise<{ totalCount: number; stuffs: RecommendedStuff[] }> => {
-    const response = await axios.get(`${BASE_URL}/api/stuffs/${stuffId}/recommendations`);
-    return response.data.data;
+    try {
+      // 1. 개별 export 된 getToken 함수를 실행하여 토큰을 안전하게 읽어옵니다.
+      const token = await getToken(); 
+
+      // 2. 기존의 수정한 적 없는 깔끔한 axios 호출 구조에 headers만 탑재합니다.
+      const response = await axios.get(`${BASE_URL}/api/stuffs/${stuffId}/recommendations`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      return response.data.data;
+    } catch (error) {
+      console.error('추천 조합 상세 리스트 조회 실패:', error);
+      throw error;
+    }
   },
 };
