@@ -48,6 +48,7 @@ const toTopPostDTO = (post) => {
 const toStuffDetailDTO = ({
   stuff,
   topPost,
+  recommendations = [] // 🌟 [추가] 기본값 빈 배열 설정
 }) => {
   return {
     stuffId: stuff.stuffId,
@@ -76,6 +77,10 @@ const toStuffDetailDTO = ({
     // 하단 인기 게시글
     // 전체 게시글 중 스크랩이 가장 많은 글
     topPost: topPost ? toTopPostDTO(topPost) : null,
+
+    // 🌟 [추가] 추천 조합 리스트 DTO 매핑 (최대 4개 가로 스와이프용)
+    // 기존에 만들어두신 toTopPostDTO가 가진 추천 필드 매핑 로직을 그대로 활용합니다.
+    recommendations: recommendations.map(post => toTopPostDTO(post)),
   };
 };
 
