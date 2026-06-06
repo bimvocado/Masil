@@ -240,10 +240,106 @@ const findTopPostByStuff = async (stuffId) => {
   return rows[0];
 };
 
+// 상품 상세 페이지 - 가로 스와이프용 상위 추천 조합 최대 4개 조회
+const findTopRecommendationsByStuff = async (stuffId) => {
+  const rows = await sequelize.query(
+    `
+    SELECT
+      p.post_id AS postId,
+      p.recommended_stuff_id AS recommendedStuffId,
+      p.recommended_image_url AS recommendedImageUrl,
+      rst.stuff_name AS recommendedStuffName,
+      rb.brand_id AS recommendedBrandId,
+      rb.brand_name AS recommendedBrandName,
+      COUNT(sc.scrap_id) AS scrapCount
+    FROM posts p
+    LEFT JOIN post_scraps sc
+      ON p.post_id = sc.post_id
+      AND sc.deleted_at IS NULL
+    INNER JOIN stuffs rst 
+      ON p.recommended_stuff_id = rst.stuff_id
+      AND rst.deleted_at IS NULL
+    LEFT JOIN brands rb 
+      ON rst.brand_id = rb.brand_id
+      AND rb.deleted_at IS NULL
+    WHERE p.stuff_id = :stuffId
+      AND p.deleted_at IS NULL
+      AND p.recommended_stuff_id IS NOT NULL  -- 추천 상품이 있는 게시글만 필터링
+    GROUP BY 
+      p.post_id, 
+      p.recommended_stuff_id,
+      p.recommended_image_url,
+      rst.stuff_id,
+      rst.stuff_name,
+      rb.brand_id,
+      rb.brand_name
+    ORDER BY scrapCount DESC, p.created_at DESC
+    LIMIT 4  -- 🌟 딱 4개까지만 제한
+    `,
+    {
+      replacements: { stuffId },
+      type: QueryTypes.SELECT,
+    }
+  );
+
+  return rows;
+};
+
+// 추천 조합 [더보기] 눌렀을 때 전체 순위 나열
+const findAllRecommendationsByStuff = async (stuffId) => {
+  const rows = await sequelize.query(
+    `
+    SELECT
+      p.post_id AS postId,
+      p.recommended_stuff_id AS recommendedStuffId,
+      p.recommended_image_url AS recommendedImageUrl,
+      rst.stuff_name AS recommendedStuffName,
+      rst.price AS price,                    -- 🌟 시안의 가격 표시를 위해 추가
+      rb.brand_id AS recommendedBrandId,
+      rb.brand_name AS recommendedBrandName,
+      COUNT(DISTINCT sc.scrap_id) AS scrapCount, -- 🌟 스크랩 수 집계
+      COUNT(DISTINCT CASE WHEN i.reaction_type = 'LIKE' THEN i.interaction_id END) AS likeCount -- 🌟 시안의 따봉(좋아요) 수 집계
+    FROM posts p
+    LEFT JOIN post_scraps sc
+      ON p.post_id = sc.post_id
+      AND sc.deleted_at IS NULL
+    INNER JOIN stuffs rst 
+      ON p.recommended_stuff_id = rst.stuff_id
+      AND rst.deleted_at IS NULL
+    LEFT JOIN brands rb 
+      ON rst.brand_id = rb.brand_id
+      AND rb.deleted_at IS NULL
+    LEFT JOIN interactions i
+      ON rst.stuff_id = i.stuff_id
+      AND i.deleted_at IS NULL
+    WHERE p.stuff_id = :stuffId
+      AND p.deleted_at IS NULL
+      AND p.recommended_stuff_id IS NOT NULL
+    GROUP BY 
+      p.post_id, 
+      p.recommended_stuff_id,
+      p.recommended_image_url,
+      rst.stuff_id,
+      rst.stuff_name,
+      rst.price,
+      rb.brand_id,
+      rb.brand_name
+    ORDER BY likeCount DESC, scrapCount DESC, p.created_at DESC -- 🌟 좋아요 많은 순 정렬
+    `,
+    {
+      replacements: { stuffId },
+      type: QueryTypes.SELECT,
+    }
+  );
+  return rows;
+};
+
 module.exports = {
   searchStuffs,
   findStuffDetail,
   findStuffById,
   findTopPostByStuff,
+  findTopRecommendationsByStuff,
+  findAllRecommendationsByStuff,
   createStuff,
 };
