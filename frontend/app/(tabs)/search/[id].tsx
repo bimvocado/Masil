@@ -71,31 +71,37 @@ export default function BrandDetailScreen() {
           {totalElements}개의 템이 있소
         </Text>
         
-        {stuffs.map((item: any, index: number) => (
-        <ProductCard 
-          key={item.stuffId}
-          rank={index + 1}
-          name={item.stuffName}
-          price={Number(item.price || 0).toLocaleString()}
-          likes={String(item.likeCount || 0)}
-          comments={String(item.postCount || 0)}
-          imageUrl={
-    item.imageUrl?.startsWith('http')
-      ? item.imageUrl
-      : `${process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org'}${item.imageUrl?.startsWith('/') ? '' : '/'}${item.imageUrl}`
-  }
-          onPress={() =>
-            router.push({
-              pathname: "/search/product/[id]",
-              params: {
-                id: String(item.stuffId),
-                stuffName: item.stuffName,
-                brandName: name as string,
+        {stuffs.map((item: any, index: number) => {
+          // 💰 [수정] 여러 포스트들의 가격을 취합해 정산한 "평균 가격" 필드를 최우선으로 가져옵니다.
+          const currentAvgPrice = item.averagePrice ?? item.avgPrice ?? item.price ?? 0;
+
+          return (
+            <ProductCard 
+              key={item.stuffId}
+              rank={index + 1}
+              name={item.stuffName}
+              // 💸 정산된 평균 가격을 콤마(,) 포맷팅하여 카드의 가격 자리에 매핑합니다.
+              price={Number(currentAvgPrice).toLocaleString()}
+              likes={String(item.likeCount || 0)}
+              comments={String(item.postCount || 0)}
+              imageUrl={
+                item.imageUrl?.startsWith('http')
+                  ? item.imageUrl
+                  : `${process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org'}${item.imageUrl?.startsWith('/') ? '' : '/'}${item.imageUrl}`
               }
-            } as any)
-          }
-        />
-        ))}
+              onPress={() =>
+                router.push({
+                  pathname: "/search/product/[id]",
+                  params: {
+                    id: String(item.stuffId),
+                    stuffName: item.stuffName,
+                    brandName: name as string,
+                  }
+                } as any)
+              }
+            />
+          );
+        })}
       </ScrollView>
     </View>
   );
