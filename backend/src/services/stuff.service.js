@@ -1,5 +1,5 @@
 const stuffRepository = require('../repositories/stuff.repository');
-const postRepository = require('../repositories/post.repository');
+const postRepository = require('../repositories/post.repository'); 
 
 const {
   toStuffSearchResultDTO,
@@ -8,40 +8,21 @@ const {
 
 // 검색창 - 상품으로 검색
 const searchStuffs = async ({ keyword, category }) => {
-  const stuffs = await stuffRepository.searchStuffs({
-    keyword,
-    category,
-  });
-
-  // return toStuffSearchResultDTO(stuffs);
-
+  const stuffs = await stuffRepository.searchStuffs({ keyword, category });
   const result = toStuffSearchResultDTO(stuffs);
 
   const stuffsWithAveragePrice = await Promise.all(
     result.stuffs.map(async (stuff) => {
-      const averagePrice = await postRepository.getAveragePriceByStuffId(
-        stuff.stuffId
-      );
-      return {
-        ...stuff,
-        averagePrice,
-      };
+      const averagePrice = await postRepository.getAveragePriceByStuffId(stuff.stuffId);
+      return { ...stuff, averagePrice };
     })
   );
-  return {
-    ...result,
-    stuffs: stuffsWithAveragePrice,
-  };
+  return { ...result, stuffs: stuffsWithAveragePrice };
 };
 
 // 상품 생성
 const createStuff = async ({ brandId, stuffName, price }) => {
-  const stuff = await stuffRepository.createStuff({
-    brandId,
-    stuffName,
-    price,
-  });
-
+  const stuff = await stuffRepository.createStuff({ brandId, stuffName, price });
   return {
     stuffId: stuff.stuffId,
     stuffName: stuff.stuffName,
@@ -50,28 +31,7 @@ const createStuff = async ({ brandId, stuffName, price }) => {
   };
 };
 
-// // 상품창 - 상세 페이지 전체
-// const getStuffDetail = async (stuffId) => {
-//   const stuff = await stuffRepository.findStuffDetail(stuffId);
-
-//   if (!stuff) {
-//     const error = new Error('존재하지 않는 상품입니다.');
-//     error.status = 404;
-//     throw error;
-//   }
-
-//   const topPost = await stuffRepository.findTopPostByStuff(stuffId);
-
-//   console.log('topPost 확인:', topPost);
-
-//   return toStuffDetailDTO({
-//     stuff,
-//     topPost,
-//   });
-// };
-
-
-// 추가(추천조합 스와이프) : 상품창 - 상세 페이지 전체
+// 상품창 - 상세 페이지 전체 (메인 상품 평균가 + 추천 스와이프 상품 평균가 추가)
 const getStuffDetail = async (stuffId) => {
   const stuff = await stuffRepository.findStuffDetail(stuffId);
 
@@ -82,39 +42,63 @@ const getStuffDetail = async (stuffId) => {
   }
 
   const topPost = await stuffRepository.findTopPostByStuff(stuffId);
-  
-  // 🌟 [추가] 상위 추천 조합 리스트 4개 들고오기
   const recommendations = await stuffRepository.findTopRecommendationsByStuff(stuffId);
 
-  console.log('topPost 확인:', topPost);
-  console.log('recommendations 확인:', recommendations); // 로그로 개수와 데이터 확인용
+  // 💰 메인 상품 실시간 평균가 정산
+  const averagePrice = await postRepository.getAveragePriceByStuffId(stuffId);
 
-  // 🌟 DTO 인자에 recommendations를 추가로 전달합니다.
-  return toStuffDetailDTO({
+  // 💰 가로 스와이프 추천 상품들 각각의 실시간 평균가 정산
+  const recommendationsWithAvgPrice = await Promise.all(
+    (recommendations || []).map(async (rec) => {
+      const targetStuffId = rec.recommendedStuffId; 
+      const recAvgPrice = await postRepository.getAveragePriceByStuffId(targetStuffId);
+      return {
+        ...rec,
+        averagePrice: recAvgPrice,
+        avgPrice: recAvgPrice 
+      };
+    })
+  );
+
+  const detailDTO = toStuffDetailDTO({
     stuff,
     topPost,
-    recommendations, 
+    recommendations: recommendationsWithAvgPrice, 
   });
+
+  return {
+    ...detailDTO,
+    averagePrice, 
+    avgPrice: averagePrice
+  };
 };
 
-
-// [추가] 상품 상세 페이지 - 추천 조합 더보기 서비스 로직
+// 상품 상세 페이지 - 추천 조합 더보기 서비스 로직 (각 아이템 평균가 추가)
 const getProductRecommendations = async (stuffId) => {
-  // 1. 레포지토리를 호출하여 DB에서 순수 데이터를 가져옴
   const recommendations = await stuffRepository.findAllRecommendationsByStuff(stuffId);
   
-  // 2. 다른 서비스들처럼 데이터를 오브젝트 형태로 정돈 및 스펙 가공하여 리턴
+  const processedStuffs = await Promise.all(
+    recommendations.map(async (item) => {
+      const targetStuffId = item.recommendedStuffId;
+      const calculatedAvgPrice = await postRepository.getAveragePriceByStuffId(targetStuffId);
+
+      return {
+        recommendedStuffId: item.recommendedStuffId,
+        recommendedStuffName: item.recommendedStuffName,
+        recommendedBrandName: item.recommendedBrandName,
+        price: Number(item.price || 0),
+        averagePrice: calculatedAvgPrice, 
+        avgPrice: calculatedAvgPrice,
+        likeCount: Number(item.likeCount || 0),   
+        scrapCount: Number(item.scrapCount || 0), 
+        recommendedImageUrl: item.recommendedImageUrl
+      };
+    })
+  );
+
   return {
-    totalCount: recommendations.length,
-    stuffs: recommendations.map(item => ({
-      recommendedStuffId: item.recommendedStuffId,
-      recommendedStuffName: item.recommendedStuffName,
-      recommendedBrandName: item.recommendedBrandName,
-      price: Number(item.price || 0),
-      likeCount: Number(item.likeCount || 0),   // 따봉 수
-      scrapCount: Number(item.scrapCount || 0), // 스크랩 수
-      recommendedImageUrl: item.recommendedImageUrl
-    }))
+    totalCount: processedStuffs.length,
+    stuffs: processedStuffs
   };
 };
 

@@ -15,7 +15,6 @@ export default function BrandDetailScreen() {
   }>();
 
   const router = useRouter();
-
   const [sort] = useState<StuffSort>('LIKE_DESC');
 
   const {
@@ -40,7 +39,13 @@ export default function BrandDetailScreen() {
 
       const result = response.data.result;
 
-      setStuffs(result.stuffs);
+      // 💰 [추가] 스토어 저장 전, 각 상품의 최우선 평균 가격을 'averagePrice' 필드로 고정해 매핑합니다.
+      const processedStuffs = (result.stuffs || []).map((item: any) => ({
+        ...item,
+        averagePrice: item.averagePrice ?? item.avgPrice ?? item.price ?? 0
+      }));
+
+      setStuffs(processedStuffs);
       setBrandInfo(result.brandName, result.totalStuffCount);
     } catch (error: any) {
       console.error('브랜드별 상품 조회 실패:', error);
@@ -72,16 +77,13 @@ export default function BrandDetailScreen() {
         </Text>
         
         {stuffs.map((item: any, index: number) => {
-          // 💰 [수정] 여러 포스트들의 가격을 취합해 정산한 "평균 가격" 필드를 최우선으로 가져옵니다.
-          const currentAvgPrice = item.averagePrice ?? item.avgPrice ?? item.price ?? 0;
-
           return (
             <ProductCard 
               key={item.stuffId}
               rank={index + 1}
               name={item.stuffName}
-              // 💸 정산된 평균 가격을 콤마(,) 포맷팅하여 카드의 가격 자리에 매핑합니다.
-              price={Number(currentAvgPrice).toLocaleString()}
+              // 💸 스토어 진입 단계에서 정제되었으므로 콤마 포맷팅만 해서 바인딩합니다.
+              price={Number(item.averagePrice).toLocaleString()}
               likes={String(item.likeCount || 0)}
               comments={String(item.postCount || 0)}
               imageUrl={

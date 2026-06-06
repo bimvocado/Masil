@@ -105,21 +105,20 @@ export default function PlusScreen() {
     }
   };
 
+  // 💡 [수정] 모달이 열리지 않아도 자동완성 시 brandResults를 조회할 수 있도록 조건 완화 (백그라운드 로드 보장)
   useEffect(() => {
-    if (isBrandModalVisible) {
-      const loadBrands = async () => {
-        try {
-          const res = brandQuery.trim()
-            ? await searchService.searchBrands(brandQuery, brandCategory)
-            : await searchService.getBrands(brandCategory);
-          setBrandResults(res.data?.result?.brands ?? []);
-        } catch (e) {
-          console.error('브랜드 로드 실패:', e);
-          setBrandResults([]);
-        }
-      };
-      loadBrands();
-    }
+    const loadBrands = async () => {
+      try {
+        const res = brandQuery.trim()
+          ? await searchService.searchBrands(brandQuery, brandCategory)
+          : await searchService.getBrands(brandCategory);
+        setBrandResults(res.data?.result?.brands ?? []);
+      } catch (e) {
+        console.error('브랜드 로드 실패:', e);
+        setBrandResults([]);
+      }
+    };
+    loadBrands();
   }, [isBrandModalVisible, brandCategory, brandQuery]);
 
   const handleStuffNameChange = async (value: string) => {
@@ -138,21 +137,34 @@ export default function PlusScreen() {
     }
   };
 
-  // 🛡️ [수정 완료] 메인 상품 선택 핸들러: 상품 이미지 필드를 완벽 차단하고 순수 브랜드 로고만 매핑
+  // 🎯 [유저님 기획 전면 반영] 메인 상품 선택 시 brandId 기반 브랜드 로고 실시간 룩업(Lookup)
   const handleSelectSuggestion = (item: StuffSuggestion) => {
     setBrandName(`@${item.stuffName}`);
-    setSelectedBrandId(item.brandId ?? selectedBrandId);
+    
+    const finalBrandId = item.brandId ?? selectedBrandId;
+    setSelectedBrandId(finalBrandId);
     setSelectedBrandName(item.brandName ?? '');
     
-    // 🚨 item.imageUrl 이나 오염된 item.logoUrl 대신, 객체 내부에 존재하는 명확한 브랜드 로고 전용 경로 탐색
-    const rawItem = item as any;
-    const finalLogoUrl = 
-      rawItem.brand?.logoUrl ||          // 1순위: brand 객체 내부의 로고Url
-      rawItem.brandLogoUrl ||            // 2순위: 단독 브랜드 로고 필드명
-      rawItem.brandLogo ||               // 3순위: 단독 브랜드 로고 필드명 2
-      (item.logoUrl && !item.logoUrl.includes('stuff') ? item.logoUrl : '') || // 4순위: 상품이미지가 아님이 검증된 로고 url
-      rawItem.logo_url || 
-      '';
+    // 🔍 1단계: 프론트엔드 brandResults 마스터 데이터에서 brandId 매칭 추적
+    let finalLogoUrl = '';
+    if (finalBrandId && brandResults.length > 0) {
+      const matchedBrand = brandResults.find((b: any) => Number(b.brandId) === Number(finalBrandId));
+      if (matchedBrand) {
+        finalLogoUrl = matchedBrand.logoUrl;
+      }
+    }
+
+    // 🔍 2단계: 만약 캐시에 없다면 백엔드가 던져준 원본 객체의 예외 필드 마지막 탐색
+    if (!finalLogoUrl) {
+      const rawItem = item as any;
+      finalLogoUrl = 
+        rawItem.brand?.logoUrl || 
+        rawItem.brandLogoUrl || 
+        rawItem.brandLogo || 
+        rawItem.logo_url || 
+        rawItem.logoUrl || 
+        '';
+    }
       
     setSelectedBrandLogoUrl(finalLogoUrl);
 
@@ -182,22 +194,36 @@ export default function PlusScreen() {
     }
   };
 
-  // 🛡️ [수정 완료] 추천 상품 선택 핸들러: 위와 동일하게 순수 브랜드 로고 필드만 정밀 매핑
+  // 🎯 [유저님 기획 전면 반영] 추천 조합 상품 선택 시 brandId 기반 브랜드 로고 실시간 룩업(Lookup)
   const handleSelectRecommendedSuggestion = (item: StuffSuggestion) => {
     setRecommendedStuffName(`@${item.stuffName}`);
-    setRecommendedBrandId(item.brandId ?? null);
+    
+    const finalRecBrandId = item.brandId ?? null;
+    setRecommendedBrandId(finalRecBrandId);
     setRecommendedBrandName(item.brandName ?? '');
     
-    const rawItem = item as any;
-    const finalLogoUrl = 
-      rawItem.brand?.logoUrl || 
-      rawItem.brandLogoUrl || 
-      rawItem.brandLogo || 
-      (item.logoUrl && !item.logoUrl.includes('stuff') ? item.logoUrl : '') ||
-      rawItem.logo_url || 
-      '';
+    // 🔍 1단계: 프론트엔드 brandResults 마스터 데이터에서 brandId 매칭 추적
+    let finalRecLogoUrl = '';
+    if (finalRecBrandId && brandResults.length > 0) {
+      const matchedBrand = brandResults.find((b: any) => Number(b.brandId) === Number(finalRecBrandId));
+      if (matchedBrand) {
+        finalRecLogoUrl = matchedBrand.logoUrl;
+      }
+    }
 
-    setRecBrandLogoUrl(finalLogoUrl);
+    // 🔍 2단계: 예외 보루 필드 탐색
+    if (!finalRecLogoUrl) {
+      const rawItem = item as any;
+      finalRecLogoUrl = 
+        rawItem.brand?.logoUrl || 
+        rawItem.brandLogoUrl || 
+        rawItem.brandLogo || 
+        rawItem.logo_url || 
+        rawItem.logoUrl || 
+        '';
+    }
+
+    setRecBrandLogoUrl(finalRecLogoUrl);
 
     setRecommendedPrice(
       item.averagePrice !== undefined && item.averagePrice !== null
@@ -247,7 +273,7 @@ export default function PlusScreen() {
     setRecommendedImageUri(null);
     setRecommendedBrandId(null);
     setRecommendedBrandName('');
-    setRecBrandLogoUrl('');
+    setRecBrandLogoUrl(''); // ✅ 잔상 방어막 구축 완료
     setBrandSelectTarget('main');
   };
 
@@ -372,7 +398,6 @@ export default function PlusScreen() {
 
               <View style={safeStyles.userInfoCard || {}}>
                 <TouchableOpacity onPress={() => { setBrandSelectTarget('main'); setIsBrandModalVisible(true); }}>
-                  {/* 💡 [정상 반영] 이제 사용자가 자동완성을 누르면 상품 사진이 아닌 순수 브랜드 로고가 꽂힙니다 */}
                   {selectedBrandLogoUrl ? <Image source={{ uri: getImageUrl(selectedBrandLogoUrl) }} style={safeStyles.avatarPlaceholder || {}} /> : <View style={safeStyles.avatarPlaceholder || {}}><Text style={safeStyles.questionMark || {}}>?</Text></View>}
                 </TouchableOpacity>
                 <View style={safeStyles.nameInputWrapper || {}}>
@@ -385,6 +410,17 @@ export default function PlusScreen() {
                 <View style={safeStyles.suggestionsContainer || {}}>
                   {suggestions.map((item) => {
                     const rawItem = item as any;
+                    
+                    // 💡 가이드 리스트 UI의 썸네일도 동일하게 brandId로 실시간 매핑 추적
+                    let itemLogoUrl = '';
+                    if (item.brandId && brandResults.length > 0) {
+                      const mBrand = brandResults.find((b: any) => Number(b.brandId) === Number(item.brandId));
+                      if (mBrand) itemLogoUrl = mBrand.logoUrl;
+                    }
+                    if (!itemLogoUrl) {
+                      itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || rawItem.logo_url || rawItem.logoUrl;
+                    }
+
                     const itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || (item.logoUrl && !item.logoUrl.includes('stuff') ? item.logoUrl : '') || rawItem.logo_url;
                     const suggestionLabel = item.brandName ? `${item.stuffName} (${item.brandName})` : item.stuffName;
                     return (
@@ -416,7 +452,6 @@ export default function PlusScreen() {
                 <Text style={safeStyles.recommendTitle || {}}>추천 조합 상품</Text>
                 <View style={safeStyles.userInfoCard || {}}>
                   <TouchableOpacity onPress={() => { setBrandSelectTarget('recommended'); setIsBrandModalVisible(true); }}>
-                    {/* 💡 [정상 반영] 추천 조합 칸도 동일하게 상품 사진 차색 후 순수 브랜드 로고 맵핑 */}
                     {recBrandLogoUrl ? <Image source={{ uri: getImageUrl(recBrandLogoUrl) }} style={safeStyles.avatarPlaceholder || {}} /> : <View style={safeStyles.avatarPlaceholder || {}}><Text style={safeStyles.questionMark || {}}>?</Text></View>}
                   </TouchableOpacity>
                   <View style={safeStyles.nameInputWrapper || {}}>
@@ -429,8 +464,17 @@ export default function PlusScreen() {
                   <View style={safeStyles.suggestionsContainer || {}}>
                     {recommendedSuggestions.map((item) => {
                       const rawItem = item as any;
-                      const itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || (item.logoUrl && !item.logoUrl.includes('stuff') ? item.logoUrl : '') || rawItem.logo_url;
-                      const suggestionLabel = item.brandName ? `${item.stuffName} (${item.brandName})` : item.stuffName;
+                      
+                      // 💡 추천 가이드 리스트 UI 썸네일 brandId 실시간 추적
+                      let itemLogoUrl = '';
+                      if (item.brandId && brandResults.length > 0) {
+                        const mBrand = brandResults.find((b: any) => Number(b.brandId) === Number(item.brandId));
+                        if (mBrand) itemLogoUrl = mBrand.logoUrl;
+                      }
+                      if (!itemLogoUrl) {
+                        itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || rawItem.logo_url || rawItem.logoUrl;
+                      }
+
                       return (
                         <TouchableOpacity 
                           key={item.stuffId} 
