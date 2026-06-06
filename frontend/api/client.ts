@@ -15,13 +15,24 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // if (config.data instanceof FormData) {
+    //   if (config.headers) {
+    //     // Ensure axios does not set an incorrect Content-Type without boundary
+    //     delete config.headers['Content-Type'];
+    //     delete config.headers['content-type'];
+    //   }
+    //   console.log('📡 [인터셉터] FormData 전송, headers after cleanup:', config.headers);
+    // }
+
     if (config.data instanceof FormData) {
       if (config.headers) {
-        // Ensure axios does not set an incorrect Content-Type without boundary
-        delete config.headers['Content-Type'];
-        delete config.headers['content-type'];
+     
+        config.headers['Content-Type'] = 'multipart/form-data';
       }
-      console.log('📡 [인터셉터] FormData 전송, headers after cleanup:', config.headers);
+      
+      config.transformRequest = [(data) => data]; 
+      
+      console.log('📡 [인터셉터] 안드로이드용 FormData 세팅 완료:', config.headers);
     }
 
     // Debug: log request basics for multipart failures
