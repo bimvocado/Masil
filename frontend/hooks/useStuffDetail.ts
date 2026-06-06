@@ -18,9 +18,9 @@ export interface StuffDetail {
   bestReviewImageUrl: string | null;
   imageUrl?: string | null;
   
-  // 💰 [추가] 화면단에서 메인 상품의 실시간 평균가를 정상 인식할 수 있도록 타입을 추가합니다.
-  averagePrice?: number;
-  avgPrice?: number;
+  // 💰 평균 가격 필드 타입 단일화
+  averagePrice: number;
+  avgPrice: number;
 
   likeCount: number;
   likeRatio: number;
@@ -67,13 +67,13 @@ export function useStuffDetail(id: string) {
         const response = await apiClient.get(`/api/stuffs/${id}/detail`);
         const responseData = response.data?.data ?? response.data?.result;
 
-        console.log('responseData', responseData);
-        console.log('responseData.topPost', responseData.topPost);
-
         if (!responseData) {
           setDetailData(null);
           return;
         }
+
+        // 💸 [정산] 백엔드가 주는 가격 필드 중 최우선 순위로 평균가를 낚아챕니다.
+        const computedAvgPrice = responseData.averagePrice ?? responseData.avgPrice ?? responseData.price ?? 0;
 
         // 기본 매핑 객체 생성
         let mapped: any = {
@@ -82,7 +82,10 @@ export function useStuffDetail(id: string) {
           imageUrl: getAbsoluteUrl(responseData.imageUrl ?? null),
           bestReviewImageUrl: getAbsoluteUrl(responseData.bestReviewImageUrl ?? responseData.imageUrl ?? null),
           
-          // 기본값 0으로 세팅
+          // 💰 통일된 평균 가격 심어주기
+          averagePrice: Number(computedAvgPrice),
+          avgPrice: Number(computedAvgPrice),
+          
           likeCount: Number(responseData.totalLikeCount || responseData.likeCount || 0),
           likeRatio: 0,
           koreanLikeCount: Number(responseData.koreanLikeCount || 0),
