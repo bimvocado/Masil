@@ -37,7 +37,14 @@ export default function BookmarkDetailScreen() {
   const fetchScraps = async () => {
     setIsLoading(true);
     try {
-      const res = await scrapService.getScrapsByCategory(Number(id));
+      const categoryId = Number(id);
+      if (isNaN(categoryId)) {
+        console.error('유효하지 않은 카테고리 ID:', id);
+        setPosts([]);
+        setIsLoading(false);
+        return;
+      }
+      const res = await scrapService.getScrapsByCategory(categoryId);
       const loaded = res.data ?? [];
       setPosts(loaded);
 
