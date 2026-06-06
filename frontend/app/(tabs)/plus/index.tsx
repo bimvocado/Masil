@@ -245,8 +245,19 @@ export default function PlusScreen() {
     }
 
     const cleanRecommendedName = recommendedStuffName.replace('@', '').trim();
+    // 추천 이미지가 있을 경우에는 추천 조합의 브랜드와 상품명 둘 다 필수로 입력해야 함
+    if (recommendedImageUri && (!cleanRecommendedName || !recommendedBrandId)) {
+      Alert.alert('알림', '추천 조합의 브랜드와 상품명을 입력해주세요.');
+      return;
+    }
+    // 사용자가 추천 상품명을 입력했지만 브랜드를 선택하지 않은 경우
     if (cleanRecommendedName && !recommendedBrandId) {
       Alert.alert('알림', '추천 조합 브랜드를 선택해주세요.');
+      return;
+    }
+    // 사용자가 추천 브랜드를 선택했지만 상품명이 비어있는 경우
+    if (recommendedBrandId && !cleanRecommendedName) {
+      Alert.alert('알림', '추천 조합 상품명을 입력해주세요.');
       return;
     }
 
@@ -292,6 +303,11 @@ export default function PlusScreen() {
       formData.append('price', purePrice);
 
       const cleanRecName = recommendedStuffName.replace('@', '').trim();
+      // 업로드 시에도 추천 이미지가 존재하면 추천 조합의 브랜드와 상품명이 모두 필요함
+      if (recommendedImageUri && (!cleanRecName || !recommendedBrandId)) {
+        Alert.alert('알림', '추천 조합의 브랜드와 상품명을 입력해주세요.');
+        return;
+      }
       if (cleanRecName && recommendedBrandId) {
         formData.append('recommendedBrandId', String(recommendedBrandId));
         formData.append('recommendedStuffName', cleanRecName);
