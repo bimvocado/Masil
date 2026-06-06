@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Image, Dimensions, FlatList } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -7,6 +7,7 @@ import { InteractionButton } from '@/constants/interaction-button';
 import { InteractionStatsBar } from '@/components/ui/interaction-stats-bar';
 
 import { useStuffDetail } from '@/hooks/useStuffDetail';
+import { postService } from '@/services/post-service';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 
@@ -32,6 +33,24 @@ export default function ProductDetailScreen() {
 
   const router = useRouter();
   const { loading, detailData, handleToggle } = useStuffDetail(String(id));
+  const [reviewPosts, setReviewPosts] = useState<any[]>([]);
+
+  const fetchReviewPosts = useCallback(async () => {
+    if (!id) return;
+
+    try {
+      const posts = await postService.getPosts(undefined, Number(id));
+      const sorted = [...(posts || [])].sort((a, b) => (b.scrapCount || 0) - (a.scrapCount || 0));
+      setReviewPosts(sorted);
+    } catch (error) {
+      console.error('리뷰 목록 로드 실패:', error);
+      setReviewPosts([]);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchReviewPosts();
+  }, [fetchReviewPosts]);
 
   console.log('상세 detailData:', detailData);
 
@@ -180,7 +199,7 @@ export default function ProductDetailScreen() {
 
         {/* 추천조합 타이틀 영역 */}
         <View style={styles.recommendationHeader}>
-          <Text style={styles.sectionTitle}>추천조합</Text>
+          <Text style={styles.sectionTitle}>{recommendationsData.length}개의 추천 조합</Text>
           <TouchableOpacity
             onPress={() => {
               router.push({
@@ -253,9 +272,19 @@ export default function ProductDetailScreen() {
 
         {/* 하단 리뷰 영역 */}
         <View style={styles.reviewHeader}>
-          <Text style={{ fontWeight: 'bold' }}>리뷰</Text>
-          <TouchableOpacity>
-            <Text>스크랩 많은 순 ▼</Text>
+          <Text style={{ fontWeight: 'bold' }}>{reviewPosts.length}개의 리뷰</Text>
+          <TouchableOpacity
+            onPress={() => {
+              router.push({
+                pathname: '/search/product/[id]/reviews',
+                params: {
+                  id: String(detailData.stuffId),
+                  mainStuffName: detailData.stuffName || stuffName || '',
+                },
+              } as any);
+            }}
+          >
+            <Text style={styles.moreText}>더보기 {'>'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -265,18 +294,11 @@ export default function ProductDetailScreen() {
               activeOpacity={0.8}
               onPress={() => {
                 const postId = detailData.topPost?.postId;
-              
-                if (!postId) {
-                  console.warn('대표 리뷰 postId가 없습니다.');
-                  return;
-                }
-              
+                if (!postId) return;
+
                 router.push({
                   pathname: '/search/post/[id]',
-                  params: {
-                    id: String(postId),
-                    fetchType: 'single',
-                  },
+                  params: { id: String(postId), fetchType: 'single' },
                 });
               }}
             >
@@ -288,6 +310,23 @@ export default function ProductDetailScreen() {
             <Text style={{ color: '#666' }}>아직 이 상품에 대한 리뷰가 없습니다.</Text>
           )}
         </View>
+
+        {reviewPosts.length > 1 && (
+          <View style={styles.reviewListContainer}>
+            {reviewPosts.slice(1, 4).map((post: any) => (
+              <TouchableOpacity
+                key={post.postId}
+                style={styles.reviewCard}
+                activeOpacity={0.8}
+                onPress={() => router.push({ pathname: '/search/post/[id]', params: { id: String(post.postId), fetchType: 'single' } })}
+              >
+                <Text style={styles.reviewCardTitle}>{post.nickname || '익명'}</Text>
+                <Text style={styles.reviewCardText} numberOfLines={2}>{post.content}</Text>
+                <Text style={styles.reviewCardMeta}>스크랩 {post.scrapCount || 0} · 좋아요 {post.likeCount || 0} · 댓글 {post.commentCount || 0}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -312,6 +351,11 @@ const styles = StyleSheet.create({
   moreText: { color: '#888', fontSize: 12 },
   reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginBottom: 10, paddingHorizontal: 20 },
   reviewBox: { minHeight: 100, backgroundColor: '#EEE', borderRadius: 20, padding: 20, justifyContent: 'center', marginHorizontal: 20 },
+  reviewListContainer: { marginHorizontal: 20, marginTop: 10 },
+  reviewCard: { backgroundColor: '#fff', borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E7E7E7' },
+  reviewCardTitle: { fontSize: 14, fontWeight: 'bold', color: '#333' },
+  reviewCardText: { color: '#666', marginTop: 4, lineHeight: 18 },
+  reviewCardMeta: { color: '#888', fontSize: 12, marginTop: 6 },
   recommendationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

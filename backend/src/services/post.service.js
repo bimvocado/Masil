@@ -92,8 +92,8 @@ const createPost = async (createPostReqDTO) => {
     }
 };
 
-const getPosts = async (viewerId = null) => { 
-  const posts = await postRepository.findAllPosts(viewerId);
+const getPosts = async (viewerId = null, stuffId = null) => { 
+  const posts = await postRepository.findAllPosts(viewerId, stuffId);
   return posts.map((post) => ({
     postId: post.postId,
     userId: post.userId,
