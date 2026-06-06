@@ -1,6 +1,6 @@
 const stuffService = require('../services/stuff.service');
 const stuffRepository = require('../repositories/stuff.repository');
-const ApiResponse = require('../utils/api-response');
+const ApiResponse = require('../utils/api.response.util');
 
 // 검색창 - 상품으로 검색
 const searchStuffs = async (req, res, next) => {
