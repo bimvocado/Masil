@@ -10,11 +10,9 @@ import { useStuffDetail } from '@/hooks/useStuffDetail';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 
-// 🌟 가로 스와이프 시 다음 추천 상품이 화면 우측에 살짝 노출되도록 카드 너비를 정의합니다. (화면 가로폭의 82%)
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.82;
 
-// 추천 조합의 이미지가 없을 때 사용할 디폴트 이미지 URL
 const DEFAULT_IMAGE_URL = 'https://supermasil.duckdns.org/uploads/default-product.png'; 
 
 const getImageUrl = (url?: string | null) => {
@@ -33,8 +31,6 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   const { loading, detailData, handleToggle } = useStuffDetail(String(id));
 
-  console.log('상세 detailData:', detailData);
-
   if (loading || !detailData) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -44,20 +40,12 @@ export default function ProductDetailScreen() {
     );
   }
 
-  console.log("==========================================");
-  console.log("📍 [상품 상세 데이터 로드 성공]");
-  console.log(`- 전체 좋아요: ${detailData.likeCount}`);
-  console.log(`- 내국인(K): ${detailData.koreanLikeCount}`);
-  console.log(`- 외국인(F): ${detailData.foreignerLikeCount}`);
-  console.log(`- 내 국적 상태(isKorean): ${(detailData as any).isKorean}`);
-  console.log("==========================================");
-
-  // 🌟 백엔드 DTO에서 추가해준 recommendations 배열을 가져옵니다. (안전하게 최대 4개 보장)
+  // 🌟 추천 조합 리스트 데이터 확보
   const recommendationsData = (detailData as any).recommendations?.slice(0, 4) || [];
 
-  // 🌟 가로 스크롤로 렌더링할 개별 추천 카드 컴포넌트
+  // 🌟 가로 스크롤 추천 카드 렌더러
   const renderRecommendationItem = ({ item }: { item: any }) => {
-    // 💰 [추가/수정] 추천 조합 상품 리스트의 유저 포스트 정산 평균 가격을 최우선으로 추출합니다.
+    // 💰 추천 조합의 평균 가격 최우선 추출
     const recAvgPrice = item.averagePrice ?? item.avgPrice ?? item.price ?? 0;
 
     return (
@@ -65,22 +53,14 @@ export default function ProductDetailScreen() {
         activeOpacity={0.7}
         onPress={() => {
           const recStuffId = item.recommendedStuffId;
-          const recStuffName = item.recommendedStuffName;
-          const recBrandName = item.recommendedBrandName;
-
-          if (!recStuffId) {
-            console.warn("📍 [경고] 추천 상품의 recommendedStuffId가 없습니다.");
-            return;
-          }
-
-          console.log(`📍 [이동] 추천 상품 상세 페이지로 이동. ID: ${recStuffId}`);
+          if (!recStuffId) return;
 
           router.push({
             pathname: '/search/product/[id]', 
             params: {
               id: String(recStuffId),
-              stuffName: recStuffName || '',
-              brandName: recBrandName || '',
+              stuffName: item.recommendedStuffName || '',
+              brandName: item.recommendedBrandName || '',
             },
           });
         }}
@@ -94,9 +74,8 @@ export default function ProductDetailScreen() {
         <View style={{ justifyContent: 'center', flex: 1 }}>
           <Text style={styles.recBrandText}>{item.recommendedBrandName}</Text>
           <Text style={styles.recStuffText} numberOfLines={1}>{item.recommendedStuffName}</Text>
-          {/* 💸 정산된 평균 가격을 천 단위로 콤마 처리하여 렌더링합니다. */}
           <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>
-            평균 {recAvgPrice ? Number(recAvgPrice).toLocaleString() : '0'}원
+            평균 {Number(recAvgPrice).toLocaleString()}원
           </Text>
           <Text style={styles.clickGuideText}>상세보기 〉</Text>
         </View>
@@ -105,7 +84,7 @@ export default function ProductDetailScreen() {
   };
 
   // 메인 상품의 평균 가격 계산 유연화
-  const mainAveragePrice = detailData.averagePrice ?? detailData.avgPrice ?? detailData.price;
+  const mainAveragePrice = detailData.averagePrice ?? detailData.avgPrice ?? detailData.price ?? 0;
 
   return (
     <View style={styles.container}>
@@ -136,13 +115,13 @@ export default function ProductDetailScreen() {
           </TouchableOpacity>
           <Text style={styles.productTitle}>{detailData.stuffName || stuffName || '상품명 없음'}</Text>
           <Text style={styles.priceText}>
-            평균 {mainAveragePrice ? Number(mainAveragePrice).toLocaleString() : '0'}원
+            평균 {Number(mainAveragePrice).toLocaleString()}원
           </Text>
         </View>
 
         <View style={styles.divider} />
 
-        {/* 📊 좋아요 / 싫어요 통계 바 */}
+        {/* 📊 통계 바 */}
         <InteractionStatsBar
           likeStats={{
             total: detailData.likeCount,
@@ -158,27 +137,27 @@ export default function ProductDetailScreen() {
           }}
         />
 
-        {/* 옳소/싫소 버튼 */}
+        {/* 상호작용 버튼 */}
         <View style={styles.statsContainer}>
-            <InteractionButton
-              type="like"
-              count={detailData.likeCount}
-              isActive={detailData.myReaction === 'LIKE'}
-              onPress={() => handleToggle('LIKE')}
-              textPosition="right"
-            />
-            <InteractionButton
-              type="dislike"
-              count={detailData.dislikeCount}
-              isActive={detailData.myReaction === 'DISLIKE'}
-              onPress={() => handleToggle('DISLIKE')}
-              textPosition="right"
-            />
+          <InteractionButton
+            type="like"
+            count={detailData.likeCount}
+            isActive={detailData.myReaction === 'LIKE'}
+            onPress={() => handleToggle('LIKE')}
+            textPosition="right"
+          />
+          <InteractionButton
+            type="dislike"
+            count={detailData.dislikeCount}
+            isActive={detailData.myReaction === 'DISLIKE'}
+            onPress={() => handleToggle('DISLIKE')}
+            textPosition="right"
+          />
         </View>
 
         <View style={styles.divider} />
 
-        {/* 추천조합 타이틀 영역 */}
+        {/* 추천조합 헤더 */}
         <View style={styles.recommendationHeader}>
           <Text style={styles.sectionTitle}>추천조합</Text>
           <TouchableOpacity
@@ -196,20 +175,19 @@ export default function ProductDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 🌟 다중 리스트 혹은 백업용 단일 리스트 분기 영역 */}
+        {/* 추천 리스트 분기 렌더링 */}
         {recommendationsData.length > 0 ? (
           <FlatList
             data={recommendationsData}
             renderItem={renderRecommendationItem}
             keyExtractor={(item, index) => item.recommendedStuffId ? String(item.recommendedStuffId) : String(index)}
-            horizontal={true}                    
+            horizontal={true}                  
             showsHorizontalScrollIndicator={false} 
             snapToInterval={CARD_WIDTH + 12}      
             decelerationRate="fast"
             contentContainerStyle={styles.horizontalListPadding}
           />
         ) : (
-          /* ✅ [수정 완료] 백업용 topPost 단일 렌더링 카드 내에서도 평균 가격 데이터를 우선 조회하도록 수정합니다. */
           detailData.topPost?.recommendedStuffName ? (
             <FlatList
               data={[detailData.topPost]}
@@ -233,8 +211,7 @@ export default function ProductDetailScreen() {
                       <Text style={styles.recBrandText}>{item.recommendedBrandName}</Text>
                       <Text style={styles.recStuffText}>{item.recommendedStuffName}</Text>
                       <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>
-                        {/* 💸 기존 단가 고정 노출 대신 정산된 평균 가격을 반영합니다. */}
-                        평균 {legacyPrice ? Number(legacyPrice).toLocaleString() : '0'}원
+                        평균 {Number(legacyPrice).toLocaleString()}원
                       </Text>
                       <Text style={styles.clickGuideText}>상세보기 〉</Text>
                     </View>
@@ -251,7 +228,7 @@ export default function ProductDetailScreen() {
 
         <View style={styles.divider} />
 
-        {/* 하단 리뷰 영역 */}
+        {/* 리뷰 영역 */}
         <View style={styles.reviewHeader}>
           <Text style={{ fontWeight: 'bold' }}>리뷰</Text>
           <TouchableOpacity>
@@ -265,18 +242,11 @@ export default function ProductDetailScreen() {
               activeOpacity={0.8}
               onPress={() => {
                 const postId = detailData.topPost?.postId;
-              
-                if (!postId) {
-                  console.warn('대표 리뷰 postId가 없습니다.');
-                  return;
-                }
+                if (!postId) return;
               
                 router.push({
                   pathname: '/search/post/[id]',
-                  params: {
-                    id: String(postId),
-                    fetchType: 'single',
-                  },
+                  params: { id: String(postId), fetchType: 'single' },
                 });
               }}
             >
@@ -312,52 +282,12 @@ const styles = StyleSheet.create({
   moreText: { color: '#888', fontSize: 12 },
   reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginBottom: 10, paddingHorizontal: 20 },
   reviewBox: { minHeight: 100, backgroundColor: '#EEE', borderRadius: 20, padding: 20, justifyContent: 'center', marginHorizontal: 20 },
-  recommendationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 10,
-  },
-  horizontalListPadding: {
-    paddingHorizontal: 20, 
-  },
-  recommendedContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
-    alignItems: 'center',
-    width: CARD_WIDTH,  
-    marginRight: 12,    
-  },
-  recommendedImage: { 
-    width: 80, 
-    height: 80, 
-    borderRadius: 12, 
-    marginRight: 12 
-  },
-  recBrandText: {
-    fontSize: 12,
-    color: '#888',
-    marginBottom: 2,
-  },
-  recStuffText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  clickGuideText: {
-    fontSize: 11,
-    color: '#FF8A00',
-    marginTop: 4,
-    fontWeight: '600',
-  },
-  emptyText: {
-    color: '#888',
-    marginVertical: 10,
-    paddingHorizontal: 20,
-  },
+  recommendationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 10 },
+  horizontalListPadding: { paddingHorizontal: 20 },
+  recommendedContainer: { flexDirection: 'row', backgroundColor: '#fff', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#EAEAEA', alignItems: 'center', width: CARD_WIDTH, marginRight: 12 },
+  recommendedImage: { width: 80, height: 80, borderRadius: 12, marginRight: 12 },
+  recBrandText: { fontSize: 12, color: '#888', marginBottom: 2 },
+  recStuffText: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+  clickGuideText: { fontSize: 11, color: '#FF8A00', marginTop: 4, fontWeight: '600' },
+  emptyText: { color: '#888', marginVertical: 10, paddingHorizontal: 20 },
 });

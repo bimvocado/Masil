@@ -2,7 +2,7 @@ const postService = require('../services/post.service');
 const ApiResponse = require('../utils/api.response.util');
 const { CreatePostReqDTO, UpdatePostReqDTO } = require('../dtos/post.dto');
 
-// 게시글 등록
+// 게시글 등록 (등록 시 해당 stuff의 평균 가격 트랜잭션 반영 유도)
 const createPost = async (req, res, next) => {
   try {
     const { 
@@ -41,6 +41,7 @@ const createPost = async (req, res, next) => {
       recommendedPrice
     );
 
+    // 🔥이 내부에서 새 포스트 가격 기준 stuff 테이블 price 업데이트 트랜잭션 실행
     const postResult = await postService.createPost(reqDTO);
 
     return res.status(201).json(
@@ -74,7 +75,7 @@ const getPost = async (req, res, next) => {
   }
 };
 
-// 게시글 수정
+// 게시글 수정 (가격 수정 시 stuff 테이블 price 평균값 재정산 트랜잭션 유도)
 const updatePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
@@ -82,6 +83,8 @@ const updatePost = async (req, res, next) => {
     const userId = req.user.userId;
 
     const reqDTO = new UpdatePostReqDTO(content, imageUrl, price, recommendedStuffId);
+    
+    // 🔥수정된 가격 반영 후 stuff 테이블 price 평균값 재계산 트랜잭션 처리
     const updateResult = await postService.updatePost(Number(postId), userId, reqDTO);
     return res.status(200).json(ApiResponse.success(200, '게시글 수정 성공', updateResult));
   } catch (error) {
@@ -89,11 +92,13 @@ const updatePost = async (req, res, next) => {
   }
 };
 
-// 게시글 삭제
+// 게시글 삭제 (삭제 시 해당 stuff의 평균 가격 재정산 트랜잭션 유도)
 const deletePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
     const userId = req.user.userId;
+    
+    // 🔥리뷰 삭제로 인해 원본 stuff의 평균 price가 재정산되는 트랜잭션이 실행됨
     const deleteResult = await postService.deletePost(Number(postId), userId);
     return res.status(200).json(ApiResponse.success(200, '게시글 삭제 성공', deleteResult));
   } catch (error) {

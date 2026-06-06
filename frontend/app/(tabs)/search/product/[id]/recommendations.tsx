@@ -7,7 +7,6 @@ import { ProductCard } from '@/components/ui/product-card';
 import { stuffService, RecommendedStuff } from '@/services/stuff-service'; 
 
 export default function RecommendedListScreen() {
-  // 중첩 라우팅 구조([id]/recommendations) 덕분에 id 인자를 온전히 인식합니다.
   const { id, mainStuffName } = useLocalSearchParams<{
     id: string;
     mainStuffName: string;
@@ -66,7 +65,7 @@ export default function RecommendedListScreen() {
         </Text>
         
         {recommendedStuffs.map((item: RecommendedStuff, index: number) => {
-          // 💰 [평균가 주입] item.averagePrice나 item.avgPrice가 있으면 쓰고, 없으면 기존 단가로 백업 처리
+          // 💰 백엔드 데이터 필드 유연화 검증
           const calculatedAvgPrice = item.averagePrice ?? (item as any).avgPrice ?? item.price ?? 0;
 
           return (
@@ -79,7 +78,6 @@ export default function RecommendedListScreen() {
               <View style={{ flex: 1 }}>
                 <ProductCard 
                   name={item.recommendedStuffName}
-                  // 💰 기존 `item.price` 대신 여러 유저의 평균 가격으로 포맷팅하여 컴포넌트에 주입합니다.
                   price={Number(calculatedAvgPrice).toLocaleString()}
                   likes={String(item.likeCount || 0)}
                   comments={String(item.scrapCount || 0)} 

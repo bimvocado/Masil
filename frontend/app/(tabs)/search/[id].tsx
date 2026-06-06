@@ -39,7 +39,7 @@ export default function BrandDetailScreen() {
 
       const result = response.data.result;
 
-      // 💰 [추가] 스토어 저장 전, 각 상품의 최우선 평균 가격을 'averagePrice' 필드로 고정해 매핑합니다.
+      // 💰 [정제] 백엔드 응답 필드가 무엇이든 averagePrice로 통일하여 매핑합니다.
       const processedStuffs = (result.stuffs || []).map((item: any) => ({
         ...item,
         averagePrice: item.averagePrice ?? item.avgPrice ?? item.price ?? 0
@@ -82,8 +82,8 @@ export default function BrandDetailScreen() {
               key={item.stuffId}
               rank={index + 1}
               name={item.stuffName}
-              // 💸 스토어 진입 단계에서 정제되었으므로 콤마 포맷팅만 해서 바인딩합니다.
-              price={Number(item.averagePrice).toLocaleString()}
+              // 💸 정제된 averagePrice를 안전하게 콤마 포맷팅합니다.
+              price={Number(item.averagePrice ?? 0).toLocaleString()}
               likes={String(item.likeCount || 0)}
               comments={String(item.postCount || 0)}
               imageUrl={
