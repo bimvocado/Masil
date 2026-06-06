@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const scrapController = require('../controllers/scrap.controller');
-const { authMiddleware, optionalAuthMiddleware } = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
+const { optionalAuthMiddleware } = require('../middlewares/optionalAuth.middleware');
 
 router.get('/categories/:categoryId/posts', optionalAuthMiddleware, scrapController.getScrapsByCategory);
 router.post('/:postId/scrap', authMiddleware, scrapController.createScrap);
