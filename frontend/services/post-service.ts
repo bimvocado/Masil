@@ -17,7 +17,7 @@ export const postService = {
 
   // 게시글 개별 조회
   getPost: async (postId: number): Promise<Post> => {
-    const response = await apiClient.get('/api/posts/${postId}');
+    const response = await apiClient.get(`/api/posts/${postId}`);
     return response.data.data;
   },
 
