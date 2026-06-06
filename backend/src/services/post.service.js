@@ -1,9 +1,10 @@
 const postRepository = require('../repositories/post.repository');
+const stuffRepository = require('../repositories/stuff.repository'); // 💰 평균가 컬럼 업데이트를 위해 추가
 const Stuff = require('../models/stuff.model');
 const sequelize = require('../config/db'); 
 const { PostResDTO } = require('../dtos/post.dto');
 
-// 게시글 등록 (트랜잭션 및 자동 분기 로직 적용)
+// 🌟 게시글 등록 (자동완성 로직 100% 보존 + 실시간 완벽 동기화)
 const createPost = async (createPostReqDTO) => {
     const {
         content,
@@ -28,6 +29,7 @@ const createPost = async (createPostReqDTO) => {
         let finalStuffId = null;
         let finalRecommendedStuffId = null;
 
+        // 1. [자동완성 원천 유지] 메인 상품 등록 또는 기존 상품 조회
         if (stuffName && brandId) {
             const cleanStuffName = stuffName.replace('@', '').trim();
             
@@ -52,6 +54,7 @@ const createPost = async (createPostReqDTO) => {
             throw new Error('메인 상품 정보가 구성되지 않았습니다.');
         }
 
+        // 2. [자동완성 원천 유지] 추천 상품 등록 또는 기존 상품 조회
         if (recommendedStuffName && recommendedBrandId) {
             const cleanRecName = recommendedStuffName.replace('@', '').trim();
 
@@ -72,6 +75,7 @@ const createPost = async (createPostReqDTO) => {
             }
         }
 
+        // 3. 게시글 생성
         const newPost = await postRepository.createPost({
             content,
             imageUrl,
@@ -82,16 +86,31 @@ const createPost = async (createPostReqDTO) => {
             recommendedImageUrl,
         }, { transaction: t }); 
 
+        // 💰 [캐싱 동기화] 게시글 생성 완료 후 레포지토리 공통 함수를 사용해 수식 계산 후 직계 컬럼 반영
+        // [A] 메인 상품 실시간 평균가 계산 및 stuffs 테이블 업데이트
+        const newAvgPrice = await postRepository.getAveragePriceByStuffId(finalStuffId, { transaction: t });
+        await stuffRepository.updateStuffAveragePrice(finalStuffId, newAvgPrice, { transaction: t });
+
+        // [B] 추천 상품 실시간 평균가 계산 및 stuffs 테이블 업데이트
+        if (finalRecommendedStuffId) {
+            const newRecAvgPrice = await postRepository.getAveragePriceByStuffId(finalRecommendedStuffId, { transaction: t });
+            await stuffRepository.updateStuffAveragePrice(finalRecommendedStuffId, newRecAvgPrice, { transaction: t });
+        }
+
         await t.commit();
-        return new PostResDTO(newPost);
+        
+        // 새로 생성된 post 객체의 id로 온전한 데이터를 다시 한 번 빌드해서 반환
+        const completePost = await postRepository.findPostById(newPost.postId);
+        return new PostResDTO(completePost);
 
     } catch (error) {
         await t.rollback();
-        console.error('게시글 등록 트랜잭션 롤백 처리 완료:', error);
+        console.error('게시글 등록 트랜잭션 롤백 완료:', error);
         throw error;
     }
 };
 
+// 게시글 리스트 조회
 const getPosts = async (viewerId = null) => { 
   const posts = await postRepository.findAllPosts(viewerId);
   return posts.map((post) => ({
@@ -100,14 +119,11 @@ const getPosts = async (viewerId = null) => {
     stuffId: post.stuffId,
     content: post.content,
     imageUrl: post.imageUrl,
-    price: post.price === null || post.price === undefined ? null : Number(post.price),
-    
-    // 💰 [보완] 프론트엔드가 averagePrice와 avgPrice 둘 중 무엇을 불러도 정상 작동하도록 2개 다 꽂아줍니다.
-    avgPrice: post.avgPrice ?? post.averagePrice ?? null,
-    averagePrice: post.avgPrice ?? post.averagePrice ?? null,
+    price: post.price === null || post.price === undefined ? 0 : Number(post.price), 
 
     recommendedStuffId: post.recommendedStuffId,
     recommendedStuffName: post.recommendedStuffName,
+    recommendedPrice: post.recommendedPrice === null || post.recommendedPrice === undefined ? 0 : Number(post.recommendedPrice),
     recommendedBrandId: post.recommendedBrandId,
     recommendedBrandName: post.recommendedBrandName,
     recommendedImageUrl: post.recommendedImageUrl,
@@ -118,7 +134,7 @@ const getPosts = async (viewerId = null) => {
     stuffName: post.stuffName,
     brandId: post.brandId,
     brandName: post.brandName,
-    brandLogoUrl: post.brandLogoUrl,                      
+    brandLogoUrl: post.brandLogoUrl,                     
     recommendedBrandLogoUrl: post.recommendedBrandLogoUrl, 
     commentCount: Number(post.commentCount || 0),
     likeCount: Number(post.likeCount || 0),
@@ -130,42 +146,81 @@ const getPosts = async (viewerId = null) => {
   }));
 };
 
-// [수정 완료] 단일 게시글 조회
+// 단건 조회
 const getPost = async (postId, viewerId = null) => {
     const post = await postRepository.findPostById(postId, viewerId);
     if (!post) throw new Error('존재하지 않는 게시글입니다.');
     
-    // 💰 레포지토리가 뱉은 날것의 post 객체에 평균 가격이 들어있다면 DTO에 들어가기 전에 확실히 인지시킵니다.
-    const calculatedAvg = post.avgPrice ?? post.averagePrice ?? null;
-    
-    return {
-        ...new PostResDTO(post),
-        avgPrice: calculatedAvg,       // 👈 DTO 필터에 걸러져 유실되는 것을 원천 차단
-        averagePrice: calculatedAvg    // 👈 프론트 기종/컴포넌트별 스펙 완벽 호환
-    };
-};
-
-const updatePost = async (postId, userId, updatePostReqDTO) => {
-    const post = await postRepository.findPostById(postId);
-    if (!post) throw new Error('존재하지 않는 게시글입니다.');
-    if (Number(post.userId) !== Number(userId)) throw new Error('게시글 수정 권한이 없습니다.');
-    await postRepository.updatePost(post, {
-        content: updatePostReqDTO.content,
-        imageUrl: updatePostReqDTO.imageUrl,
-        price: updatePostReqDTO.price,
-        recommendedStuffId: updatePostReqDTO.recommendedStuffId,
-    });
     return new PostResDTO(post);
 };
 
-const deletePost = async (postId, userId) => {
-    const post = await postRepository.findPostById(postId);
-    if (!post) throw new Error('존재하지 않는 게시글입니다.');
-    if (Number(post.userId) !== Number(userId)) throw new Error('게시글 삭제 권한이 없습니다.');
-    await postRepository.deletePost(post);
-    return { message: '게시글이 삭제되었습니다.' };
+// 🌟 게시글 수정 (가격 변동 가능성이 크므로 동일하게 재정산 트랜잭션 추가)
+const updatePost = async (postId, userId, updatePostReqDTO) => {
+    const t = await sequelize.transaction();
+    try {
+        // Raw Query 데이터와 오리지널 인스턴스 검증을 위해 단건 조회
+        const postData = await postRepository.findPostById(postId);
+        if (!postData) throw new Error('존재하지 않는 게시글입니다.');
+        if (Number(postData.userId) !== Number(userId)) throw new Error('게시글 수정 권한이 없습니다.');
+
+        // 실제 대상을 영속성 모델로 취득
+        const postInstance = await Post.findByPk(postId, { transaction: t });
+
+        // 업데이트 단행
+        await postRepository.updatePost(postInstance, {
+            content: updatePostReqDTO.content,
+            imageUrl: updatePostReqDTO.imageUrl,
+            price: Number(updatePostReqDTO.price) || 0,
+            recommendedStuffId: updatePostReqDTO.recommendedStuffId,
+        }, { transaction: t });
+
+        // 💰 [동기화 추가] 수정으로 인해 파괴되거나 변동된 평균 단가를 양쪽 다 업데이트
+        const mainAvg = await postRepository.getAveragePriceByStuffId(postData.stuffId, { transaction: t });
+        await stuffRepository.updateStuffAveragePrice(postData.stuffId, mainAvg, { transaction: t });
+
+        if (updatePostReqDTO.recommendedStuffId) {
+            const recAvg = await postRepository.getAveragePriceByStuffId(updatePostReqDTO.recommendedStuffId, { transaction: t });
+            await stuffRepository.updateStuffAveragePrice(updatePostReqDTO.recommendedStuffId, recAvg, { transaction: t });
+        }
+
+        await t.commit();
+        const updatedPost = await postRepository.findPostById(postId);
+        return new PostResDTO(updatedPost);
+    } catch (error) {
+        await t.rollback();
+        throw error;
+    }
 };
 
+// 🌟 게시글 삭제 (해당 포스트의 단가가 빠지므로 실시간 마이너스 정산 필수)
+const deletePost = async (postId, userId) => {
+    const t = await sequelize.transaction();
+    try {
+        const postData = await postRepository.findPostById(postId);
+        if (!postData) throw new Error('존재하지 않는 게시글입니다.');
+        if (Number(postData.userId) !== Number(userId)) throw new Error('게시글 삭제 권한이 없습니다.');
+
+        const postInstance = await Post.findByPk(postId, { transaction: t });
+        await postRepository.deletePost(postInstance, { transaction: t });
+
+        // 💰 [동기화 추가] 이 포스트의 가격이 빠진 상태의 새로운 평균값을 구해 반영
+        const mainAvg = await postRepository.getAveragePriceByStuffId(postData.stuffId, { transaction: t });
+        await stuffRepository.updateStuffAveragePrice(postData.stuffId, mainAvg, { transaction: t });
+
+        if (postData.recommendedStuffId) {
+            const recAvg = await postRepository.getAveragePriceByStuffId(postData.recommendedStuffId, { transaction: t });
+            await stuffRepository.updateStuffAveragePrice(postData.recommendedStuffId, recAvg, { transaction: t });
+        }
+
+        await t.commit();
+        return { message: '게시글이 삭제되었습니다.' };
+    } catch (error) {
+        await t.rollback();
+        throw error;
+    }
+};
+
+// 유저 피드 리스트 조회
 const getUserPosts = async (userId, viewerId = null) => {
   const posts = await postRepository.findPostsByUserId(userId, viewerId);
   return posts.map((post) => ({
@@ -174,14 +229,11 @@ const getUserPosts = async (userId, viewerId = null) => {
     stuffId: post.stuffId,
     content: post.content,
     imageUrl: post.imageUrl,
-    price: post.price === null || post.price === undefined ? null : Number(post.price),
-    
-    // 💰 [보완] 유저 피드용 평균 가격도 2중 필드로 안전 장치 가동
-    avgPrice: post.avgPrice ?? post.averagePrice ?? null,
-    averagePrice: post.avgPrice ?? post.averagePrice ?? null,
+    price: post.price === null || post.price === undefined ? 0 : Number(post.price), 
 
     recommendedStuffId: post.recommendedStuffId,
     recommendedStuffName: post.recommendedStuffName,
+    recommendedPrice: post.recommendedPrice === null || post.recommendedPrice === undefined ? 0 : Number(post.recommendedPrice),
     recommendedBrandId: post.recommendedBrandId,
     recommendedBrandName: post.recommendedBrandName,
     recommendedImageUrl: post.recommendedImageUrl,
@@ -192,7 +244,7 @@ const getUserPosts = async (userId, viewerId = null) => {
     stuffName: post.stuffName,
     brandId: post.brandId,
     brandName: post.brandName,
-    brandLogoUrl: post.brandLogoUrl,                      
+    brandLogoUrl: post.brandLogoUrl,                     
     recommendedBrandLogoUrl: post.recommendedBrandLogoUrl, 
     commentCount: Number(post.commentCount || 0),
     likeCount: Number(post.likeCount || 0),
