@@ -55,7 +55,8 @@ const createPost = async (req, res, next) => {
 const getPosts = async (req, res, next) => {
   try {
     const viewerId = req.user ? req.user.userId : null;
-    const posts = await postService.getPosts(viewerId); 
+    const stuffId = req.query.stuffId ? Number(req.query.stuffId) : null;
+    const posts = await postService.getPosts(viewerId, stuffId); 
     return res.status(200).json(ApiResponse.success(200, '게시글 전체 조회 성공', posts));
   } catch (error) {
     next(error);
