@@ -83,7 +83,7 @@ export default function UserScreen() {
 
   const filteredPosts = posts.filter((post) => 
     post.content.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    post.createdAt.includes(searchQuery)
+    formatDate(post.createdAt).includes(searchQuery)
   );
 
   return (
@@ -180,7 +180,7 @@ export default function UserScreen() {
                       : post.content}
                   </Text>
                   
-                  <Text style={styles.postDate}>{post.createdAt}</Text>  
+                  <Text style={styles.postDate}>{formatDate(post.createdAt)}</Text>  
                   <View style={styles.interactionRow}>
                     <View style={styles.iconGroup}>
                       <Image
