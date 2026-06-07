@@ -51,6 +51,15 @@ class PostResDTO {
     this.recommendedStuffName = post.recommendedStuffName || post.recommended_stuff_name;
     this.recommendedBrandId = post.recommendedBrandId || post.recommended_brand_id;
     this.recommendedBrandName = post.recommendedBrandName || post.recommended_brand_name;
+
+    // 🔥 [필수] Interaction 필드들 - 이 라인이 없으면 모두 필터링됨!
+    this.isLiked = post.isLiked ?? false;
+    this.isDisliked = post.isDisliked ?? false;
+    this.likeCount = post.likeCount ?? 0;
+    this.dislikeCount = post.dislikeCount ?? 0;
+    this.commentCount = post.commentCount ?? 0;
+    this.scrapCount = post.scrapCount ?? 0;
+    this.isScrapped = post.isScrapped ?? false;
   }
 }
 
