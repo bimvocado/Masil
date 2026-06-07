@@ -11,11 +11,6 @@ export const formatDate = (dateString?: string) => {
   return `${year}.${month}.${day}`;
 };
 
-export const getPostDisplayDate = (
-  item?: {
-    postCreatedAt?: string;
-    createdAt?: string;
-  } | null
-) => {
-  return formatDate(item?.postCreatedAt || item?.createdAt);
+export const getPostDisplayDate = (dateString?: string) => {
+  return formatDate(dateString);
 };
