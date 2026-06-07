@@ -1,11 +1,10 @@
 //게시글
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Post } from '@/types/post';
 import apiClient from '@/api/client';
 
-const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 const getImageUrl = (url?: string | null) => {
   if (!url) return undefined;
@@ -25,6 +24,7 @@ interface PostItemProps {
 
 export const PostItem = ({ item, user, onOpenComments, isLiked: initialLiked, isDisliked: initialDisliked, isScrapped, onScrapPress, onBack }: PostItemProps) => {
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
 
   const currentIsLiked = Boolean(initialLiked || item.isLiked || (item as any).liked);
   const currentIsDisliked = Boolean(initialDisliked || item.isDisliked || (item as any).disliked);
@@ -70,7 +70,7 @@ export const PostItem = ({ item, user, onOpenComments, isLiked: initialLiked, is
   };
 
   return (
-    <View style={[styles.page, { paddingTop: insets.top, paddingBottom: insets.bottom }]}> 
+    <View style={[styles.page, { height: windowHeight }]}> 
       {/* 배경 이미지 */}
       <View style={styles.backgroundContainer}>
         {item.imageUrl ? (
@@ -163,7 +163,7 @@ export const PostItem = ({ item, user, onOpenComments, isLiked: initialLiked, is
 };
 
 const styles = StyleSheet.create({
-  page: { height: WINDOW_HEIGHT, width: '100%' },
+  page: { width: '100%' },
   backgroundContainer: { 
     ...StyleSheet.absoluteFillObject, 
     backgroundColor: '#000', 
