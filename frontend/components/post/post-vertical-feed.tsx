@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity,
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  useWindowDimensions,
   Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView, Alert, Image
 } from 'react-native';
 import { Post } from '@/types/post';
@@ -11,8 +12,6 @@ import { scrapService } from '@/api/scrap-service';
 import { categoryService } from '@/api/category-service';
 import { PostItem } from '@/components/post/post-item';
 
-const { height: WINDOW_HEIGHT } = Dimensions.get('window');
-
 interface Props {
   posts: Post[];
   user: any;
@@ -22,6 +21,8 @@ interface Props {
 }
 
 export const PostVerticalFeed = ({ posts, user, onBack, initialIndex = 0, onPostUpdate }: Props) => {
+  //const { height: windowHeight } = useWindowDimensions();
+  const [feedHeight, setFeedHeight] = useState(0);
   const [currentPostId, setCurrentPostId] = useState<number>(posts[initialIndex]?.postId);
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(false);
@@ -140,7 +141,6 @@ export const PostVerticalFeed = ({ posts, user, onBack, initialIndex = 0, onPost
   const updatePostState = (postId: number, changes: Partial<Post>) => {
     const updated = posts.map(p => {
       if (p.postId === postId) {
-        const newIsScrapped = changes.isScrapped !== undefined ? changes.isScrapped : p.isScrapped;
         let newScrapCount = p.scrapCount || 0;
         if (changes.isScrapped === true) newScrapCount++;
         else if (changes.isScrapped === false) newScrapCount = Math.max(0, newScrapCount - 1);
@@ -153,26 +153,37 @@ export const PostVerticalFeed = ({ posts, user, onBack, initialIndex = 0, onPost
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <FlatList
-        data={posts}
-        renderItem={({ item }) => (
-          <PostItem 
-            item={item}               
-            user={user}               
-            onOpenComments={handleOpenComments} 
-            isScrapped={!!item.isScrapped}      
-            isLiked={!!item.isLiked}       
-            isDisliked={!!item.isDisliked}
-            onScrapPress={() => handleScrapPress(item)} 
-            onBack={onBack || (() => {})} 
-          />
+    <View style={{ flex: 1 }} onLayout={(e) => setFeedHeight(e.nativeEvent.layout.height)}>
+      
+      {feedHeight > 0 && (
+        <FlatList
+          data={posts}
+          renderItem={({ item }) => (
+            <View style={{ height: feedHeight }}>
+              <PostItem 
+                item={item}               
+                user={user}               
+                onOpenComments={handleOpenComments} 
+                isScrapped={!!item.isScrapped}      
+                isLiked={!!item.isLiked}       
+                isDisliked={!!item.isDisliked}
+                onScrapPress={() => handleScrapPress(item)} 
+                onBack={onBack || (() => {})} 
+              />
+            </View>
         )}
         keyExtractor={(item) => item.postId.toString()}
         pagingEnabled
         initialScrollIndex={initialIndex >= 0 ? initialIndex : 0}
-        getItemLayout={(_, index) => ({ length: WINDOW_HEIGHT, offset: WINDOW_HEIGHT * index, index })}
-      />
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        getItemLayout={(_, index) => ({ 
+            length: feedHeight, 
+            offset: feedHeight * index, 
+            index 
+          })}
+        />
+      )}
 
       {/* 댓글 모달 */}
       <Modal visible={showComments} transparent animationType="slide">

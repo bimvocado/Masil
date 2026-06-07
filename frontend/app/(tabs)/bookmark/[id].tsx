@@ -144,7 +144,7 @@ export default function BookmarkDetailScreen() {
             return (
               <TouchableOpacity
                 style={[styles.postCard, { padding: 0 }]}
-                onPress={() => router.push({ pathname: `/search/post/${item.postId}` } as any)}
+                onPress={() => router.push({ pathname: '/bookmark/post/[id]', params: { id: String(item.postId) } })}
                 activeOpacity={0.8}
               >
                 {item.imageUrl ? (
