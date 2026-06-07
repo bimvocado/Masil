@@ -3,7 +3,7 @@ import { Platform ,View, Text, FlatList,  ActivityIndicator, TouchableOpacity, I
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles } from '@/components/styles/bookmark-detail';
-import { formatDate } from '@/utils/date';
+import { getPostDisplayDate } from '@/utils/date';
 import { InteractionButton } from '@/constants/interaction-button';
 import { Post } from '@/types/post';
 import { TopBar } from '@/components/layout/top-bar';
@@ -115,7 +115,7 @@ export default function BookmarkDetailScreen() {
         {item.brandName || '-'} • {item.stuffName || '-'}
       </Text>
       <Text style={[styles.postDate, customStyle, shadowStyle]}>
-        {formatDate(item.createdAt)}
+        {getPostDisplayDate(item.postCreatedAt)}
       </Text>
     </>
   );
