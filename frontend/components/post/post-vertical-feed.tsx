@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  useWindowDimensions,
   Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView, Alert, Image
 } from 'react-native';
 import { Post } from '@/types/post';
