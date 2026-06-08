@@ -10,6 +10,7 @@ import {
   ScrollView,
   Alert,
   Modal,
+  StyleSheet,
 } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -63,7 +64,7 @@ export default function PlusScreen() {
   const [recommendedBrandId, setRecommendedBrandId] = useState<number | null>(null);
   const [recommendedBrandName, setRecommendedBrandName] = useState('');
   
-  // 💡 스크린샷 에러 해결: 컴포넌트 내부에 변수가 없을 경우를 대비해 유연하게 fallback 지정하기 위한 로컬 상태 선언
+  // 💡Fallback 지정용 로컬 상태 선언
   const [recBrandLogoUrl, setRecBrandLogoUrl] = useState('');
 
   const handleBackPress = () => {
@@ -104,21 +105,20 @@ export default function PlusScreen() {
     }
   };
 
+  // 💡 [수정] 모달이 열리지 않아도 자동완성 시 brandResults를 조회할 수 있도록 조건 완화 (백그라운드 로드 보장)
   useEffect(() => {
-    if (isBrandModalVisible) {
-      const loadBrands = async () => {
-        try {
-          const res = brandQuery.trim()
-            ? await searchService.searchBrands(brandQuery, brandCategory)
-            : await searchService.getBrands(brandCategory);
-          setBrandResults(res.data?.result?.brands ?? []);
-        } catch (e) {
-          console.error('브랜드 로드 실패:', e);
-          setBrandResults([]);
-        }
-      };
-      loadBrands();
-    }
+    const loadBrands = async () => {
+      try {
+        const res = brandQuery.trim()
+          ? await searchService.searchBrands(brandQuery, brandCategory)
+          : await searchService.getBrands(brandCategory);
+        setBrandResults(res.data?.result?.brands ?? []);
+      } catch (e) {
+        console.error('브랜드 로드 실패:', e);
+        setBrandResults([]);
+      }
+    };
+    loadBrands();
   }, [isBrandModalVisible, brandCategory, brandQuery]);
 
   const handleStuffNameChange = async (value: string) => {
@@ -137,11 +137,37 @@ export default function PlusScreen() {
     }
   };
 
+  // 🎯 [유저님 기획 전면 반영] 메인 상품 선택 시 brandId 기반 브랜드 로고 실시간 룩업(Lookup)
   const handleSelectSuggestion = (item: StuffSuggestion) => {
     setBrandName(`@${item.stuffName}`);
-    setSelectedBrandId(item.brandId ?? selectedBrandId);
+    
+    const finalBrandId = item.brandId ?? selectedBrandId;
+    setSelectedBrandId(finalBrandId);
     setSelectedBrandName(item.brandName ?? '');
-    setSelectedBrandLogoUrl(item.logoUrl ?? '');
+    
+    // 🔍 1단계: 프론트엔드 brandResults 마스터 데이터에서 brandId 매칭 추적
+    let finalLogoUrl = '';
+    if (finalBrandId && brandResults.length > 0) {
+      const matchedBrand = brandResults.find((b: any) => Number(b.brandId) === Number(finalBrandId));
+      if (matchedBrand) {
+        finalLogoUrl = matchedBrand.logoUrl;
+      }
+    }
+
+    // 🔍 2단계: 만약 캐시에 없다면 백엔드가 던져준 원본 객체의 예외 필드 마지막 탐색
+    if (!finalLogoUrl) {
+      const rawItem = item as any;
+      finalLogoUrl = 
+        rawItem.brand?.logoUrl || 
+        rawItem.brandLogoUrl || 
+        rawItem.brandLogo || 
+        rawItem.logo_url || 
+        rawItem.logoUrl || 
+        '';
+    }
+      
+    setSelectedBrandLogoUrl(finalLogoUrl);
+
     setPrice(
       item.averagePrice !== undefined && item.averagePrice !== null
         ? String(Math.round(item.averagePrice))
@@ -168,11 +194,37 @@ export default function PlusScreen() {
     }
   };
 
+  // 🎯 [유저님 기획 전면 반영] 추천 조합 상품 선택 시 brandId 기반 브랜드 로고 실시간 룩업(Lookup)
   const handleSelectRecommendedSuggestion = (item: StuffSuggestion) => {
     setRecommendedStuffName(`@${item.stuffName}`);
-    setRecommendedBrandId(item.brandId ?? null);
+    
+    const finalRecBrandId = item.brandId ?? null;
+    setRecommendedBrandId(finalRecBrandId);
     setRecommendedBrandName(item.brandName ?? '');
-    setRecBrandLogoUrl(item.logoUrl ?? '');
+    
+    // 🔍 1단계: 프론트엔드 brandResults 마스터 데이터에서 brandId 매칭 추적
+    let finalRecLogoUrl = '';
+    if (finalRecBrandId && brandResults.length > 0) {
+      const matchedBrand = brandResults.find((b: any) => Number(b.brandId) === Number(finalRecBrandId));
+      if (matchedBrand) {
+        finalRecLogoUrl = matchedBrand.logoUrl;
+      }
+    }
+
+    // 🔍 2단계: 예외 보루 필드 탐색
+    if (!finalRecLogoUrl) {
+      const rawItem = item as any;
+      finalRecLogoUrl = 
+        rawItem.brand?.logoUrl || 
+        rawItem.brandLogoUrl || 
+        rawItem.brandLogo || 
+        rawItem.logo_url || 
+        rawItem.logoUrl || 
+        '';
+    }
+
+    setRecBrandLogoUrl(finalRecLogoUrl);
+
     setRecommendedPrice(
       item.averagePrice !== undefined && item.averagePrice !== null
         ? String(Math.round(item.averagePrice))
@@ -221,7 +273,7 @@ export default function PlusScreen() {
     setRecommendedImageUri(null);
     setRecommendedBrandId(null);
     setRecommendedBrandName('');
-    setRecBrandLogoUrl('');
+    setRecBrandLogoUrl(''); // ✅ 잔상 방어막 구축 완료
     setBrandSelectTarget('main');
   };
 
@@ -245,7 +297,6 @@ export default function PlusScreen() {
         formData.append('recommendedPrice', recommendedPrice || '0');
       }
 
-      // 💡 [수정됨] 문자열 인덱싱 기법으로 FileSystem 에러 완벽 해결
       const cacheDirKey = 'cacheDirectory';
       const docDirKey = 'documentDirectory';
       const targetCacheDir = ExpoFileSystem[cacheDirKey] || ExpoFileSystem[docDirKey] || '';
@@ -354,13 +405,38 @@ export default function PlusScreen() {
                 </View>
               </View>
 
+              {/* 메인 상품 자동완성 추천 가이드 리스트 */}
               {suggestions.length > 0 && (
                 <View style={safeStyles.suggestionsContainer || {}}>
-                  {suggestions.map((item) => (
-                    <TouchableOpacity key={item.stuffId} style={safeStyles.suggestionItem || {}} onPress={() => handleSelectSuggestion(item)}>
-                      <Text style={safeStyles.suggestionText || {}}>{item.stuffName} ({item.brandName})</Text>
-                    </TouchableOpacity>
-                  ))}
+                  {suggestions.map((item) => {
+                    const rawItem = item as any;
+                    
+                    // 💡 가이드 리스트 UI의 썸네일도 동일하게 brandId로 실시간 매핑 추적
+                    let itemLogoUrl = '';
+                    if (item.brandId && brandResults.length > 0) {
+                      const mBrand = brandResults.find((b: any) => Number(b.brandId) === Number(item.brandId));
+                      if (mBrand) itemLogoUrl = mBrand.logoUrl;
+                    }
+                    if (!itemLogoUrl) {
+                      itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || rawItem.logo_url || rawItem.logoUrl;
+                    }
+
+                     const suggestionLabel = item.brandName ? `${item.stuffName} (${item.brandName})` : item.stuffName;
+                    return (
+                      <TouchableOpacity 
+                        key={item.stuffId} 
+                        style={[safeStyles.suggestionItem || {}, localStyles.suggestionRow]} 
+                        onPress={() => handleSelectSuggestion(item)}
+                      >
+                        {itemLogoUrl ? (
+                          <Image source={{ uri: getImageUrl(itemLogoUrl) }} style={localStyles.miniBrandLogo} />
+                        ) : (
+                          <View style={localStyles.miniBrandLogoPlaceholder}><Text style={{fontSize: 10, color: '#aaa'}}>?</Text></View>
+                        )}
+                        <Text style={safeStyles.suggestionText || {}}>{suggestionLabel}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               )}
 
@@ -382,13 +458,38 @@ export default function PlusScreen() {
                   </View>
                 </View>
 
+                {/* 추천 상품 자동완성 추천 가이드 리스트 */}
                 {recommendedSuggestions.length > 0 && (
                   <View style={safeStyles.suggestionsContainer || {}}>
-                    {recommendedSuggestions.map((item) => (
-                      <TouchableOpacity key={item.stuffId} style={safeStyles.suggestionItem || {}} onPress={() => handleSelectRecommendedSuggestion(item)}>
-                        <Text style={safeStyles.suggestionText || {}}>{item.stuffName} ({item.brandName})</Text>
-                      </TouchableOpacity>
-                    ))}
+                    {recommendedSuggestions.map((item) => {
+                      const rawItem = item as any;
+                      
+                      // 💡 추천 가이드 리스트 UI 썸네일 brandId 실시간 추적
+                      let itemLogoUrl = '';
+                      if (item.brandId && brandResults.length > 0) {
+                        const mBrand = brandResults.find((b: any) => Number(b.brandId) === Number(item.brandId));
+                        if (mBrand) itemLogoUrl = mBrand.logoUrl;
+                      }
+                      if (!itemLogoUrl) {
+                        itemLogoUrl = rawItem.brand?.logoUrl || rawItem.brandLogoUrl || rawItem.brandLogo || rawItem.logo_url || rawItem.logoUrl;
+                      }
+                    
+                      const suggestionLabel = item.brandName ? `${item.stuffName} (${item.brandName})` : item.stuffName;
+                      return (
+                        <TouchableOpacity 
+                          key={item.stuffId} 
+                          style={[safeStyles.suggestionItem || {}, localStyles.suggestionRow]} 
+                          onPress={() => handleSelectRecommendedSuggestion(item)}
+                        >
+                          {itemLogoUrl ? (
+                            <Image source={{ uri: getImageUrl(itemLogoUrl) }} style={localStyles.miniBrandLogo} />
+                          ) : (
+                            <View style={localStyles.miniBrandLogoPlaceholder}><Text style={{fontSize: 10, color: '#aaa'}}>?</Text></View>
+                          )}
+                          <Text style={safeStyles.suggestionText || {}}>{suggestionLabel}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 )}
 
@@ -408,7 +509,7 @@ export default function PlusScreen() {
             </>
           ) : (
             <>
-              <TextInput placeholder="조합에 대한 소개글을 작성해 주세요." placeholderTextColor={Colors.gray.light} style={safeStyles.contentInput || {}} multiline textAlignVertical="top" value={content} onChangeText={setContent} />
+              <TextInput placeholder="소개글을 작성해 주세요." placeholderTextColor={Colors.gray.light} style={safeStyles.contentInput || {}} multiline textAlignVertical="top" value={content} onChangeText={setContent} />
               <TouchableOpacity style={safeStyles.nextButton || {}} onPress={handleUpload}>
                 <Text style={safeStyles.nextButtonText || {}}>업로드</Text>
               </TouchableOpacity>
@@ -456,3 +557,28 @@ export default function PlusScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+const localStyles = StyleSheet.create({
+  suggestionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  miniBrandLogo: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    marginRight: 10,
+    backgroundColor: '#f5f5f5',
+  },
+  miniBrandLogoPlaceholder: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    marginRight: 10,
+    backgroundColor: '#eee',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }
+});

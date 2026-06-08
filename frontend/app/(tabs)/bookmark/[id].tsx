@@ -3,7 +3,7 @@ import { Platform ,View, Text, FlatList,  ActivityIndicator, TouchableOpacity, I
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles } from '@/components/styles/bookmark-detail';
-import { formatDate } from '@/utils/date';
+import { getPostDisplayDate } from '@/utils/date';
 import { InteractionButton } from '@/constants/interaction-button';
 import { Post } from '@/types/post';
 import { TopBar } from '@/components/layout/top-bar';
@@ -37,7 +37,14 @@ export default function BookmarkDetailScreen() {
   const fetchScraps = async () => {
     setIsLoading(true);
     try {
-      const res = await scrapService.getScrapsByCategory(Number(id));
+      const categoryId = Number(id);
+      if (isNaN(categoryId)) {
+        console.error('유효하지 않은 카테고리 ID:', id);
+        setPosts([]);
+        setIsLoading(false);
+        return;
+      }
+      const res = await scrapService.getScrapsByCategory(categoryId);
       const loaded = res.data ?? [];
       setPosts(loaded);
 
@@ -108,7 +115,7 @@ export default function BookmarkDetailScreen() {
         {item.brandName || '-'} • {item.stuffName || '-'}
       </Text>
       <Text style={[styles.postDate, customStyle, shadowStyle]}>
-        {formatDate(item.createdAt)}
+        {getPostDisplayDate(item.postCreatedAt)}
       </Text>
     </>
   );
@@ -137,7 +144,7 @@ export default function BookmarkDetailScreen() {
             return (
               <TouchableOpacity
                 style={[styles.postCard, { padding: 0 }]}
-                onPress={() => router.push({ pathname: `/user/post-feed/${item.postId}` } as any)}
+                onPress={() => router.push({ pathname: '/bookmark/post/[id]', params: { id: String(item.postId) } })}
                 activeOpacity={0.8}
               >
                 {item.imageUrl ? (

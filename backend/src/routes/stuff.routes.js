@@ -12,4 +12,7 @@ router.post('/', stuffController.createStuff);
 // 💡 authMiddleware를 통해 누가 보는지(국적) 파악합니다!
 router.get('/:stuffId/detail', authMiddleware, stuffController.getStuffDetail);
 
+// 상품 상세 페이지에서 추천 조합 [더보기] 눌렀을 때
+router.get('/:stuffId/recommendations', authMiddleware, stuffController.getProductRecommendations);
+
 module.exports = router;

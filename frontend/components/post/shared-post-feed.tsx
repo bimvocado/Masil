@@ -24,10 +24,19 @@ export const SharedPostFeed = ({ id, fetchType, onBack }: Props) => {
         if (fetchType === 'single') {
           if (!id) return; 
           
-          const targetPost = await postService.getPost(Number(id));
+          const targetPost = await postService.getPost(Number(id), user?.userId);
           const normalizedPost = {
             ...targetPost,
             imageUrl: targetPost.imageUrl ?? (targetPost as any).image_url ?? null,
+            
+            isLiked: !!targetPost.isLiked,
+            isDisliked: !!targetPost.isDisliked,
+            isScrapped: !!targetPost.isScrapped,
+            likeCount: Number(targetPost.likeCount || 0),
+            dislikeCount: Number(targetPost.dislikeCount || 0),
+            scrapCount: Number(targetPost.scrapCount || 0),
+            commentCount: Number(targetPost.commentCount || 0),
+          
           };
           setAllPosts([normalizedPost]);
         } else {

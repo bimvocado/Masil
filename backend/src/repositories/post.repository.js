@@ -7,7 +7,7 @@ const createPost = async (postData, options = {}) => {
     return await Post.create(postData, options);
 };
 
-const findAllPosts = async (viewerId = null) => {
+const findAllPosts = async (viewerId = null, stuffId = null) => {
     const posts = await sequelize.query(`
         SELECT
             p.post_id AS postId,
@@ -18,18 +18,27 @@ const findAllPosts = async (viewerId = null) => {
             p.created_at AS createdAt,
             p.updated_at AS updatedAt,
             p.price AS price,
+            
+            -- 💰 [추가] 메인 상품의 실시간 평균 가격 계산
+            (SELECT ROUND(AVG(sub_p.price)) 
+             FROM posts sub_p 
+             WHERE sub_p.stuff_id = p.stuff_id 
+               AND sub_p.price IS NOT NULL 
+               AND sub_p.deleted_at IS NULL) AS avgPrice,
 
             u.nickname AS nickname,
             u.profile_image_url AS profileImageUrl,
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
+            b.logo_url AS brandLogoUrl, -- 🎉 [추가] 메인 브랜드 로고 주소
 
             p.recommended_stuff_id AS recommendedStuffId,
             p.recommended_image_url AS recommendedImageUrl,
             rst.stuff_name AS recommendedStuffName,
             rb.brand_id AS recommendedBrandId,
             rb.brand_name AS recommendedBrandName,
+            rb.logo_url AS recommendedBrandLogoUrl, -- 🎉 [추가] 추천 브랜드 로고 주소
             
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
@@ -56,6 +65,7 @@ const findAllPosts = async (viewerId = null) => {
         LEFT JOIN post_scraps su ON p.post_id = su.post_id AND su.user_id = :viewerId AND su.deleted_at IS NULL
         
         WHERE p.deleted_at IS NULL
+          AND (:stuffId IS NULL OR p.stuff_id = :stuffId)
         
         GROUP BY 
             p.post_id, 
@@ -68,14 +78,87 @@ const findAllPosts = async (viewerId = null) => {
             
         ORDER BY p.created_at DESC
     `, {
-        replacements: { viewerId: viewerId || 0 }, 
+        replacements: { viewerId: viewerId || 0, stuffId }, 
         type: QueryTypes.SELECT
     });
     
     return posts;
 };
 
-const findPostById = async (postId) => {
+const findPostsByStuffId = async (stuffId, viewerId = null) => {
+    const posts = await sequelize.query(`
+        SELECT
+            p.post_id AS postId,
+            p.user_id AS userId,
+            p.stuff_id AS stuffId,
+            p.content AS content,
+            p.image_url AS imageUrl,
+            p.created_at AS createdAt,
+            p.updated_at AS updatedAt,
+            p.price AS price,
+
+            (SELECT ROUND(AVG(sub_p.price))
+             FROM posts sub_p
+             WHERE sub_p.stuff_id = p.stuff_id
+               AND sub_p.price IS NOT NULL
+               AND sub_p.deleted_at IS NULL) AS avgPrice,
+
+            u.nickname AS nickname,
+            u.profile_image_url AS profileImageUrl,
+            st.stuff_name AS stuffName,
+            b.brand_id AS brandId,
+            b.brand_name AS brandName,
+            b.logo_url AS brandLogoUrl,
+
+            p.recommended_stuff_id AS recommendedStuffId,
+            p.recommended_image_url AS recommendedImageUrl,
+            rst.stuff_name AS recommendedStuffName,
+            rb.brand_id AS recommendedBrandId,
+            rb.brand_name AS recommendedBrandName,
+            rb.logo_url AS recommendedBrandLogoUrl,
+
+            MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
+            MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
+
+            COUNT(DISTINCT c.comment_id) AS commentCount,
+            COUNT(DISTINCT CASE WHEN i.reaction_type = 'LIKE' THEN i.interaction_id END) AS likeCount,
+            COUNT(DISTINCT CASE WHEN i.reaction_type = 'DISLIKE' THEN i.interaction_id END) AS dislikeCount,
+            COUNT(DISTINCT s.scrap_id) AS scrapCount,
+            CASE WHEN su.scrap_id IS NOT NULL THEN TRUE ELSE FALSE END AS isScrapped
+
+        FROM posts p
+        LEFT JOIN users u ON p.user_id = u.user_id
+        LEFT JOIN stuffs st ON p.stuff_id = st.stuff_id
+        LEFT JOIN brands b ON st.brand_id = b.brand_id
+        LEFT JOIN stuffs rst ON p.recommended_stuff_id = rst.stuff_id
+        LEFT JOIN brands rb ON rst.brand_id = rb.brand_id
+        LEFT JOIN comments c ON p.post_id = c.post_id AND c.deleted_at IS NULL
+        LEFT JOIN interactions i ON p.stuff_id = i.stuff_id AND i.deleted_at IS NULL
+        LEFT JOIN post_scraps s ON p.post_id = s.post_id AND s.deleted_at IS NULL
+        LEFT JOIN post_scraps su ON p.post_id = su.post_id AND su.user_id = :viewerId AND su.deleted_at IS NULL
+
+        WHERE p.deleted_at IS NULL
+          AND p.stuff_id = :stuffId
+
+        GROUP BY
+            p.post_id,
+            u.user_id,
+            st.stuff_id,
+            b.brand_id,
+            rst.stuff_id,
+            rb.brand_id,
+            su.scrap_id
+
+        ORDER BY scrapCount DESC, p.created_at DESC
+    `, {
+        replacements: { stuffId, viewerId: viewerId || 0 },
+        type: QueryTypes.SELECT
+    });
+
+    return posts;
+};
+
+const findPostById = async (postId, viewerId = null) => {
     const posts = await sequelize.query(`
         SELECT
             p.post_id AS postId,
@@ -89,16 +172,33 @@ const findPostById = async (postId) => {
             p.created_at AS createdAt,
             p.updated_at AS updatedAt,
 
+            -- 💰 [추가] 상세 보기용 실시간 평균 가격 계산
+            (SELECT ROUND(AVG(sub_p.price)) 
+             FROM posts sub_p 
+             WHERE sub_p.stuff_id = p.stuff_id 
+               AND sub_p.price IS NOT NULL 
+               AND sub_p.deleted_at IS NULL) AS avgPrice,
+
             u.nickname AS nickname,
             u.profile_image_url AS profileImageUrl,
 
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
+            b.logo_url AS brandLogoUrl,
 
             rst.stuff_name AS recommendedStuffName,
             rb.brand_id AS recommendedBrandId,
-            rb.brand_name AS recommendedBrandName
+            rb.brand_name AS recommendedBrandName,
+            rb.logo_url AS recommendedBrandLogoUrl,
+            
+            MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
+            MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
+            COUNT(DISTINCT c.comment_id) AS commentCount,
+            COUNT(DISTINCT CASE WHEN i.reaction_type = 'LIKE' THEN i.interaction_id END) AS likeCount,
+            COUNT(DISTINCT CASE WHEN i.reaction_type = 'DISLIKE' THEN i.interaction_id END) AS dislikeCount,
+            COUNT(DISTINCT s.scrap_id) AS scrapCount,
+            CASE WHEN su.scrap_id IS NOT NULL THEN TRUE ELSE FALSE END AS isScrapped
 
         FROM posts p
         LEFT JOIN users u ON p.user_id = u.user_id
@@ -107,13 +207,27 @@ const findPostById = async (postId) => {
 
         LEFT JOIN stuffs rst ON p.recommended_stuff_id = rst.stuff_id
         LEFT JOIN brands rb ON rst.brand_id = rb.brand_id
+        
+        LEFT JOIN comments c ON p.post_id = c.post_id AND c.deleted_at IS NULL
+        LEFT JOIN interactions i ON p.stuff_id = i.stuff_id AND i.deleted_at IS NULL
+        LEFT JOIN post_scraps s ON p.post_id = s.post_id AND s.deleted_at IS NULL
+        LEFT JOIN post_scraps su ON p.post_id = su.post_id AND su.user_id = :viewerId AND su.deleted_at IS NULL
 
         WHERE p.post_id = :postId
           AND p.deleted_at IS NULL
 
+        GROUP BY 
+            p.post_id, 
+            u.user_id, 
+            st.stuff_id, 
+            b.brand_id, 
+            rst.stuff_id, 
+            rb.brand_id, 
+            su.scrap_id
+            
         LIMIT 1
     `, {
-        replacements: { postId },
+        replacements: { postId, viewerId: viewerId || 0 },
         type: QueryTypes.SELECT
     });
 
@@ -139,18 +253,27 @@ const findPostsByUserId = async (userId, viewerId = null) => {
             p.created_at AS createdAt,
             p.updated_at AS updatedAt,
             p.price AS price,
+            
+            -- 💰 [추가] 유저 피드용 실시간 평균 가격 계산
+            (SELECT ROUND(AVG(sub_p.price)) 
+             FROM posts sub_p 
+             WHERE sub_p.stuff_id = p.stuff_id 
+               AND sub_p.price IS NOT NULL 
+               AND sub_p.deleted_at IS NULL) AS avgPrice,
 
             u.nickname AS nickname,
             u.profile_image_url AS profileImageUrl,
             st.stuff_name AS stuffName,
             b.brand_id AS brandId,
             b.brand_name AS brandName,
+            b.logo_url AS brandLogoUrl, -- 🎉 [추가] 메인 브랜드 로고 주소
 
             p.recommended_stuff_id AS recommendedStuffId,
             p.recommended_image_url AS recommendedImageUrl,
             rst.stuff_name AS recommendedStuffName,
             rb.brand_id AS recommendedBrandId,
             rb.brand_name AS recommendedBrandName,
+            rb.logo_url AS recommendedBrandLogoUrl, -- 🎉 [추가] 추천 브랜드 로고 주소
 
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'LIKE' THEN 1 ELSE 0 END) = 1 AS isLiked,
             MAX(CASE WHEN i.user_id = :viewerId AND i.reaction_type = 'DISLIKE' THEN 1 ELSE 0 END) = 1 AS isDisliked,
@@ -215,6 +338,7 @@ module.exports = {
     updatePost,
     deletePost,
     findAllPosts,
+    findPostsByStuffId,
     findPostsByUserId,
     getAveragePriceByStuffId,
 };

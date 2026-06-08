@@ -22,6 +22,7 @@ class UpdatePostReqDTO {
   }
 }
 
+// 🌟 [수정 완료] 브랜드 로고와 메타 정보 매핑 추가
 class PostResDTO {
   constructor(post) {
     this.postId = post.postId || post.post_id;
@@ -34,6 +35,31 @@ class PostResDTO {
     this.price = post.price;
     this.createdAt = post.createdAt || post.created_at;
     this.updatedAt = post.updatedAt || post.updated_at;
+
+    // 팩토리나 생쿼리(snake_case) 대응을 위해 유연하게 필드 바인딩 
+    this.nickname = post.nickname;
+    this.profileImageUrl = post.profileImageUrl || post.profile_image_url;
+    this.stuffName = post.stuffName || post.stuff_name;
+    this.brandId = post.brandId || post.brand_id;
+    this.brandName = post.brandName || post.brand_name;
+    
+    // 🎉 [핵심 추가] 메인 브랜드 로고 및 추천 조합 브랜드 로고
+    this.brandLogoUrl = post.brandLogoUrl || post.brand_logo_url;
+    this.recommendedBrandLogoUrl = post.recommendedBrandLogoUrl || post.recommended_brand_logo_url;
+    
+    // 추가 메타 정보들 (상세 페이지 대응용)
+    this.recommendedStuffName = post.recommendedStuffName || post.recommended_stuff_name;
+    this.recommendedBrandId = post.recommendedBrandId || post.recommended_brand_id;
+    this.recommendedBrandName = post.recommendedBrandName || post.recommended_brand_name;
+
+    // 🔥 [필수] Interaction 필드들 - 이 라인이 없으면 모두 필터링됨!
+    this.isLiked = post.isLiked ?? false;
+    this.isDisliked = post.isDisliked ?? false;
+    this.likeCount = post.likeCount ?? 0;
+    this.dislikeCount = post.dislikeCount ?? 0;
+    this.commentCount = post.commentCount ?? 0;
+    this.scrapCount = post.scrapCount ?? 0;
+    this.isScrapped = post.isScrapped ?? false;
   }
 }
 

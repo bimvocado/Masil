@@ -1,67 +1,83 @@
-class CreatePostReqDTO {
-    constructor(content, imageUrl, userId, stuffId, price, recommendedStuffId, recommendedImageUrl) {
-        this.content = content;
-        this.imageUrl = imageUrl;
-        this.userId = userId;
-        this.stuffId = Number(stuffId);
+// 검색창 - 상품으로 검색
+const toStuffSearchDTO = (stuff) => {
+  return {
+    stuffId: stuff.stuffId,
+    stuffName: stuff.stuffName,
+    price: stuff.price,
+    isDiscontinued: stuff.isDiscontinued,
+    imageUrl: stuff.imageUrl,
+    brandId: stuff.Brand?.brandId,
+    brandName: stuff.Brand?.brandName,
+    logoUrl: stuff.Brand?.logoUrl,
+    category: stuff.Brand?.category,
+  };
+};
 
-        this.price =
-            price === null || price === undefined || price === ''
-                ? null
-                : Number(price);
+// 검색창 - 상품 검색 결과
+const toStuffSearchResultDTO = (stuffs) => {
+  return {
+    stuffListSize: stuffs.length,
+    stuffs: stuffs.map(toStuffSearchDTO),
+  };
+};
 
-        this.recommendedStuffId =
-            recommendedStuffId === null || recommendedStuffId === undefined || recommendedStuffId === ''
-                ? null
-                : Number(recommendedStuffId);
+// 상품창 - 하단 스크랩 가장 많은 글 및 추천 아이템 바인딩 DTO
+const toTopPostDTO = (post) => {
+  return {
+    postId: post.postId,
+    content: post.content,
+    imageUrl: post.imageUrl,
+    userId: post.userId,
+    nickname: post.nickname,
+    scrapCount: Number(post.scrapCount || 0),
+    recommendedStuffId: post.recommendedStuffId,
+    recommendedImageUrl: post.recommendedImageUrl,
+    recommendedStuffName: post.recommendedStuffName,
+    recommendedBrandId: post.recommendedBrandId,
+    recommendedBrandName: post.recommendedBrandName,
 
-        this.recommendedImageUrl = recommendedImageUrl ?? null;
-    }
-}
+    // 💰 서비스 레이어에서 주입한 평균가 필드가 걸러지지 않도록 패스해 줍니다.
+    averagePrice: post.averagePrice ? Number(post.averagePrice) : undefined,
+    avgPrice: post.avgPrice ? Number(post.avgPrice) : undefined,
 
-class UpdatePostReqDTO {
-    constructor(content, imageUrl, price, recommendedStuffId) {
-        this.content = content;
-        this.imageUrl = imageUrl;
-        this.price = price;
-        this.recommendedStuffId = recommendedStuffId;
-    }
-}
+    createdAt: post.createdAt,
+  };
+};
 
-class PostResDTO {
-    constructor(post) {
-        this.postId = post.postId;
-        this.content = post.content;
-        this.imageUrl = post.imageUrl;
-        this.userId = post.userId;
-        this.stuffId = post.stuffId;
-        this.price = post.price;
+// 상품창 - 상세 페이지 전체
+const toStuffDetailDTO = ({
+  stuff,
+  topPost,
+  recommendations = [] 
+}) => {
+  return {
+    stuffId: stuff.stuffId,
+    stuffName: stuff.stuffName,
+    price: stuff.price,
+    brandId: stuff.brandId,
+    brandName: stuff.brandName,
+    logoUrl: stuff.logoUrl,
+    imageUrl: stuff.imageUrl,
 
-        // 💡 프론트엔드 라우터(router.push)에서 유실 및 예외가 터지지 않도록 안정적으로 정수 캐스팅
-        this.recommendedStuffId = post.recommendedStuffId ? Number(post.recommendedStuffId) : null;
-        this.recommendedStuffName = post.recommendedStuffName;
-        this.recommendedBrandId = post.recommendedBrandId ? Number(post.recommendedBrandId) : null;
-        this.recommendedBrandName = post.recommendedBrandName;
-        this.recommendedImageUrl = post.recommendedImageUrl;
+    totalLikeCount: Number(stuff.totalLikeCount || 0),
+    koreanLikeCount: Number(stuff.koreanLikeCount || 0),
+    foreignerLikeCount: Number(stuff.foreignerLikeCount || 0),
 
-        this.createdAt = post.createdAt;
-        this.updatedAt = post.updatedAt;
-        this.nickname = post.nickname;
-        this.stuffName = post.stuffName;
-        this.brandName = post.brandName;
+    totalDislikeCount: Number(stuff.totalDislikeCount || 0),
+    koreanDislikeCount: Number(stuff.koreanDislikeCount || 0),
+    foreignerDislikeCount: Number(stuff.foreignerDislikeCount || 0),
 
-        this.isLiked = !!post.isLiked;
-        this.isDisliked = !!post.isDisliked;
-        this.isScrapped = !!post.isScrapped;
-
-        this.likeCount = Number(post.likeCount || 0);
-        this.dislikeCount = Number(post.dislikeCount || 0);
-        this.commentCount = Number(post.commentCount || 0);
-    }
-}
+    totalPostCount: Number(stuff.totalPostCount || 0),
+    topPost: topPost ? toTopPostDTO(topPost) : null,
+    
+    // 💰 이제 내부에 정의된 toTopPostDTO가 averagePrice를 안전하게 품고 리턴합니다.
+    recommendations: recommendations.map(post => toTopPostDTO(post)),
+  };
+};
 
 module.exports = {
-    CreatePostReqDTO,
-    UpdatePostReqDTO,
-    PostResDTO,
+  toStuffSearchDTO,
+  toStuffSearchResultDTO,
+  toTopPostDTO,
+  toStuffDetailDTO,
 };

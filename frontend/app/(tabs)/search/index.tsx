@@ -45,11 +45,11 @@ export default function SearchScreen() {
     useState('');
 
   // 검색창 - 브랜드 리스트 3열
-  const fetchBrands = async () => {
+  const fetchBrands = async (query = searchQuery) => {
     try {
       setLoading(true);
 
-      const keyword = searchQuery.trim();
+      const keyword = query.trim();
 
       // 검색어가 없으면 브랜드 3열 목록 조회
 //       if (!keyword) {

@@ -1,24 +1,24 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Image, Dimensions, FlatList } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { TopBar } from '@/components/layout/top-bar';
-//import { ProductCard } from '@/components/ui/product-card';
 import { InteractionButton } from '@/constants/interaction-button';
 import { InteractionStatsBar } from '@/components/ui/interaction-stats-bar';
 
-//import { searchService } from '@/api/search-service';
-
 import { useStuffDetail } from '@/hooks/useStuffDetail';
+import { postService } from '@/services/post-service';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 
-// 💡 방법 1: 추천 조합의 이미지가 없을 때 사용할 디폴트 이미지 URL을 정의합니다.
-// (원하시는 기본 이미지의 웹 주소로 변경하여 사용하세요!)
+// 🌟 가로 스와이프 시 다음 추천 상품이 화면 우측에 살짝 노출되도록 카드 너비를 정의합니다. (화면 가로폭의 82%)
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width * 0.82;
+
+// 추천 조합의 이미지가 없을 때 사용할 디폴트 이미지 URL
 const DEFAULT_IMAGE_URL = 'https://supermasil.duckdns.org/uploads/default-product.png'; 
 
 const getImageUrl = (url?: string | null) => {
-  // 💡 이미지가 비어있거나 null/undefined인 경우 디폴트 이미지를 반환합니다.
   if (!url) return DEFAULT_IMAGE_URL;
   return url.startsWith('http') ? url : `${BASE_URL}${url}`;
 };
@@ -26,12 +26,31 @@ const getImageUrl = (url?: string | null) => {
 export default function ProductDetailScreen() {
   const { id, stuffName, brandName } = useLocalSearchParams<{
     id: string;
+    name: string;
     stuffName: string;
     brandName: string;
   }>();
 
   const router = useRouter();
   const { loading, detailData, handleToggle } = useStuffDetail(String(id));
+  const [reviewPosts, setReviewPosts] = useState<any[]>([]);
+
+  const fetchReviewPosts = useCallback(async () => {
+    if (!id) return;
+
+    try {
+      const posts = await postService.getPosts(undefined, Number(id));
+      const sorted = [...(posts || [])].sort((a, b) => (b.scrapCount || 0) - (a.scrapCount || 0));
+      setReviewPosts(sorted);
+    } catch (error) {
+      console.error('리뷰 목록 로드 실패:', error);
+      setReviewPosts([]);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchReviewPosts();
+  }, [fetchReviewPosts]);
 
   console.log('상세 detailData:', detailData);
 
@@ -51,6 +70,61 @@ export default function ProductDetailScreen() {
   console.log(`- 외국인(F): ${detailData.foreignerLikeCount}`);
   console.log(`- 내 국적 상태(isKorean): ${(detailData as any).isKorean}`);
   console.log("==========================================");
+
+  // 🌟 백엔드 DTO에서 추가해준 recommendations 배열을 가져옵니다. (안전하게 최대 4개 보장)
+  const recommendationsData = (detailData as any).recommendations?.slice(0, 4) || [];
+
+  // 🌟 가로 스크롤로 렌더링할 개별 추천 카드 컴포넌트
+  const renderRecommendationItem = ({ item }: { item: any }) => {
+    // 💰 [추가/수정] 추천 조합 상품 리스트의 유저 포스트 정산 평균 가격을 최우선으로 추출합니다.
+    const recAvgPrice = item.averagePrice ?? item.avgPrice ?? item.price ?? 0;
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => {
+          const recStuffId = item.recommendedStuffId;
+          const recStuffName = item.recommendedStuffName;
+          const recBrandName = item.recommendedBrandName;
+
+          if (!recStuffId) {
+            console.warn("📍 [경고] 추천 상품의 recommendedStuffId가 없습니다.");
+            return;
+          }
+
+          console.log(`📍 [이동] 추천 상품 상세 페이지로 이동. ID: ${recStuffId}`);
+
+          router.push({
+            pathname: '/search/product/[id]', 
+            params: {
+              id: String(recStuffId),
+              stuffName: recStuffName || '',
+              brandName: recBrandName || '',
+            },
+          });
+        }}
+        style={styles.recommendedContainer}
+      >
+        <Image
+          source={{ uri: getImageUrl(item.recommendedImageUrl) }}
+          style={styles.recommendedImage}
+        />
+
+        <View style={{ justifyContent: 'center', flex: 1 }}>
+          <Text style={styles.recBrandText}>{item.recommendedBrandName}</Text>
+          <Text style={styles.recStuffText} numberOfLines={1}>{item.recommendedStuffName}</Text>
+          {/* 💸 정산된 평균 가격을 천 단위로 콤마 처리하여 렌더링합니다. */}
+          <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>
+            평균 {recAvgPrice ? Number(recAvgPrice).toLocaleString() : '0'}원
+          </Text>
+          <Text style={styles.clickGuideText}>상세보기 〉</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // 메인 상품의 평균 가격 계산 유연화
+  const mainAveragePrice = detailData.averagePrice ?? detailData.avgPrice ?? detailData.price;
 
   return (
     <View style={styles.container}>
@@ -81,7 +155,7 @@ export default function ProductDetailScreen() {
           </TouchableOpacity>
           <Text style={styles.productTitle}>{detailData.stuffName || stuffName || '상품명 없음'}</Text>
           <Text style={styles.priceText}>
-            {detailData.price ? detailData.price.toLocaleString() : '가격 정보 없음'}원
+            평균 {mainAveragePrice ? Number(mainAveragePrice).toLocaleString() : '0'}원
           </Text>
         </View>
 
@@ -123,62 +197,94 @@ export default function ProductDetailScreen() {
 
         <View style={styles.divider} />
 
-        {/* 추천 조합 (2번 문제 해결 - 이미지 디폴트 처리 및 클릭 시 상세이동) */}
-        <Text style={styles.sectionTitle}>추천조합</Text>
-
-        {detailData.topPost?.recommendedStuffName ? (
+        {/* 추천조합 타이틀 영역 */}
+        <View style={styles.recommendationHeader}>
+          <Text style={styles.sectionTitle}>{recommendationsData.length}개의 추천 조합</Text>
           <TouchableOpacity
-            activeOpacity={0.7}
             onPress={() => {
-              const recStuffId = detailData.topPost?.recommendedStuffId;
-              const recStuffName = detailData.topPost?.recommendedStuffName;
-              const recBrandName = detailData.topPost?.recommendedBrandName;
-
-              if (!recStuffId) {
-                console.warn("📍 [경고] 추천 상품의 recommendedStuffId가 없습니다.");
-                return;
-              }
-
-              console.log(`📍 [이동] 추천 상품 상세 페이지로 이동. ID: ${recStuffId}`);
-
               router.push({
-                pathname: '/search/product/[id]', 
+                pathname: '/search/product/[id]/recommendations', 
                 params: {
-                  id: String(recStuffId),
-                  stuffName: recStuffName || '',
-                  brandName: recBrandName || '',
+                  id: String(detailData.stuffId),
+                  mainStuffName: detailData.stuffName || stuffName || '',
                 },
-              });
+              } as any);
             }}
-            style={styles.recommendedContainer}
           >
-            {/* 💡 이미지가 없어도 getImageUrl을 통해 디폴트 이미지 URL을 받아와서 항상 출력합니다. */}
-            <Image
-              source={{ uri: getImageUrl(detailData.topPost.recommendedImageUrl) }}
-              style={styles.recommendedImage}
-            />
-
-            <View style={{ justifyContent: 'center', flex: 1 }}>
-              <Text style={styles.recBrandText}>{detailData.topPost.recommendedBrandName}</Text>
-              <Text style={styles.recStuffText}>{detailData.topPost.recommendedStuffName}</Text>
-              <Text style={styles.clickGuideText}>상세보기 〉</Text>
-            </View>
+            <Text style={styles.moreText}>더보기 {'>'}</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* 🌟 다중 리스트 혹은 백업용 단일 리스트 분기 영역 */}
+        {recommendationsData.length > 0 ? (
+          <FlatList
+            data={recommendationsData}
+            renderItem={renderRecommendationItem}
+            keyExtractor={(item, index) => item.recommendedStuffId ? String(item.recommendedStuffId) : String(index)}
+            horizontal={true}                    
+            showsHorizontalScrollIndicator={false} 
+            snapToInterval={CARD_WIDTH + 12}      
+            decelerationRate="fast"
+            contentContainerStyle={styles.horizontalListPadding}
+          />
         ) : (
-          <Text style={styles.emptyText}>추천 조합이 없습니다.</Text>
+          /* ✅ [수정 완료] 백업용 topPost 단일 렌더링 카드 내에서도 평균 가격 데이터를 우선 조회하도록 수정합니다. */
+          detailData.topPost?.recommendedStuffName ? (
+            <FlatList
+              data={[detailData.topPost]}
+              renderItem={({ item }: { item: any }) => {
+                const legacyPrice = item.averagePrice ?? item.avgPrice ?? item.price ?? 0;
+                return (
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      const recStuffId = item.recommendedStuffId;
+                      if (!recStuffId) return;
+                      router.push({
+                        pathname: '/search/product/[id]', 
+                        params: { id: String(recStuffId), stuffName: item.recommendedStuffName || '', brandName: item.recommendedBrandName || '' },
+                      });
+                    }}
+                    style={styles.recommendedContainer}
+                  >
+                    <Image source={{ uri: getImageUrl(item.recommendedImageUrl) }} style={styles.recommendedImage} />
+                    <View style={{ justifyContent: 'center', flex: 1 }}>
+                      <Text style={styles.recBrandText}>{item.recommendedBrandName}</Text>
+                      <Text style={styles.recStuffText}>{item.recommendedStuffName}</Text>
+                      <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>
+                        {/* 💸 기존 단가 고정 노출 대신 정산된 평균 가격을 반영합니다. */}
+                        평균 {legacyPrice ? Number(legacyPrice).toLocaleString() : '0'}원
+                      </Text>
+                      <Text style={styles.clickGuideText}>상세보기 〉</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+              horizontal={true}
+              contentContainerStyle={styles.horizontalListPadding}
+            />
+          ) : (
+            <Text style={styles.emptyText}>추천 조합이 없습니다.</Text>
+          )
         )}
-        
-        <TouchableOpacity>
-          <Text style={styles.moreText}>더보기 {'>'}</Text>
-        </TouchableOpacity>
 
         <View style={styles.divider} />
 
-        {/* 하단 리뷰 영역 (원래 주신 소스코드 형태를 100% 보존합니다) */}
+        {/* 하단 리뷰 영역 */}
         <View style={styles.reviewHeader}>
-          <Text style={{ fontWeight: 'bold' }}>리뷰</Text>
-          <TouchableOpacity>
-            <Text>스크랩 많은 순 ▼</Text>
+          <Text style={{ fontWeight: 'bold' }}>{reviewPosts.length}개의 리뷰</Text>
+          <TouchableOpacity
+            onPress={() => {
+              router.push({
+                pathname: '/search/product/[id]/reviews',
+                params: {
+                  id: String(detailData.stuffId),
+                  mainStuffName: detailData.stuffName || stuffName || '',
+                },
+              } as any);
+            }}
+          >
+            <Text style={styles.moreText}>더보기 {'>'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -188,22 +294,14 @@ export default function ProductDetailScreen() {
               activeOpacity={0.8}
               onPress={() => {
                 const postId = detailData.topPost?.postId;
-              
-                if (!postId) {
-                  console.warn('대표 리뷰 postId가 없습니다.');
-                  return;
-                }
-              
+                if (!postId) return;
+
                 router.push({
                   pathname: '/search/post/[id]',
-                  params: {
-                    id: String(postId),
-                    fetchType: 'single',
-                  },
-                } as any);
+                  params: { id: String(postId), fetchType: 'single' },
+                });
               }}
             >
-              
               <Text style={{ fontWeight: 'bold' }}>{detailData.topPost.nickname}</Text>
               <Text style={{ color: '#666', marginTop: 5 }}>{detailData.topPost.content}</Text>
               <Text style={{ color: '#888', marginTop: 5 }}>스크랩 {detailData.topPost.scrapCount}</Text>
@@ -212,6 +310,23 @@ export default function ProductDetailScreen() {
             <Text style={{ color: '#666' }}>아직 이 상품에 대한 리뷰가 없습니다.</Text>
           )}
         </View>
+
+        {reviewPosts.length > 1 && (
+          <View style={styles.reviewListContainer}>
+            {reviewPosts.slice(1, 4).map((post: any) => (
+              <TouchableOpacity
+                key={post.postId}
+                style={styles.reviewCard}
+                activeOpacity={0.8}
+                onPress={() => router.push({ pathname: '/search/post/[id]', params: { id: String(post.postId), fetchType: 'single' } })}
+              >
+                <Text style={styles.reviewCardTitle}>{post.nickname || '익명'}</Text>
+                <Text style={styles.reviewCardText} numberOfLines={2}>{post.content}</Text>
+                <Text style={styles.reviewCardMeta}>스크랩 {post.scrapCount || 0} · 좋아요 {post.likeCount || 0} · 댓글 {post.commentCount || 0}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -219,25 +334,38 @@ export default function ProductDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  scrollContent: { padding: 20 },
+  scrollContent: { paddingBottom: 30 }, 
   imagePlaceholderBox: {
     height: 180, backgroundColor: '#fff', borderRadius: 20,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden',
+    justifyContent: 'center', alignItems: 'center', marginHorizontal: 20, marginTop: 20, marginBottom: 20, overflow: 'hidden',
   },
   reviewImage: { width: '100%', height: '100%' },
   imageLabel: { color: '#888', textAlign: 'center' },
-  infoSection: { marginBottom: 15 },
+  infoSection: { paddingHorizontal: 20, marginBottom: 15 },
   brandLink: { color: '#888', fontSize: 12, marginBottom: 5 },
   productTitle: { fontSize: 24, fontWeight: 'bold' },
-  priceText: { fontSize: 18, color: '#444' },
-  divider: { height: 1, backgroundColor: '#DDD', marginVertical: 15 },
+  priceText: { fontSize: 18, color: '#FF8A00', fontWeight: 'bold' }, 
+  divider: { height: 1, backgroundColor: '#DDD', marginVertical: 15, marginHorizontal: 20 },
   statsContainer: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 5 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
-  moreText: { textAlign: 'right', color: '#888', fontSize: 12 },
-  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginBottom: 10 },
-  reviewBox: { minHeight: 100, backgroundColor: '#EEE', borderRadius: 20, padding: 20, justifyContent: 'center' },
-  
-  // 💡 추천 조합 영역 컴포넌트들을 가로정렬 및 깔끔하게 배치하는 스타일들입니다.
+  sectionTitle: { fontSize: 16, fontWeight: 'bold' }, 
+  moreText: { color: '#888', fontSize: 12 },
+  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginBottom: 10, paddingHorizontal: 20 },
+  reviewBox: { minHeight: 100, backgroundColor: '#EEE', borderRadius: 20, padding: 20, justifyContent: 'center', marginHorizontal: 20 },
+  reviewListContainer: { marginHorizontal: 20, marginTop: 10 },
+  reviewCard: { backgroundColor: '#fff', borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E7E7E7' },
+  reviewCardTitle: { fontSize: 14, fontWeight: 'bold', color: '#333' },
+  reviewCardText: { color: '#666', marginTop: 4, lineHeight: 18 },
+  reviewCardMeta: { color: '#888', fontSize: 12, marginTop: 6 },
+  recommendationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  horizontalListPadding: {
+    paddingHorizontal: 20, 
+  },
   recommendedContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -245,8 +373,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#EAEAEA',
-    marginVertical: 5,
     alignItems: 'center',
+    width: CARD_WIDTH,  
+    marginRight: 12,    
   },
   recommendedImage: { 
     width: 80, 
@@ -273,5 +402,6 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#888',
     marginVertical: 10,
+    paddingHorizontal: 20,
   },
 });

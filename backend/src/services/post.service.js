@@ -22,14 +22,12 @@ const createPost = async (createPostReqDTO) => {
         throw new Error('내용을 입력해주세요.');
     }
 
-    // 1. 안전한 트랜잭션 경계 설정
     const t = await sequelize.transaction();
 
     try {
         let finalStuffId = null;
         let finalRecommendedStuffId = null;
 
-        // 2. 메인 상품 처리 (기존 조회 없으면 자동 삽입)
         if (stuffName && brandId) {
             const cleanStuffName = stuffName.replace('@', '').trim();
             
@@ -54,7 +52,6 @@ const createPost = async (createPostReqDTO) => {
             throw new Error('메인 상품 정보가 구성되지 않았습니다.');
         }
 
-        // 3. 추천 조합 상품 처리 (기존 조회 없으면 자동 삽입)
         if (recommendedStuffName && recommendedBrandId) {
             const cleanRecName = recommendedStuffName.replace('@', '').trim();
 
@@ -75,7 +72,6 @@ const createPost = async (createPostReqDTO) => {
             }
         }
 
-        // 4. 최종 posts 게시글 데이터 일괄 적재
         const newPost = await postRepository.createPost({
             content,
             imageUrl,
@@ -86,20 +82,18 @@ const createPost = async (createPostReqDTO) => {
             recommendedImageUrl,
         }, { transaction: t }); 
 
-        // 모든 쿼리가 정상 종료되면 실제 DB 반영
         await t.commit();
         return new PostResDTO(newPost);
 
     } catch (error) {
-        // 하나라도 중간에 실패 시, 자동 생성 중이던 Stuff 오브젝트를 포함하여 완벽히 롤백(취소)
         await t.rollback();
         console.error('게시글 등록 트랜잭션 롤백 처리 완료:', error);
         throw error;
     }
 };
 
-const getPosts = async (viewerId = null) => { 
-  const posts = await postRepository.findAllPosts(viewerId);
+const getPosts = async (viewerId = null, stuffId = null) => { 
+  const posts = await postRepository.findAllPosts(viewerId, stuffId);
   return posts.map((post) => ({
     postId: post.postId,
     userId: post.userId,
@@ -107,6 +101,11 @@ const getPosts = async (viewerId = null) => {
     content: post.content,
     imageUrl: post.imageUrl,
     price: post.price === null || post.price === undefined ? null : Number(post.price),
+    
+    // 💰 [보완] 프론트엔드가 averagePrice와 avgPrice 둘 중 무엇을 불러도 정상 작동하도록 2개 다 꽂아줍니다.
+    avgPrice: post.avgPrice ?? post.averagePrice ?? null,
+    averagePrice: post.avgPrice ?? post.averagePrice ?? null,
+
     recommendedStuffId: post.recommendedStuffId,
     recommendedStuffName: post.recommendedStuffName,
     recommendedBrandId: post.recommendedBrandId,
@@ -119,6 +118,8 @@ const getPosts = async (viewerId = null) => {
     stuffName: post.stuffName,
     brandId: post.brandId,
     brandName: post.brandName,
+    brandLogoUrl: post.brandLogoUrl,                      
+    recommendedBrandLogoUrl: post.recommendedBrandLogoUrl, 
     commentCount: Number(post.commentCount || 0),
     likeCount: Number(post.likeCount || 0),
     dislikeCount: Number(post.dislikeCount || 0),
@@ -129,10 +130,19 @@ const getPosts = async (viewerId = null) => {
   }));
 };
 
+// [수정 완료] 단일 게시글 조회
 const getPost = async (postId, viewerId = null) => {
     const post = await postRepository.findPostById(postId, viewerId);
     if (!post) throw new Error('존재하지 않는 게시글입니다.');
-    return new PostResDTO(post);
+    
+    // 💰 레포지토리가 뱉은 날것의 post 객체에 평균 가격이 들어있다면 DTO에 들어가기 전에 확실히 인지시킵니다.
+    const calculatedAvg = post.avgPrice ?? post.averagePrice ?? null;
+    
+    return {
+        ...new PostResDTO(post),
+        avgPrice: calculatedAvg,       // 👈 DTO 필터에 걸러져 유실되는 것을 원천 차단
+        averagePrice: calculatedAvg    // 👈 프론트 기종/컴포넌트별 스펙 완벽 호환
+    };
 };
 
 const updatePost = async (postId, userId, updatePostReqDTO) => {
@@ -165,6 +175,11 @@ const getUserPosts = async (userId, viewerId = null) => {
     content: post.content,
     imageUrl: post.imageUrl,
     price: post.price === null || post.price === undefined ? null : Number(post.price),
+    
+    // 💰 [보완] 유저 피드용 평균 가격도 2중 필드로 안전 장치 가동
+    avgPrice: post.avgPrice ?? post.averagePrice ?? null,
+    averagePrice: post.avgPrice ?? post.averagePrice ?? null,
+
     recommendedStuffId: post.recommendedStuffId,
     recommendedStuffName: post.recommendedStuffName,
     recommendedBrandId: post.recommendedBrandId,
@@ -177,6 +192,8 @@ const getUserPosts = async (userId, viewerId = null) => {
     stuffName: post.stuffName,
     brandId: post.brandId,
     brandName: post.brandName,
+    brandLogoUrl: post.brandLogoUrl,                      
+    recommendedBrandLogoUrl: post.recommendedBrandLogoUrl, 
     commentCount: Number(post.commentCount || 0),
     likeCount: Number(post.likeCount || 0),
     dislikeCount: Number(post.dislikeCount || 0),
