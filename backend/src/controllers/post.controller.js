@@ -67,8 +67,12 @@ const getPosts = async (req, res, next) => {
 const getPost = async (req, res, next) => {
   try {
     const { postId } = req.params;
-    const viewerId = req.user ? req.user.userId : null; 
-    const post = await postService.getPost(Number(postId), viewerId); 
+
+    const viewerId = req.query.viewerId || (req.user ? req.user.userId : null); 
+    
+    console.log('📌 확인된 viewerId:', viewerId);
+
+    const post = await postService.getPost(Number(postId), Number(viewerId)); 
     return res.status(200).json(ApiResponse.success(200, '게시글 조회 성공', post));
   } catch (error) {
     next(error);
