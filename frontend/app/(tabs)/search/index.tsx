@@ -52,11 +52,26 @@ export default function SearchScreen() {
       const keyword = query.trim();
 
       // 검색어가 없으면 브랜드 3열 목록 조회
+//       if (!keyword) {
+//         const response = await searchService.getBrands  (activeTab);
+//
+//         setBrands(response.data.result.brands);
+//         setStuffs([]);
+//
+//         return;
+//       }
+
       if (!keyword) {
+        setStuffs([]);
+
         const response = await searchService.getBrands(activeTab);
 
-        setBrands(response.data.result.brands);
-        setStuffs([]);
+        const brandList =
+          response.data.result.brands ||
+          response.data.result.brandList ||
+          [];
+
+        setBrands(brandList);
 
         return;
       }
@@ -125,10 +140,7 @@ export default function SearchScreen() {
               setSearchQuery(text);
 
               if (text.trim() === '') {
-                setBrands([]);
                 setStuffs([]);
-                setError(null);
-                fetchBrands(text);
               }
             }}
           />
