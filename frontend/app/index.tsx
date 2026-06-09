@@ -347,7 +347,7 @@ export default function EntryScreen() {
                   )}
                   {errors.general ? <Text style={styles.errorText}>{errors.general}</Text> : null}
                   <TouchableOpacity style={styles.loginButtonFrame} onPress={handleSubmit}>
-                    <Text style={styles.buttonText}>{isLoginView ? 'Logina' : 'Sign Upa'}</Text>
+                    <Text style={styles.buttonText}>{isLoginView ? 'Login' : 'Sign Up'}</Text>
                   </TouchableOpacity>
                 </View>
                 {isLoginView ? (
