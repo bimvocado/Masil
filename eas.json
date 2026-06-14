@@ -5,14 +5,8 @@
   },
   "build": {
     "development": {
-      "developmentClient": false,
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://supermasil.duckdns.org" 
-      },
-      "distribution": "internal",
-      "android": {
-        "gradleCommand": ":app:assembleDebug"
-      }
+      "developmentClient": true,
+      "distribution": "internal"
     },
     "preview": {
       "distribution": "internal"

@@ -1,5 +1,10 @@
 {
   "plugins": [
     "expo-web-browser"
-  ]
+  ],
+  "extra": {
+    "eas": {
+      "projectId": "c906a494-acc4-4a3f-b3e0-00a90130dd24"
+    }
+  }
 }
