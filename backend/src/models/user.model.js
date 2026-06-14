@@ -35,6 +35,13 @@ const User = sequelize.define('User', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true,
+    field: 'is_korean',
+  },
+  //사용자가 골랐던거 저장하려면 어쩔수없이 있어야함 에라이 
+  country: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    defaultValue: '대한민국', 
   },
 
   provider: {

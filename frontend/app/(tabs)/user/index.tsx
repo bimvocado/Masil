@@ -11,13 +11,11 @@ import { useAuthStore } from '@/store/use-auth-store';
 import { InteractionButton } from '@/constants/interaction-button';
 import { postService } from '@/services/post-service';
 import { authService } from '@/api/auth-service'; 
+import { formatDate } from '@/utils/date';
 
 import React, { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-
-// 💡 서버 주소 설정 (환경에 맞게 수정하세요)
-const BASE_URL = 'http://localhost:3000';
-
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 export default function UserScreen() {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,10 +78,12 @@ export default function UserScreen() {
         : p
     ));
   };
+  
+  
 
   const filteredPosts = posts.filter((post) => 
     post.content.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    post.createdAt.includes(searchQuery)
+    formatDate(post.createdAt).includes(searchQuery)
   );
 
   return (
@@ -148,7 +148,7 @@ export default function UserScreen() {
             />
             <TextInput
               style={styles.filterInput}
-              placeholder="올렸던 상품 / 작성일자"
+              placeholder="게시글 내용 / 작성일자"
               placeholderTextColor="#aaa"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -180,24 +180,28 @@ export default function UserScreen() {
                       : post.content}
                   </Text>
                   
-                  <Text style={styles.postDate}>{post.createdAt}</Text>  
+                  <Text style={styles.postDate}>{formatDate(post.createdAt)}</Text>  
                   <View style={styles.interactionRow}>
                     <View style={styles.iconGroup}>
-                      <InteractionButton 
-                        type="comment"
-                        count={post.commentCount?.toLocaleString() || '0'}
-                        textPosition="right"
+                      <Image
+                        source={require('@/assets/icons/comment.png')}
+                        style={{ width: 22, height: 22, tintColor: '#dcdcdc' }}
+                        resizeMode="contain"
                       />
+                      <Text style={{ marginLeft: 4, color: '#666666', fontSize: 13, fontWeight: '600' }}>
+                        {post.commentCount?.toLocaleString() || '0'}
+                      </Text>
                     </View>
                     
                     <View style={styles.iconGroup}>
-                      <InteractionButton 
-                        type="heart"
-                        count={post.scrapCount?.toLocaleString() || '0'}
-                        textPosition="right"
-                        isActive={post.isScrapped}
-                        onPress={() => toggleHeart(post.postId)}
+                      <Image
+                        source={post.isScrapped ? require('@/assets/icons/filledbookmark.png') : require('@/assets/icons/bookmark.png')}
+                        style={{ width: 22, height: 22, tintColor: post.isScrapped ? '#009205' : '#dcdcdc' }}
+                        resizeMode="contain"
                       />
+                      <Text style={{ marginLeft: 4, color: '#666666', fontSize: 13, fontWeight: '600' }}>
+                        {post.scrapCount?.toLocaleString() || '0'}
+                      </Text>
                     </View>
                   </View>
                 </View>

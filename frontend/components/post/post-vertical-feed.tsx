@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity,
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
   Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView, Alert, Image
 } from 'react-native';
 import { Post } from '@/types/post';
@@ -11,18 +11,17 @@ import { scrapService } from '@/api/scrap-service';
 import { categoryService } from '@/api/category-service';
 import { PostItem } from '@/components/post/post-item';
 
-
-const { height: WINDOW_HEIGHT } = Dimensions.get('window');
-
 interface Props {
   posts: Post[];
   user: any;
   onBack?: () => void;
   initialIndex?: number;
-  onPostUpdate?: (updatedPosts: Post[]) => void; // 부모 상태 업데이트용
+  onPostUpdate?: (updatedPosts: Post[]) => void;
 }
 
 export const PostVerticalFeed = ({ posts, user, onBack, initialIndex = 0, onPostUpdate }: Props) => {
+  //const { height: windowHeight } = useWindowDimensions();
+  const [feedHeight, setFeedHeight] = useState(0);
   const [currentPostId, setCurrentPostId] = useState<number>(posts[initialIndex]?.postId);
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(false);
@@ -31,7 +30,6 @@ export const PostVerticalFeed = ({ posts, user, onBack, initialIndex = 0, onPost
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
 
-  // 1. 댓글 로직
   const loadComments = async (postId: number) => {
     try {
       const res = await commentService.getComments(postId);
@@ -74,7 +72,6 @@ export const PostVerticalFeed = ({ posts, user, onBack, initialIndex = 0, onPost
           }
         };
   
-        // 2. 화면에 즉시 반영
         setComments(prev => [newCommentWithUserInfo, ...prev]);
         onPostUpdate?.(posts.map(p => 
           p.postId === currentPostId ? { ...p, commentCount: (p.commentCount || 0) + 1 } : p
@@ -97,24 +94,14 @@ export const PostVerticalFeed = ({ posts, user, onBack, initialIndex = 0, onPost
         ));
       } catch (error) {
         console.error("삭제 실패:", error);
-        if (Platform.OS === 'web') {
-          alert("삭제에 실패했습니다.");
-        } else {
-          Alert.alert("오류", "삭제에 실패했습니다.");
-        }
+        Alert.alert("오류", "삭제에 실패했습니다.");
       }
     };
   
-    if (Platform.OS === 'web') {
-      if (window.confirm("정말 삭제하시겠습니까?")) {
-        await performDelete();
-      }
-    } else {
-      Alert.alert("삭제", "정말 삭제할까요?", [
-        { text: "취소", style: "cancel" },
-        { text: "삭제", onPress: performDelete, style: "destructive" }
-      ]);
-    }
+    Alert.alert("삭제", "정말 삭제할까요?", [
+      { text: "취소", style: "cancel" },
+      { text: "삭제", onPress: performDelete, style: "destructive" }
+    ]);
   };
 
   const handleScrapPress = async (post: Post) => {
@@ -153,7 +140,6 @@ export const PostVerticalFeed = ({ posts, user, onBack, initialIndex = 0, onPost
   const updatePostState = (postId: number, changes: Partial<Post>) => {
     const updated = posts.map(p => {
       if (p.postId === postId) {
-        const newIsScrapped = changes.isScrapped !== undefined ? changes.isScrapped : p.isScrapped;
         let newScrapCount = p.scrapCount || 0;
         if (changes.isScrapped === true) newScrapCount++;
         else if (changes.isScrapped === false) newScrapCount = Math.max(0, newScrapCount - 1);
@@ -164,44 +150,39 @@ export const PostVerticalFeed = ({ posts, user, onBack, initialIndex = 0, onPost
     });
     onPostUpdate?.(updated);
   };
-const styles = StyleSheet.create({profileImage: {width: 34,height: 34,borderRadius: 17,marginRight: 10,backgroundColor: '#eee', },
-  modalBackdrop: { flex: 0.4, backgroundColor: 'rgba(0,0,0,0.5)' },
-  panel: { flex: 0.6, backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16 },
-  panelHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  panelTitle: { fontWeight: 'bold', fontSize: 16 },
-  commentItem: { marginBottom: 15 },
-  profilePlaceholder: {width: 34, height: 34, borderRadius: 17,backgroundColor: '#eee',marginRight: 10,},
-  nickname: { fontWeight: 'bold', fontSize: 13, color: '#333' },
-  editBtn: { color: '#888', fontSize: 11, marginRight: 10 },
-  deleteBtn: { color: '#FF6B6B', fontSize: 11 },
-  commentText: { fontSize: 14, color: '#333', marginTop: 2 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#eee' },
-  input: { flex: 1, backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 15, height: 40 },
-  submitButton: { marginLeft: 10 },
-  submitText: { color: '#FF8888', fontWeight: 'bold' },
-  categoryItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  categoryItemText: { fontSize: 16, color: '#333' }
-});
 
-return (
-    <View style={{ flex: 1 }}>
-      <FlatList
-        data={posts}
-        renderItem={({ item }) => (
-          <PostItem 
-            item={item}               
-            user={user}               
-            onOpenComments={handleOpenComments} 
-            isScrapped={!!item.isScrapped}      
-            onScrapPress={() => handleScrapPress(item)} 
-            onBack={onBack || (() => {})} 
-          />
+  return (
+    <View style={{ flex: 1 }} onLayout={(e) => setFeedHeight(e.nativeEvent.layout.height)}>
+      
+      {feedHeight > 0 && (
+        <FlatList
+          data={posts}
+          renderItem={({ item }) => (
+            <View style={{ height: feedHeight }}>
+              <PostItem 
+                item={item}               
+                user={user}               
+                onOpenComments={handleOpenComments} 
+                isScrapped={!!item.isScrapped}      
+                isLiked={!!item.isLiked}       
+                isDisliked={!!item.isDisliked}
+                onScrapPress={() => handleScrapPress(item)} 
+                onBack={onBack || (() => {})} 
+              />
+            </View>
         )}
         keyExtractor={(item) => item.postId.toString()}
         pagingEnabled
         initialScrollIndex={initialIndex >= 0 ? initialIndex : 0}
-        getItemLayout={(_, index) => ({ length: WINDOW_HEIGHT, offset: WINDOW_HEIGHT * index, index })}
-      />
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        getItemLayout={(_, index) => ({ 
+            length: feedHeight, 
+            offset: feedHeight * index, 
+            index 
+          })}
+        />
+      )}
 
       {/* 댓글 모달 */}
       <Modal visible={showComments} transparent animationType="slide">
@@ -222,35 +203,28 @@ return (
             data={comments}
             keyExtractor={(c) => c.commentId.toString()}
             renderItem={({ item }) => {
-              // 1. 내 댓글인지 체크 (Zustand 유저와 비교)
               const isMyComment = user?.userId === item.userId;
             
-              // 2. 이미지 경로 계산
+              // 🟢 댕강 잘려나갔던 프로필 URI 조립기 심폐소생술 완료!
               const getProfileUri = () => {
-                // 내 댓글이면 내 Zustand 정보 우선, 아니면 댓글 데이터 정보 사용
                 const rawUrl = isMyComment ? user?.profileImageUrl : item.User?.profileImageUrl;
                 
                 if (!rawUrl) return 'https://ui-avatars.com/api/?name=User&background=random';
                 if (rawUrl.startsWith('http')) return rawUrl;
             
                 const fileName = rawUrl.split('/').pop();
-                return `http://localhost:3000/uploads/${fileName}`;
+                
+                // 🟢 실서버 덕디엔에스 주소를 풀백으로 장착하여 완벽하게 방어합니다!
+                const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
+                return `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}-uploads/${fileName}`;
               };
             
               const profileUri = getProfileUri();
             
               return (
                 <View style={styles.commentItem}>
-                  {/* ✅ 이 줄이 바로 팀장님이 말씀하신 그 뼈대! 버리면 안 돼요! */}
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                    
-                    {/* 프사 영역 */}
-                    <Image 
-                      source={{ uri: profileUri }} 
-                      style={styles.profileImage} 
-                    />
-                    
-                    {/* 닉네임 & 댓글 내용 영역 */}
+                    <Image source={{ uri: profileUri }} style={styles.profileImage} />
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                         <Text style={styles.nickname}>
@@ -270,8 +244,7 @@ return (
                       </View>
                       <Text style={styles.commentText}>{item.text}</Text>
                     </View>
-            
-                  </View> {/* 뼈대 끝 */}
+                  </View> 
                 </View>
               );
             }}
@@ -309,5 +282,25 @@ return (
         </View>
       </Modal>
     </View>
-  ); };
+  );
+};
 
+const styles = StyleSheet.create({
+  profileImage: { width: 34, height: 34, borderRadius: 17, marginRight: 10, backgroundColor: '#eee' },
+  modalBackdrop: { flex: 0.4, backgroundColor: 'rgba(0,0,0,0.5)' },
+  panel: { flex: 0.6, backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16 },
+  panelHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  panelTitle: { fontWeight: 'bold', fontSize: 16 },
+  commentItem: { marginBottom: 15 },
+  profilePlaceholder: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eee', marginRight: 10 },
+  nickname: { fontWeight: 'bold', fontSize: 13, color: '#333' },
+  editBtn: { color: '#888', fontSize: 11, marginRight: 10 },
+  deleteBtn: { color: '#FF6B6B', fontSize: 11 },
+  commentText: { fontSize: 14, color: '#333', marginTop: 2 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#eee' },
+  input: { flex: 1, backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 15, height: 40 },
+  submitButton: { marginLeft: 10 },
+  submitText: { color: '#FF8888', fontWeight: 'bold' },
+  categoryItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  categoryItemText: { fontSize: 16, color: '#333' }
+});

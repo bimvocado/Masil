@@ -9,8 +9,8 @@ import {
   StyleSheet,
 } from 'react-native';
 
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { TopBar } from '@/components/layout/top-bar';
 
 import { styles } from '@/components/styles/search';
 
@@ -18,15 +18,13 @@ import { searchService } from '@/api/search-service';
 import { useSearchStore } from '@/store/search-store';
 import { ProductCard } from '@/components/ui/product-card';
 
-const BASE_URL = 'http://localhost:3000';
-
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 const getImageUrl = (url?: string | null) => {
   if (!url) return undefined;
   return url.startsWith('http') ? url : `${BASE_URL}${url}`;
 };
 
 export default function SearchScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   const {
@@ -47,18 +45,33 @@ export default function SearchScreen() {
     useState('');
 
   // 검색창 - 브랜드 리스트 3열
-  const fetchBrands = async () => {
+  const fetchBrands = async (query = searchQuery) => {
     try {
       setLoading(true);
 
-      const keyword = searchQuery.trim();
+      const keyword = query.trim();
 
       // 검색어가 없으면 브랜드 3열 목록 조회
-      if (!keyword) {
-        const response = await searchService.getBrands  (activeTab);
+//       if (!keyword) {
+//         const response = await searchService.getBrands  (activeTab);
+//
+//         setBrands(response.data.result.brands);
+//         setStuffs([]);
+//
+//         return;
+//       }
 
-        setBrands(response.data.result.brands);
+      if (!keyword) {
         setStuffs([]);
+
+        const response = await searchService.getBrands(activeTab);
+
+        const brandList =
+          response.data.result.brands ||
+          response.data.result.brandList ||
+          [];
+
+        setBrands(brandList);
 
         return;
       }
@@ -102,8 +115,9 @@ export default function SearchScreen() {
   }, [searchQuery, activeTab]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      
+    <View style={styles.container}>
+      <TopBar title="검색" showBackButton={false} />
+
       <View style={styles.searchBarContainer}>
         <View style={styles.searchBar}>
 
@@ -122,7 +136,13 @@ export default function SearchScreen() {
             placeholder="브랜드 or 상품"
             placeholderTextColor="#aaa"
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+
+              if (text.trim() === '') {
+                setStuffs([]);
+              }
+            }}
           />
         </View>
       </View>

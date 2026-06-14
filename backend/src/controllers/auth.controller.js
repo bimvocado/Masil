@@ -42,19 +42,22 @@ const login = async (req, res, next) => {
  * 2. 구글 로그인
  */
 const googleLogin = async (req, res, next) => {
-  const { code, codeVerifier } = req.body;
+  // 1. 프론트엔드에서 code 대신 idToken을 받도록 변경
+  const { idToken } = req.body; 
+  
   try {
-    const { tokens } = await client.getToken({
-      code,
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
-      codeVerifier, 
-    });
+    // 2. getToken 로직 삭제
 
+    // 3. audience를 배열로 변경하여 여러 클라이언트 ID 허용
     const ticket = await client.verifyIdToken({
-      idToken: tokens.id_token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      idToken: idToken,
+      audience: [
+        process.env.GOOGLE_CLIENT_ID,         // 웹 ID
+        process.env.GOOGLE_ANDROID_CLIENT_ID, // 안드 ID
+        
+        // 🔥 [100% 안심 셋팅] 여기에 구글 콘솔 안드로이드 클라이언트 ID 문자열을 직접 한 줄 더 박아주세요!
+        "837732936258-ei8plnvdb0mseeu7ordfbfe6rmr2c0tq.apps.googleusercontent.com"
+      ],
     });
     
     const payload = ticket.getPayload();

@@ -5,32 +5,57 @@ const Stuff = require('../models/stuff.model');
 const Brand = require('../models/brand.model');
 
 // 검색창 - 상품으로 검색
-// 검색창 - 상품으로 검색
 const searchStuffs = async ({ keyword, category }) => {
-  const where = {};
-  const brandWhere = {};
+  const rows = await sequelize.query(
+    `
+    SELECT
+      s.stuff_id AS stuffId,
+      s.stuff_name AS stuffName,
+      s.price AS price,
+      s.is_discontinued AS isDiscontinued,
 
-  if (keyword) {
-    where.stuffName = {
-      [Op.like]: `%${keyword}%`,
-    };
-  }
+      b.brand_id AS brandId,
+      b.brand_name AS brandName,
+      b.logo_url AS logoUrl,
+      b.category AS category,
 
-  if (category) {
-    brandWhere.category = category;
-  }
+      (
+        SELECT p.image_url
+        FROM posts p
+        LEFT JOIN post_scraps sc
+          ON p.post_id = sc.post_id
+          AND sc.deleted_at IS NULL
+        WHERE p.stuff_id = s.stuff_id
+          AND p.image_url IS NOT NULL
+          AND p.image_url != ''
+          AND p.deleted_at IS NULL
+        GROUP BY p.post_id
+        ORDER BY COUNT(sc.scrap_id) DESC, p.created_at DESC
+        LIMIT 1
+      ) AS imageUrl
 
-  return await Stuff.findAll({
-    where,
-    include: [
-      {
-        model: Brand,
-        where: brandWhere,
-        required: true,
+    FROM stuffs s
+
+    INNER JOIN brands b
+      ON s.brand_id = b.brand_id
+      AND b.deleted_at IS NULL
+
+    WHERE s.deleted_at IS NULL
+      AND (:keyword IS NULL OR s.stuff_name LIKE CONCAT('%', :keyword, '%'))
+      AND (:category IS NULL OR b.category = :category)
+
+    ORDER BY s.stuff_name ASC
+    `,
+    {
+      replacements: {
+        keyword: keyword || null,
+        category: category || null,
       },
-    ],
-    order: [['stuffName', 'ASC']],
-  });
+      type: QueryTypes.SELECT,
+    }
+  );
+
+  return rows;
 };
 
 // 상품창 - 상세 페이지 전체
@@ -158,6 +183,12 @@ const findTopPostByStuff = async (stuffId) => {
       u.nickname AS nickname,
       p.created_at AS createdAt,
 
+      p.recommended_stuff_id AS recommendedStuffId,
+      p.recommended_image_url AS recommendedImageUrl,
+      rst.stuff_name AS recommendedStuffName,
+      rb.brand_id AS recommendedBrandId,
+      rb.brand_name AS recommendedBrandName,
+
       COUNT(sc.scrap_id) AS scrapCount
 
     FROM posts p
@@ -169,6 +200,14 @@ const findTopPostByStuff = async (stuffId) => {
     LEFT JOIN users u
       ON p.user_id = u.user_id
 
+    LEFT JOIN stuffs rst 
+      ON p.recommended_stuff_id = rst.stuff_id
+      AND rst.deleted_at IS NULL
+    
+    LEFT JOIN brands rb 
+      ON rst.brand_id = rb.brand_id
+      AND rb.deleted_at IS NULL
+
     WHERE p.stuff_id = :stuffId
       AND p.deleted_at IS NULL
 
@@ -178,7 +217,13 @@ const findTopPostByStuff = async (stuffId) => {
       p.image_url, 
       p.user_id, 
       u.nickname, 
-      p.created_at
+      p.created_at,
+      p.recommended_stuff_id,
+      p.recommended_image_url,
+      rst.stuff_id,
+      rst.stuff_name,
+      rb.brand_id,
+      rb.brand_name
 
     ORDER BY scrapCount DESC, p.created_at DESC
 
@@ -193,10 +238,105 @@ const findTopPostByStuff = async (stuffId) => {
   return rows[0];
 };
 
+// 상품 상세 페이지 - 가로 스와이프용 상위 추천 조합 최대 4개 조회 (추천 상품 아이디 기준으로 GROUP BY)
+const findTopRecommendationsByStuff = async (stuffId) => {
+  const rows = await sequelize.query(
+    `
+    SELECT
+      MAX(p.post_id) AS postId, 
+      p.recommended_stuff_id AS recommendedStuffId,
+      MAX(p.recommended_image_url) AS recommendedImageUrl,
+      rst.stuff_name AS recommendedStuffName,
+      rb.brand_id AS recommendedBrandId,
+      rb.brand_name AS recommendedBrandName,
+      COUNT(sc.scrap_id) AS scrapCount
+    FROM posts p
+    LEFT JOIN post_scraps sc
+      ON p.post_id = sc.post_id
+      AND sc.deleted_at IS NULL
+    INNER JOIN stuffs rst 
+      ON p.recommended_stuff_id = rst.stuff_id
+      AND rst.deleted_at IS NULL
+    LEFT JOIN brands rb 
+      ON rst.brand_id = rb.brand_id
+      AND rb.deleted_at IS NULL
+    WHERE p.stuff_id = :stuffId
+      AND p.deleted_at IS NULL
+      AND p.recommended_stuff_id IS NOT NULL
+    GROUP BY 
+      p.recommended_stuff_id,
+      rst.stuff_id,
+      rst.stuff_name,
+      rb.brand_id,
+      rb.brand_name
+    ORDER BY scrapCount DESC
+    LIMIT 4
+    `,
+    {
+      replacements: { stuffId },
+      type: QueryTypes.SELECT,
+    }
+  );
+
+  return rows;
+};
+
+// 추천 조합 [더보기] 눌렀을 때 전체 순위 나열 (정확한 좋아요 연산을 위해 서브쿼리 적용)
+const findAllRecommendationsByStuff = async (stuffId) => {
+  const rows = await sequelize.query(
+    `
+    SELECT
+      MAX(p.post_id) AS postId,
+      p.recommended_stuff_id AS recommendedStuffId,
+      MAX(p.recommended_image_url) AS recommendedImageUrl,
+      rst.stuff_name AS recommendedStuffName,
+      rst.price AS price,
+      rb.brand_id AS recommendedBrandId,
+      rb.brand_name AS recommendedBrandName,
+      COUNT(DISTINCT sc.scrap_id) AS scrapCount,
+      (
+        SELECT COUNT(*) 
+        FROM interactions sub_i 
+        WHERE sub_i.stuff_id = p.recommended_stuff_id 
+          AND sub_i.reaction_type = 'LIKE' 
+          AND sub_i.deleted_at IS NULL
+      ) AS likeCount
+    FROM posts p
+    LEFT JOIN post_scraps sc
+      ON p.post_id = sc.post_id
+      AND sc.deleted_at IS NULL
+    INNER JOIN stuffs rst 
+      ON p.recommended_stuff_id = rst.stuff_id
+      AND rst.deleted_at IS NULL
+    LEFT JOIN brands rb 
+      ON rst.brand_id = rb.brand_id
+      AND rb.deleted_at IS NULL
+    WHERE p.stuff_id = :stuffId
+      AND p.deleted_at IS NULL
+      AND p.recommended_stuff_id IS NOT NULL
+    GROUP BY 
+      p.recommended_stuff_id,
+      rst.stuff_id,
+      rst.stuff_name,
+      rst.price,
+      rb.brand_id,
+      rb.brand_name
+    ORDER BY likeCount DESC, scrapCount DESC
+    `,
+    {
+      replacements: { stuffId },
+      type: QueryTypes.SELECT,
+    }
+  );
+  return rows;
+};
+
 module.exports = {
   searchStuffs,
   findStuffDetail,
   findStuffById,
   findTopPostByStuff,
+  findTopRecommendationsByStuff,
+  findAllRecommendationsByStuff,
   createStuff,
 };

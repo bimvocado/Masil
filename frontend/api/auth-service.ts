@@ -2,36 +2,33 @@ import apiClient from './client';
 import { saveToken, removeToken } from '@/utils/storage';
 import { User } from '@/types/user';
 
-export const BASE_URL = 'http://localhost:3000'; 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';export const API_URL = BASE_URL;
 
 export const authService = {
  
-  login: async (loginId: string, password: string) => {
-    try {
-      console.log("[디버그] 로그인 API 호출 시작 (ID: " + loginId + ")");
-      const response = await apiClient.post('/api/auth/login', { loginId, password });
-      
-      const token = response.data?.token || 
-                    response.data?.data?.token || 
-                    response.data?.accessToken;
+ login: async (loginId: string, password: string) => {
+  try {
+    console.log(`[디버그] 로그인 API 호출 시작 (ID: ${loginId})`);
+    const response = await apiClient.post('/api/auth/login', { loginId, password });
+    
+    const token = response.data?.token || 
+                  response.data?.data?.token || 
+                  response.data?.accessToken;
 
-      if (token) {
-        await saveToken(token);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('userToken', token);
-        }
-        console.log("✅ [디버그] 토큰 저장 완료");
-      }
-      return response.data;
-    } catch (error) {
-      console.error('로그인 에러:', error);
-      throw error;
+    if (token) {
+      await saveToken(token);
+      console.log("[디버그] 네이티브 저장소에 토큰 저장 완료");
     }
-  },
+    
+    return response.data;
+  } catch (error) {
+    console.error('일반 로그인 에러:', error);
+    throw error;
+  }
+},
 
   /**
-   * 프로필 로드: 새로고침 시 404 방지를 위해 /me 주소를 활용하도록 설계
+   * 프로필 로드: 
    */
   getProfile: async (userId?: number) => { 
     try {
@@ -80,10 +77,8 @@ export const authService = {
    */
   updateProfile: async (formData: FormData, config?: any) => { // 👈 config?: any 추가
     try {
-
       const response = await apiClient.patch('/api/users/profile', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        ...config, 
+        ...config,
       });
       return response.data;
     } catch (error) {
@@ -110,11 +105,10 @@ export const authService = {
   /**
    * 구글 로그인
    */
-  loginWithGoogle: async (code: string, codeVerifier?: string) => {
+loginWithGoogle: async (idToken: string) => {
     try {
-      const response = await apiClient.post('/api/auth/google', { code, codeVerifier });
-      const token = response.data.data?.token || response.data.token;
-      if (token) await saveToken(token);
+      // 🚨 백엔드가 req.body에서 { idToken } 을 꺼내서 verifyIdToken을 하므로 키값을 똑같이 맞춰줍니다!
+      const response = await apiClient.post('/api/auth/google', { idToken }); 
       return response.data;
     } catch (error) {
       console.error('구글 로그인 에러:', error);
@@ -127,7 +121,6 @@ export const authService = {
    */
   logout: async () => {
     await removeToken();
-    if (typeof window !== 'undefined') localStorage.removeItem('userToken');
     console.log("로그아웃 완료");
   },
 };

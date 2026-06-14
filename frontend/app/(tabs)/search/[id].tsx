@@ -15,7 +15,6 @@ export default function BrandDetailScreen() {
   }>();
 
   const router = useRouter();
-
   const [sort] = useState<StuffSort>('LIKE_DESC');
 
   const {
@@ -40,7 +39,13 @@ export default function BrandDetailScreen() {
 
       const result = response.data.result;
 
-      setStuffs(result.stuffs);
+      // 💰 [추가] 스토어 저장 전, 각 상품의 최우선 평균 가격을 'averagePrice' 필드로 고정해 매핑합니다.
+      const processedStuffs = (result.stuffs || []).map((item: any) => ({
+        ...item,
+        averagePrice: item.averagePrice ?? item.avgPrice ?? item.price ?? 0
+      }));
+
+      setStuffs(processedStuffs);
       setBrandInfo(result.brandName, result.totalStuffCount);
     } catch (error: any) {
       console.error('브랜드별 상품 조회 실패:', error);
@@ -71,26 +76,34 @@ export default function BrandDetailScreen() {
           {totalElements}개의 템이 있소
         </Text>
         
-        {stuffs.map((item: any, index: number) => (
-          <ProductCard 
-            key={item.stuffId}
-            rank={index + 1}
-            name={item.stuffName}
-            price={Number(item.price || 0).toLocaleString()}
-            likes={String(item.likeCount || 0)}
-            comments={String(item.postCount || 0)}
-            onPress={() =>
-              router.push({
-                pathname: "/search/product/[id]",
-                params: {
-                  id: String(item.stuffId),
-                  stuffName: item.stuffName,
-                  brandName: name as string,
-                }
-              } as any)
-            }
-          />
-        ))}
+        {stuffs.map((item: any, index: number) => {
+          return (
+            <ProductCard 
+              key={item.stuffId}
+              rank={index + 1}
+              name={item.stuffName}
+              // 💸 스토어 진입 단계에서 정제되었으므로 콤마 포맷팅만 해서 바인딩합니다.
+              price={Number(item.averagePrice).toLocaleString()}
+              likes={String(item.likeCount || 0)}
+              comments={String(item.postCount || 0)}
+              imageUrl={
+                item.imageUrl?.startsWith('http')
+                  ? item.imageUrl
+                  : `${process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org'}${item.imageUrl?.startsWith('/') ? '' : '/'}${item.imageUrl}`
+              }
+              onPress={() =>
+                router.push({
+                  pathname: "/search/product/[id]",
+                  params: {
+                    id: String(item.stuffId),
+                    stuffName: item.stuffName,
+                    brandName: name as string,
+                  }
+                } as any)
+              }
+            />
+          );
+        })}
       </ScrollView>
     </View>
   );

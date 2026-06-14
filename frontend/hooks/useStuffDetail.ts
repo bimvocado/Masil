@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import apiClient from '@/api/client';
-import { BASE_URL } from '@/api/auth-service';
+
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
+export const API_URL = BASE_URL;
 
 const getAbsoluteUrl = (url: string | null | undefined) => {
   if (!url) return null;
@@ -16,6 +18,10 @@ export interface StuffDetail {
   bestReviewImageUrl: string | null;
   imageUrl?: string | null;
   
+  // 💰 평균 가격 필드 타입 단일화
+  averagePrice: number;
+  avgPrice: number;
+
   likeCount: number;
   likeRatio: number;
   koreanLikeCount: number;
@@ -28,9 +34,25 @@ export interface StuffDetail {
 
   recommendedStuffs: any[];
   bestReview: any | null;
-  topPost?: any | null;
+
+  topPost?: {
+    postId: number;
+    userId: number;
+    nickname: string;
+    content: string;
+    imageUrl: string | null;
+    scrapCount: number;
+    createdAt: string;
+
+    recommendedStuffId?: number | null;
+    recommendedStuffName?: string | null;
+    recommendedBrandId?: number | null;
+    recommendedBrandName?: string | null;
+    recommendedImageUrl?: string | null;
+  } | null;
   
   myReaction?: 'LIKE' | 'DISLIKE' | null;
+  isKorean?: boolean | null;
 }
 
 export function useStuffDetail(id: string) {
@@ -50,6 +72,9 @@ export function useStuffDetail(id: string) {
           return;
         }
 
+        // 💸 [정산] 백엔드가 주는 가격 필드 중 최우선 순위로 평균가를 낚아챕니다.
+        const computedAvgPrice = responseData.averagePrice ?? responseData.avgPrice ?? responseData.price ?? 0;
+
         // 기본 매핑 객체 생성
         let mapped: any = {
           ...responseData,
@@ -57,7 +82,10 @@ export function useStuffDetail(id: string) {
           imageUrl: getAbsoluteUrl(responseData.imageUrl ?? null),
           bestReviewImageUrl: getAbsoluteUrl(responseData.bestReviewImageUrl ?? responseData.imageUrl ?? null),
           
-          // 기본값 0으로 세팅
+          // 💰 통일된 평균 가격 심어주기
+          averagePrice: Number(computedAvgPrice),
+          avgPrice: Number(computedAvgPrice),
+          
           likeCount: Number(responseData.totalLikeCount || responseData.likeCount || 0),
           likeRatio: 0,
           koreanLikeCount: Number(responseData.koreanLikeCount || 0),
@@ -76,6 +104,7 @@ export function useStuffDetail(id: string) {
           const statsResp = await apiClient.get(`/api/interactions/${id}/interactions`);
           const statsData = statsResp.data?.data?.stats ?? statsResp.data?.stats;
           const myReaction = statsResp.data?.data?.myReaction ?? statsResp.data?.myReaction ?? null;
+          const isKor = statsResp.data?.data?.isKorean ?? statsResp.data?.isKorean;
 
           if (statsData) {
             mapped.likeCount = statsData.like.total;
@@ -87,6 +116,7 @@ export function useStuffDetail(id: string) {
             mapped.dislikeRatio = statsData.dislike.ratio;
             mapped.koreanDislikeCount = statsData.dislike.korean;
             mapped.foreignerDislikeCount = statsData.dislike.foreigner;
+            mapped.isKorean = isKor;
           }
           if (myReaction !== undefined && myReaction !== null) {
             mapped.myReaction = myReaction;
@@ -120,7 +150,7 @@ export function useStuffDetail(id: string) {
 
       const response = await apiClient.post(`/api/interactions/${id}/interactions`, { reactionType });
       const statsData = response.data?.data?.stats ?? response.data?.stats;
-      
+      const isKor = response.data?.data?.isKorean ?? response.data?.isKorean;
       if (statsData) {
         setDetailData((prev) => {
           if (!prev) return prev;
@@ -135,6 +165,7 @@ export function useStuffDetail(id: string) {
             dislikeRatio: statsData.dislike.ratio, 
             koreanDislikeCount: statsData.dislike.korean,
             foreignerDislikeCount: statsData.dislike.foreigner,
+            isKorean: isKor,
           };
         });
       }

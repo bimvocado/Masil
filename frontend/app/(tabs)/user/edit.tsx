@@ -6,9 +6,7 @@ import { ProfileInput } from '@/components/ui/profile-input';
 import { authService } from '@/api/auth-service'; 
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '@/store/use-auth-store'; 
-
-const BASE_URL = 'http://localhost:3000';
-
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://supermasil.duckdns.org';
 export default function ProfileEditScreen() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
@@ -82,9 +80,7 @@ export default function ProfileEditScreen() {
         }
       }
 
-      const res = await authService.updateProfile(formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await authService.updateProfile(formData);
       console.log("🔥🔥 서버가 보내준 이미지 경로:", res.data.profileImageUrl);
       if (res.success) {
         const rawPath = res.data.profileImageUrl; 
@@ -97,8 +93,7 @@ export default function ProfileEditScreen() {
         if (timestampedPath) {
           const finalUrl = timestampedPath.startsWith('http')
             ? timestampedPath
-            : `${BASE_URL}${timestampedPath.startsWith('/') ? '' : '/'}${timestampedPath}`;
-          
+            : `${BASE_URL}${timestampedPath.startsWith('/') ? '' : '/'}${timestampedPath}`;   
           setProfileImageUrl(finalUrl); 
         }
         router.replace('/user');

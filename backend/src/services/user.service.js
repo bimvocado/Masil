@@ -1,9 +1,10 @@
 const User = require('../models/user.model');
 const bcrypt = require('bcrypt');
 const { OAuth2Client } = require('google-auth-library');
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client();
 const categoryService = require('./category.service');
 const sequelize = require('../config/db');
+const Interaction = require('../models/interaction.model');
 
 const DEFAULT_SCRAP_CATEGORY_NAME = '기본 스크랩';
 
@@ -145,14 +146,28 @@ const socialLoginOrSignup = async (googleData) => {
   return user;
 };
 
-
 const updateUserProfile = async (userId, updateData) => {
   try {
-    console.log(`[서비스] 프로필 업데이트 시작 - userId: ${userId}`);
     const user = await User.findByPk(userId);
     if (!user) {
       throw new Error('사용자를 찾을 수 없습니다.');
     }
+
+  
+    if (updateData.country) {
+  const isKor = updateData.country.includes('대한민국');
+  
+  updateData.isKorean = isKor;
+  updateData.is_korean = isKor; // DB 컬럼명 대응
+
+  console.log(`[국가변경] 입력된 국가: ${updateData.country} -> 판정 결과: ${isKor}`);
+  await Interaction.update(
+        { isKorean: isKor }, 
+        { where: { userId: userId } }
+      );
+      console.log(`[동기화 완료] 유저 ${userId}의 모든 상호작용 국적을 ${isKor}로 변경함.`);
+    }
+
     await user.update(updateData);
 
     const result = user.toJSON();
@@ -164,6 +179,7 @@ const updateUserProfile = async (userId, updateData) => {
     throw error; 
   }
 };
+
 module.exports = { 
   signup, 
   loginUser,

@@ -71,11 +71,12 @@ const styles = StyleSheet.create({
     borderColor: '#f0f0f0',
   },
   content: {
-    height: 56,
+    height: 80,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
+    paddingTop: 30,
   },
   sideContainer: {
     width: 40,

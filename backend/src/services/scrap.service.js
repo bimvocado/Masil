@@ -1,7 +1,7 @@
 const scrapRepository = require('../repositories/scrap.repository');
 
-const getScrapsByCategory = async (categoryId) => {
-  return await scrapRepository.findScrapsByCategory(categoryId);
+const getScrapsByCategory = async (categoryId, viewerId = null) => {
+  return await scrapRepository.findScrapsByCategory(categoryId, viewerId);
 };
 
 const createScrap = async (userId, postId, categoryId) => {

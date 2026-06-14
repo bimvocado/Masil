@@ -1,29 +1,44 @@
 const postService = require('../services/post.service');
 const ApiResponse = require('../utils/api.response.util');
-
-const {
-  CreatePostReqDTO,
-  UpdatePostReqDTO
-} = require('../dtos/post.dto');
+const { CreatePostReqDTO, UpdatePostReqDTO } = require('../dtos/post.dto');
 
 // 게시글 등록
 const createPost = async (req, res, next) => {
   try {
-    const { content, stuffId } = req.body;
+    const { 
+      content, 
+      brandId, 
+      stuffName, 
+      price, 
+      recommendedBrandId, 
+      recommendedStuffName, 
+      recommendedPrice 
+    } = req.body;
     
     console.log('req.body:', req.body);
-    console.log('req.file:', req.file);
+    console.log('req.files:', req.files);
 
     const userId = req.user.userId;
 
-    // 백엔드에서 imageUrl 만듦
-    const imageUrl = req.file ? `/uploads/${req.file.filename}`: null;
+    const imageUrl = (req.files && req.files.image && req.files.image[0])
+      ? `/uploads/${req.files.image[0].filename}`
+      : null;
+
+    const recommendedImageUrl = (req.files && req.files.recommendedImage && req.files.recommendedImage[0])
+      ? `/uploads/${req.files.recommendedImage[0].filename}`
+      : null;
 
     const reqDTO = new CreatePostReqDTO(
       content,
       imageUrl,
       userId,
-      stuffId
+      recommendedImageUrl,
+      brandId,
+      stuffName,
+      price,
+      recommendedBrandId,
+      recommendedStuffName,
+      recommendedPrice
     );
 
     const postResult = await postService.createPost(reqDTO);
@@ -39,11 +54,10 @@ const createPost = async (req, res, next) => {
 // 게시글 전체 조회
 const getPosts = async (req, res, next) => {
   try {
-    const posts = await postService.getPosts();
-
-    return res.status(200).json(
-      ApiResponse.success(200, '게시글 전체 조회 성공', posts)
-    );
+    const viewerId = req.user ? req.user.userId : null;
+    const stuffId = req.query.stuffId ? Number(req.query.stuffId) : null;
+    const posts = await postService.getPosts(viewerId, stuffId); 
+    return res.status(200).json(ApiResponse.success(200, '게시글 전체 조회 성공', posts));
   } catch (error) {
     next(error);
   }
@@ -54,11 +68,12 @@ const getPost = async (req, res, next) => {
   try {
     const { postId } = req.params;
 
-    const post = await postService.getPost(Number(postId));
+    const viewerId = req.query.viewerId || (req.user ? req.user.userId : null); 
+    
+    console.log('📌 확인된 viewerId:', viewerId);
 
-    return res.status(200).json(
-      ApiResponse.success(200, '게시글 조회 성공', post)
-    );
+    const post = await postService.getPost(Number(postId), Number(viewerId)); 
+    return res.status(200).json(ApiResponse.success(200, '게시글 조회 성공', post));
   } catch (error) {
     next(error);
   }
@@ -68,21 +83,12 @@ const getPost = async (req, res, next) => {
 const updatePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
-    const { content, imageUrl } = req.body;
-
+    const { content, imageUrl, price, recommendedStuffId } = req.body;
     const userId = req.user.userId;
 
-    const reqDTO = new UpdatePostReqDTO(content, imageUrl);
-
-    const updateResult = await postService.updatePost(
-      Number(postId),
-      userId,
-      reqDTO
-    );
-
-    return res.status(200).json(
-      ApiResponse.success(200, '게시글 수정 성공', updateResult)
-    );
+    const reqDTO = new UpdatePostReqDTO(content, imageUrl, price, recommendedStuffId);
+    const updateResult = await postService.updatePost(Number(postId), userId, reqDTO);
+    return res.status(200).json(ApiResponse.success(200, '게시글 수정 성공', updateResult));
   } catch (error) {
     next(error);
   }
@@ -92,17 +98,9 @@ const updatePost = async (req, res, next) => {
 const deletePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
-
     const userId = req.user.userId;
-
-    const deleteResult = await postService.deletePost(
-      Number(postId),
-      userId
-    );
-
-    return res.status(200).json(
-      ApiResponse.success(200, '게시글 삭제 성공', deleteResult)
-    );
+    const deleteResult = await postService.deletePost(Number(postId), userId);
+    return res.status(200).json(ApiResponse.success(200, '게시글 삭제 성공', deleteResult));
   } catch (error) {
     next(error);
   }

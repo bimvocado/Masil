@@ -1,13 +1,17 @@
 
 
 export interface Post {
+    isLiked: boolean;
+    isDisliked: boolean;
     postId: number;  
     userId: number;
     stuffId: number;
     // title: string;
     content: string;      // 리뷰 본문 내용
     imageUrl?: string;    // 이미지 (있을수도 없을수도 있으니 ?)
-    createdAt: string;   
+    createdAt: string;
+    postCreatedAt: string;
+    scrapCreatedAt?: string;   
     updatedAt: string;
 
 

@@ -1,17 +1,26 @@
 import { View, TouchableOpacity, Image, StyleSheet } from 'react-native';
-import { useRouter, Href, useSegments } from 'expo-router'; 
+import { useRouter, Href, useSegments, usePathname } from 'expo-router'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function BottomTab() {
   const segments = useSegments(); 
+  const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  
   const currentTab = segments[1]; 
 
-  const handlePress = (path: string) => {
-    const targetTab = path.split('/')[1]; 
-    if (currentTab !== targetTab) {
-      router.push(path as Href);
+const handlePress = (path: string) => {
+    if (pathname === path) return;
+
+    if (pathname.startsWith(path)) {
+      if (router.canDismiss()) {
+        router.dismissAll(); 
+      } else {
+        router.replace(path as Href);
+      }
+    } else {
+      router.navigate(path as Href);
     }
   };
 
@@ -65,12 +74,12 @@ export function BottomTab() {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => handlePress('/user')} hitSlop={touchSlop}>
-        <Image
-          source={require('@/assets/icons/user.png')}
+        <Image 
+          source={require('@/assets/icons/user.png')} 
           style={[
-            bottomTabStyles.icon,
-            currentTab === 'user' && bottomTabStyles.activeIcon,
-          ]}
+            bottomTabStyles.icon, 
+            pathname.startsWith('/user') && bottomTabStyles.activeIcon
+          ]} 
         />
       </TouchableOpacity>
     </View>
@@ -81,20 +90,16 @@ const bottomTabStyles = StyleSheet.create({
   container: {
     paddingTop: 16,
     backgroundColor: '#ffffff',
-
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-
     borderTopWidth: 1,
     borderColor: '#dddddd',
   },
-
   icon: {
     width: 24,
     height: 24,
   },
-
   activeIcon: {
     tintColor: '#009205',
   },
