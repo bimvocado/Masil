@@ -55,8 +55,8 @@ const googleLogin = async (req, res, next) => {
         process.env.GOOGLE_CLIENT_ID,         // 웹 ID
         process.env.GOOGLE_ANDROID_CLIENT_ID, // 안드 ID
         
-        // 🔥 [100% 안심 셋팅] 여기에 구글 콘솔 안드로이드 클라이언트 ID 문자열을 직접 한 줄 더 박아주세요!
-        "837732936258-ei8plnvdb0mseeu7ordfbfe6rmr2c0tq.apps.googleusercontent.com"
+        
+        "837732936258-db6uvho2lnn9ipg13h22acvos0hijrfl.apps.googleusercontent.com"
       ],
     });
     
